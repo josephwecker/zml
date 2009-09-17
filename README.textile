@@ -10,7 +10,7 @@ or as a python templating language using pytenjin.
 
 h3. Example 1
 
-<pre><code language="python">
+<pre><code>
 # Ok, here's my html
 
 :html
@@ -24,9 +24,10 @@ h3. Example 1
 
 h4. Main points:
 
-# Uses indentation to designate tag nesting. Takes care of closing tags etc. all by itself, which reduces redundancy and visual clutter.
-# Attributes in parentheses, if you like. They actually don’t need commas between them, and can span extra lines as in:
-<pre><code language="python">
+* Uses indentation to designate tag nesting. Takes care of closing tags etc. all by itself, which reduces redundancy and visual clutter.
+* Attributes in parentheses, if you like. They actually don’t need commas between them, and can span extra lines as in:
+
+<pre><code>
 :html(
     onload="openstuff()" 
     id="thehtml" 
@@ -34,9 +35,10 @@ h4. Main points:
 
     :head  #....
 </code></pre>
-# Comments with #
-# Enclose any special characters in quotes. Normal quoting rules apply, escape with backslash.
-# This works great for the majority of html, but sometimes you need embedded
+
+* Comments with #
+* Enclose any special characters in quotes. Normal quoting rules apply, escape with backslash.
+* This works great for the majority of html, but sometimes you need embedded
 html, like “blah &lt;emph&gt;blah&lt;/emph&gt; blah blah!” – in that case, just do it as a string like I just wrote.
 
 h4. Features still to describe:
