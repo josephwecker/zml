@@ -1,0 +1,51 @@
+h2. Zippy Markup Language (ZML)
+
+| Authors | Joseph Wecker <joseph.wecker@gmail.com> |
+| Version | 0 still, but getting there |
+
+h2. Summary
+
+Inspired by SLiP, haml, and sexp2xml. Concise markup language for general xml
+or as a python templating language using pytenjin.
+
+h3. Example 1
+
+<pre><code language="python">
+# Ok, here's my html
+
+:html
+    :head(title='hey there')
+    :body
+        :table(class="mytable redish another", blah='random')
+            :tr  # First row, for fun.
+                :td Here is some text 
+                :td 'and some more with craziness ;(*)(&lt;<>&lt;>'
+</code></pre>
+
+h4. Main points:
+
+# Uses indentation to designate tag nesting. Takes care of closing tags etc. all by itself, which reduces redundancy and visual clutter.
+# Attributes in parentheses, if you like. They actually don’t need commas between them, and can span extra lines as in:
+<pre><code language="python">
+:html(
+    onload="openstuff()" 
+    id="thehtml" 
+    class = 'one two three')
+
+    :head  #....
+</code></pre>
+# Comments with #
+# Enclose any special characters in quotes. Normal quoting rules apply, escape with backslash.
+# This works great for the majority of html, but sometimes you need embedded
+html, like “blah &lt;emph&gt;blah&lt;/emph&gt; blah blah!” – in that case, just do it as a string like I just wrote.
+
+h4. Features still to describe:
+
+* Embedded python and variables
+* Including other files
+* Specialized tags
+* Caching
+* How it works super, super, super fast…
+* Integrating with ngx-rome
+
+For now look in sample.zml

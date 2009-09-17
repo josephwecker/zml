@@ -1,0 +1,27 @@
+#
+# Need a way to have include files insert their stuff at selected places.
+#
+
+:html
+  :head(title='hey there'
+     stylesheets = 'blah.css'
+     scripts = 'blah.\'::>><<js')
+  :body(width='100%')
+    :table(class='blah two three')
+      (py>
+      i = 0
+      for item in ['foo', 'bar', 'baz']:
+        i += 1 <py)
+        (py> if i == 2: <py)
+          :tr
+           :td 'i is 2 -- ${item}'
+           :td ${i}
+        (py> elif i == 3: <py)
+          (py> for n in [1,2,3,4]: <py)
+            :tr
+              :td '${item}!!!'
+              :td ${n} ${i}  # NO SPACE??? what's going on here?? TODO
+    :h1 """did it!"""
+# 
+# [{__tag='html', __children=[{__tag='head', title='hey there', __children=[...]}, {__tag='body'...}]}]
+# 
