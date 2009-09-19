@@ -32,7 +32,7 @@ syn match  zmlEscape		"\\$"
 
 syn match zmlGenericTag		"^\s*:\w*"
 syn match zmlInlineTag		":\w*:"
-syn match zmlIdTag              "^\s*>\w*"
+syn match zmlIdTag              "^\s*%\w*"
 syn match zmlClassTag           "^\s*\.\w*"
 syn match zmlSpecialTag         "^\s*\*\w*"
 
@@ -71,8 +71,8 @@ if version >= 508 || !exists("did_zml_syn_inits")
 
   HiLink zmlGenericTag		Entity
   HiLink zmlInlineTag		Entity
-  HiLink zmlIdTag		Statement
-  HiLink zmlClassTag		Statement
+  HiLink zmlIdTag		Entity
+  HiLink zmlClassTag		Entity
   HiLink zmlSpecialTag		Conditional
 
   HiLink zmlParam		Test
