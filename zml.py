@@ -300,9 +300,18 @@ class ZmlParser():
         elif currt[1] == ',':
             return ''
         elif currt[1] == '[':
-            die_error('Sadly my master hasn\'t taught me to do lists yet', currt)
-            # TODO: Consume and build list as attribute value
+            return self._get_list_values()
         return None
+
+    def _get_list_values(self):
+        result_values = []
+        while True:
+            currt = self._next_token(ignore = [COMMENT, NL, NEWLINE],
+                    allow_only = [OP, NUMBER, STRING, NAME], op_allow='],')
+            if currt[0] == NUMBER or currt[0] == STRING or currt[0] == NAME:
+                result_values.append(self._pull_text(currt))
+            elif currt[1] == ']':
+                return result_values
 
     def _next_token(self, ignore = [COMMENT], allow_only=None,
             op_allow=None):
