@@ -320,12 +320,6 @@ class ZmlParser():
                             die_error('Expecting one of "%s"' % op_allow)
                 break
         return token
-        
-    def _parse(self, token):
-        if token[0] is ENDMARKER:
-            return None
-        print token
-        self._parse(self.tsrc.next())
 
 
 if __name__ == '__main__':
