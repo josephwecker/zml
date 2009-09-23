@@ -30,11 +30,11 @@ syn match  zmlEscapeError	"\\x\x\=\X" display contained
 syn match  zmlEscape		"\\$"
 
 
-syn match zmlGenericTag		"^\s*:\w*"
-syn match zmlInlineTag		":\w*:"
-syn match zmlIdTag              "^\s*%\w*"
-syn match zmlClassTag           "^\s*\.\w*"
-syn match zmlSpecialTag         "^\s*\*\w*"
+syn match zmlGenericTag		"\s*:\w*"
+"syn region zmlInlineTag		start=+\(:\|%\|.\|\*\)+ end=";" excludenl contains=zmlInlineTag,zmlTagParams
+syn match zmlIdTag              "\s*%\w*"
+syn match zmlClassTag           "\s*\.\w*"
+syn match zmlSpecialTag         "\s*\*\w*"
 
 syn match zmlIndentError	"^\s*\( \t\|\t \)\s*\S"me=e-1 display
 "syn match zmlSpaceError	        "\s\+$" display
