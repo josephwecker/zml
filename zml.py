@@ -57,7 +57,7 @@ class ZmlParser():
         idx = 0
         for item in tree_level:
             if isinstance(item, dict):
-                if item['__type'] == '%':
+                if item['__type'] == '`':
                     tree_level[idx]['__code_string'] = \
                             self._get_code_string(item)
                 self._reinsert_code_chunks(tree_level[idx]['__children'])
@@ -66,7 +66,7 @@ class ZmlParser():
     def _get_code_string(self, item):
         code_level = item['__dindlvl']
         full_line = item['__full_line']
-        orig_code = self.code_chunks['%'+item['__name']]
+        orig_code = self.code_chunks['`'+item['__name']]
         formatted_code = self._fix_code_indents(orig_code, full_line)
         formatted_code = self._add_indent(formatted_code, code_level)
         return '<?py\n' + formatted_code + '\n?>\n'
@@ -109,39 +109,45 @@ class ZmlParser():
             if isinstance(child, dict):
                 name = child.pop('__name')
                 kind = child.pop('__type')
-                if kind == '%':
+                if kind == '`':
                     self._emit_code_chunk(curr_level, indlvl, child)
                 # TODO Handle and emit other custom tag types
                 else:
                     code_level = child.pop('__dindlvl') # used for code blocks
                     children = child.pop('__children')
                     full_line = child.pop('__full_line') # used for code blocks
+                    #if code_level == 'INLINE':
+                    #    cind = ''
+                    #else:
+                    #    cind = indlvl * ' ' * 2
+                    cind = ''
+
                     if len(child) == 0 and len(children) == 0:
-                        sys.stdout.write((indlvl * ' ' * 2) + '<'+name+'/>\n')
+                        sys.stdout.write(cind + '<'+name+'/>') #\n')
                     elif len(child) == 0:  # i.e., no attributes but has children
-                        sys.stdout.write((indlvl * ' ' * 2) + '<'+name+'>')
+                        sys.stdout.write(cind + '<'+name+'>')
                         if self._children_has_dict(children):
-                            sys.stdout.write('\n')
+                            #sys.stdout.write('\n')
                             self._emit_output(children, indlvl + 1)
-                            sys.stdout.write((indlvl * ' ' * 2) + '</'+name+'>\n')
+                            sys.stdout.write(cind + '</'+name+'>')#\n')
                         else:
                             self._emit_output(children, indlvl + 1)
-                            sys.stdout.write('</'+name+'>\n')
+                            sys.stdout.write('</'+name+'>')#\n')
                     elif len(children) == 0: # i.e., has attributes, no children
-                        sys.stdout.write((indlvl * ' ' * 2) + '<'+name+' ')
+                        sys.stdout.write(cind + '<'+name+' ')
                         self._emit_attributes(child)
-                        sys.stdout.write('/>\n')
+                        sys.stdout.write('/>')#\n')
                     else: # i.e., has attributes and children
-                        sys.stdout.write((indlvl * ' ' * 2) + '<'+name+' ')
+                        sys.stdout.write(cind + '<'+name+' ')
                         self._emit_attributes(child)
                         sys.stdout.write('>')
                         if self._children_has_dict(children):
-                            sys.stdout.write('\n')
+                            #sys.stdout.write('\n')
                             self._emit_output(children, indlvl + 1)
-                            sys.stdout.write((indlvl * ' ' * 2) + '</'+name+'>\n')
+                            sys.stdout.write(cind + '</'+name+'>')#\n')
                         else:
                             self._emit_output(children, indlvl + 1)
-                            sys.stdout.write('</'+name+'>\n')
+                            sys.stdout.write('</'+name+'>')#\n')
             else:
                 if has_out_norm_child:
                     sys.stdout.write(' ')
@@ -164,7 +170,10 @@ class ZmlParser():
         out_str = []
         for k,v in attr_list.items():
             k = k[1:]
-            out_str.append(k+'='+xml_attrib_string(v))
+            if isinstance(v, list):
+                out_str.append(k+'='+xml_attrib_string(' '.join(v)))
+            else:
+                out_str.append(k+'='+xml_attrib_string(v))
         sys.stdout.write(' '.join(out_str))
 
     def _fix_string(self, string):
@@ -181,7 +190,7 @@ class ZmlParser():
         # Big chunks of code
         dynamic_chunks = re.findall(r'\(py>.*?<py\)', instr, re.DOTALL)
         for chunk in dynamic_chunks:
-            tag = '%__dynamic__' + hashlib.md5(chunk).hexdigest()
+            tag = '`__dynamic__' + hashlib.md5(chunk).hexdigest()
             instr = instr.replace(chunk, tag)
             self.code_chunks[tag] = chunk
         # Escaped variables
@@ -214,28 +223,30 @@ class ZmlParser():
                 curr_tag['__children'] = []
                 curr_tag['__type'] = currt[1]
                 curr_tag['__dindlvl'] = curr_dynamic_level
-                curr_tag['__full_line'] = currt[4]
+                curr_tag['__full_line'] = currt[4]  # TODO: Only do this when needed
                 curr_tag['__name'] = self._next_token(allow_only = [NAME])[1]
                 currt = self._next_token()
                 if currt[1] == '(':
                     curr_tag = self._get_attributes(curr_tag)
                     currt = self._next_token(ignore = [COMMENT], allow_only =
-                            [NAME, STRING, NUMBER, NL, NEWLINE])
+                            [NAME, STRING, NUMBER, NL, NEWLINE, OP])
                 # Otherwise, everything up to the newline is part of children -
                 # So we loop through until we hit the EOL and add them on.
                 while True:
                     if currt[0] == NL or currt[0] == NEWLINE:
                         break
+                    elif currt[0] == OP:
+                        curr_tag['__children'].append(self._get_inline_tag(currt[1]))
                     else:
                         curr_tag['__children'].append(self._pull_text(currt))
                     currt = self._next_token(ignore = [COMMENT], allow_only =
-                            [NAME, STRING, NUMBER, NL, NEWLINE])
+                            [NAME, STRING, NUMBER, NL, NEWLINE, OP])
                 current_level.append(curr_tag)
             elif currt[0] == INDENT:
                 if self.indent_val == None:
                     self.indent_val = currt[1]
                 curr_tag = current_level.pop()
-                if curr_tag['__type'] == '%':  # Dynamic section tag
+                if curr_tag['__type'] == '`':  # Dynamic section tag
                     more_children, cont = \
                             self._parse_current_indent_level(curr_dynamic_level+1)
                 else:
@@ -247,9 +258,40 @@ class ZmlParser():
                     current_level, True
             elif currt[0] == STRING or currt[0] == NUMBER or currt[0] == NAME:
                 if vars().has_key('curr_tag'):
-                    curr_tag['__children'].append(self._pull_text(currt))
+                    while True:
+                        if currt[0] == NL or currt[0] == NEWLINE:
+                            break
+                        elif currt[0] == OP:
+                            curr_tag['__children'].append(self._get_inline_tag(currt[1]))
+                        else:
+                            curr_tag['__children'].append(self._pull_text(currt))
+                        currt = self._next_token(ignore = [COMMENT], allow_only =
+                                [NAME, STRING, NUMBER, NL, NEWLINE, OP])
+                        curr_tag['__children'].append(self._pull_text(currt))
                 else:
                     current_level.append(self._pull_text(currt))
+
+    def _get_inline_tag(self, tag_type):
+        curr_tag = {}
+        curr_tag['__children'] = []
+        curr_tag['__type'] = tag_type
+        curr_tag['__dindlvl'] = 'INLINE'
+        curr_tag['__full_line'] = ''
+        curr_tag['__name'] = self._next_token(allow_only = [NAME])[1]
+        currt = self._next_token(ignore = [COMMENT, NL, NEWLINE],
+                allow_only = [NAME, STRING, NUMBER, OP])
+        while True:
+            if currt[1] == '(':
+                curr_tag = self._get_attributes(curr_tag)
+            elif currt[1] == ';':
+                break
+            elif currt[0] == OP:
+                curr_tag['__children'].append(self._get_inline_tag(currt[1]))
+            else:
+                curr_tag['__children'].append(self._pull_text(currt))
+            currt = self._next_token(ignore = [COMMENT, NL, NEWLINE],
+                    allow_only = [NAME, STRING, NUMBER, OP])
+        return curr_tag
 
     def _pull_text(self, token):
         if token[0] == NAME or token[0] == NUMBER:
