@@ -31,7 +31,7 @@ def die_error(msg, token=None):
 class ZmlParser():
 
     def parse_file(self, filename):
-        ''' Take a filename with zml in it and return the xml/tenjin.  Right
+        ''' Take a filename with zml in it and return the xml.  Right
         now it simply reads it in and operates on it as a string- the reason
         being it needs to chunk out the dynamic parts before parsing.  The
         downside is, of course, it may be memory intensive for large files.'''
@@ -39,17 +39,18 @@ class ZmlParser():
         self.parse_string(open(filename).read())
 
     def parse_string(self, instr):
-        ''' Take a zml string and return the xml/tenjin. '''
+        ''' Take a zml string and return the xml. '''
 
         self.code_chunks = {}
         self.code_vars = {}
         self.indent_val = None
         instr = self._swap_out_code_chunks(instr)
+        print instr
         string_src = cStringIO.StringIO(instr).readline
         self.tsrc = generate_tokens(string_src)
         self.parse_tree, _is_eof = self._parse_current_indent_level()
-        #pp = pprint.PrettyPrinter(indent=2)
-        #pp.pprint(self.parse_tree)
+        pp = pprint.PrettyPrinter(indent=2)
+        pp.pprint(self.parse_tree)
         self._reinsert_code_chunks(self.parse_tree)
         output = self._emit_output(self.parse_tree, 0)
 
@@ -103,7 +104,7 @@ class ZmlParser():
 
     def _emit_output(self, curr_level, indlvl):
         ''' Takes the current parse tree and recursively emits it as
-        xml/tenjin.'''
+        xml.'''
         has_out_norm_child = False
         for child in curr_level:
             if isinstance(child, dict):
@@ -187,20 +188,14 @@ class ZmlParser():
 
 
     def _swap_out_code_chunks(self, instr):
-        # Big chunks of code
+        # Big chunks of tenjin code
         dynamic_chunks = re.findall(r'\(py>.*?<py\)', instr, re.DOTALL)
         for chunk in dynamic_chunks:
             tag = '`__dynamic__' + hashlib.md5(chunk).hexdigest()
             instr = instr.replace(chunk, tag)
             self.code_chunks[tag] = chunk
-        # Escaped variables
-        dynamic_vars = re.findall(r'\$\{.*?\}', instr, re.DOTALL)
-        for var in dynamic_vars:
-            tag = '__dynamic__' + hashlib.md5(var).hexdigest()
-            instr = instr.replace(var, tag)
-            self.code_vars[tag] = var
-        # Raw variables
-        dynamic_vars = re.findall(r'\%\{.*?\}', instr, re.DOTALL)
+        # Tenjin and sgte escaped variables
+        dynamic_vars = re.findall(r'(\$\{.*?\}|\%\{.*?}|\$[^$]+:\{.*?\}.*?\$|\$.*?\$)', instr, re.DOTALL)
         for var in dynamic_vars:
             tag = '__dynamic__' + hashlib.md5(var).hexdigest()
             instr = instr.replace(var, tag)
@@ -257,19 +252,15 @@ class ZmlParser():
                 if cont == True:
                     current_level, True
             elif currt[0] == STRING or currt[0] == NUMBER or currt[0] == NAME:
-                if vars().has_key('curr_tag'):
-                    while True:
-                        if currt[0] == NL or currt[0] == NEWLINE:
-                            break
-                        elif currt[0] == OP:
-                            curr_tag['__children'].append(self._get_inline_tag(currt[1]))
-                        else:
-                            curr_tag['__children'].append(self._pull_text(currt))
-                        currt = self._next_token(ignore = [COMMENT], allow_only =
-                                [NAME, STRING, NUMBER, NL, NEWLINE, OP])
-                        curr_tag['__children'].append(self._pull_text(currt))
-                else:
-                    current_level.append(self._pull_text(currt))
+                while True:
+                    if currt[0] == NL or currt[0] == NEWLINE:
+                        break
+                    elif currt[0] == OP:
+                        current_level.append(self._get_inline_tag(currt[1]))
+                    else:
+                        current_level.append(self._pull_text(currt))
+                    currt = self._next_token(ignore = [COMMENT], allow_only =
+                            [NAME, STRING, NUMBER, NL, NEWLINE, OP])
 
     def _get_inline_tag(self, tag_type):
         curr_tag = {}
