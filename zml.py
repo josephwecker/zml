@@ -48,6 +48,7 @@ class ZmlParser():
         self.tsrc = generate_tokens(string_src)
         self.parse_tree, _is_eof = self._parse_current_indent_level()
         self._reinsert_code_chunks(self.parse_tree)
+        self._process_special_tags(self.parse_tree)
         output = self._emit_output(self.parse_tree, 0)
 
     def _swap_out_code_chunks(self, instr):
@@ -311,6 +312,25 @@ class ZmlParser():
                 output.append(indent + line)
             return '\n'.join(output)
         return code
+
+    def _process_special_tags(self, curr_level):
+        ''' Processes specialized tags such as '.someclass (a div)', '%someid
+        (a div)', and '*superspecial'- which calls external callbacks.'''
+        for child in curr_level:
+            if isinstance(child, dict):
+                if child['__type'] == '.':
+                    if child.has_key('+class'):
+                        curr_classes = child['+class'] + ' '
+                    else:
+                        curr_classes = ''
+                    child['+class'] = curr_classes + child['__name']
+                    child['__type'] = ':'
+                    child['__name'] = 'div'
+                elif child['__type'] == '%':
+                    child['+id'] = child['__name']
+                    child['__type'] = ':'
+                    child['__name'] = 'div'
+                self._process_special_tags(child['__children'])
 
     def _emit_output(self, curr_level, indlvl):
         ''' Takes the current parse tree and recursively emits it as
