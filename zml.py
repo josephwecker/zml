@@ -330,7 +330,15 @@ class ZmlParser():
                     child['+id'] = child['__name']
                     child['__type'] = ':'
                     child['__name'] = 'div'
+                elif child['__type'] == '*':
+                    self._process_super_special(child)
                 self._process_special_tags(child['__children'])
+
+    def _process_super_special(self, child_dict):
+        ''' Tries to import an appropriate handler, and then uses callbacks to
+        modify the child, modify anything in the parse_tree, and build any
+        structures that might be used for later emission.'''
+        pass
 
     def _emit_output(self, curr_level, indlvl):
         ''' Takes the current parse tree and recursively emits it as

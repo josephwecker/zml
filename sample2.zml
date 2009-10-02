@@ -5,5 +5,8 @@
 :html
   :body
     $if blah$
-        :h1 """did it 1!"""
+        .crazy """did it 1!"""
+        .crazy(class='first')
     $end if$
+    %templist
+        :h1 hey there
