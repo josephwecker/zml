@@ -105,9 +105,10 @@ class ZmlParser():
     def _emit_output(self, curr_level, indlvl):
         ''' Takes the current parse tree and recursively emits it as
         xml.'''
-        has_out_norm_child = False
+        last_was_norm_child = False
         for child in curr_level:
             if isinstance(child, dict):
+                last_was_norm_child = False
                 name = child.pop('__name')
                 kind = child.pop('__type')
                 if kind == '`':
@@ -124,36 +125,34 @@ class ZmlParser():
                     cind = ''
 
                     if len(child) == 0 and len(children) == 0:
-                        sys.stdout.write(cind + '<'+name+'/>') #\n')
+                        sys.stdout.write(cind + '<'+name+'/>')
                     elif len(child) == 0:  # i.e., no attributes but has children
                         sys.stdout.write(cind + '<'+name+'>')
                         if self._children_has_dict(children):
-                            #sys.stdout.write('\n')
                             self._emit_output(children, indlvl + 1)
-                            sys.stdout.write(cind + '</'+name+'>')#\n')
+                            sys.stdout.write(cind + '</'+name+'>')
                         else:
                             self._emit_output(children, indlvl + 1)
-                            sys.stdout.write('</'+name+'>')#\n')
+                            sys.stdout.write('</'+name+'>')
                     elif len(children) == 0: # i.e., has attributes, no children
                         sys.stdout.write(cind + '<'+name+' ')
                         self._emit_attributes(child)
-                        sys.stdout.write('/>')#\n')
+                        sys.stdout.write('/>')
                     else: # i.e., has attributes and children
                         sys.stdout.write(cind + '<'+name+' ')
                         self._emit_attributes(child)
                         sys.stdout.write('>')
                         if self._children_has_dict(children):
-                            #sys.stdout.write('\n')
                             self._emit_output(children, indlvl + 1)
-                            sys.stdout.write(cind + '</'+name+'>')#\n')
+                            sys.stdout.write(cind + '</'+name+'>')
                         else:
                             self._emit_output(children, indlvl + 1)
-                            sys.stdout.write('</'+name+'>')#\n')
+                            sys.stdout.write('</'+name+'>')
             else:
-                if has_out_norm_child:
+                if last_was_norm_child:
                     sys.stdout.write(' ')
                 sys.stdout.write(child)
-                has_out_norm_child = True
+                last_was_norm_child = True
 
     def _emit_code_chunk(self, curr_level, indlvl, child):
         sys.stdout.write(child['__code_string'])
