@@ -1,0 +1,7 @@
+- Process class and id div tags correctly
+- Mechanism for html special processing:
+  - Whole parse tree available
+  - Process callback
+  - Emit callback
+- Break into ngx-rome chunks (based on config?)
+- 
