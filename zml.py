@@ -71,7 +71,7 @@ class ZmlParser():
             instr = instr.replace(chunk, tag)
             self.code_chunks[tag] = chunk
         # Tenjin and sgte escaped variables
-        dynamic_vars = re.findall(r'(\$\{.*?\}|\%\{.*?}|\$[^$]+:\{.*?\}.*?\$|\$.*?\$)', instr, re.DOTALL)
+        dynamic_vars = re.findall(r'(\$\{.*?\}|\%\{.*?}|\$[^$\n\s]+:\{.*?\}.*?\$|\$[\w\s]*\$)', instr, re.DOTALL)
         for var in dynamic_vars:
             tag = '__dynamic__' + hashlib.md5(var).hexdigest()
             instr = instr.replace(var, tag)
