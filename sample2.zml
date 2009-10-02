@@ -1,0 +1,9 @@
+#
+# Need a way to have include files insert their stuff at selected places.
+#
+
+:html
+  :body
+    $if blah$
+        :h1 """did it 1!"""
+    $end if$
