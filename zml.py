@@ -13,7 +13,7 @@
 from tokenize import * # mostly for token-type tags
 import cStringIO
 import re, hashlib, sys
-import pprint
+#import pprint
 from xml.sax.saxutils import escape, quoteattr
 
 def xml_attrib_string(text):
@@ -45,12 +45,12 @@ class ZmlParser():
         self.code_vars = {}
         self.indent_val = None
         instr = self._swap_out_code_chunks(instr)
-        print instr
+        #print instr
         string_src = cStringIO.StringIO(instr).readline
         self.tsrc = generate_tokens(string_src)
         self.parse_tree, _is_eof = self._parse_current_indent_level()
-        pp = pprint.PrettyPrinter(indent=2)
-        pp.pprint(self.parse_tree)
+        #pp = pprint.PrettyPrinter(indent=2)
+        #pp.pprint(self.parse_tree)
         self._reinsert_code_chunks(self.parse_tree)
         output = self._emit_output(self.parse_tree, 0)
 
