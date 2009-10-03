@@ -13,8 +13,11 @@
 from tokenize import * # mostly for token-type tags
 import cStringIO
 import re, hashlib, sys
-#import pprint
 from xml.sax.saxutils import escape, quoteattr
+
+# Not required
+import psyco
+psyco.full()
 
 def xml_attrib_string(text):
     return quoteattr(escape(text))
@@ -42,7 +45,11 @@ class ZmlParser():
         ''' Take a zml string and return the xml. '''
         self.code_chunks = {}
         self.code_vars = {}
+        self.handlers = {}
+        self.misc_data = {}
+
         self.indent_val = None
+
         instr = self._swap_out_code_chunks(instr)
         string_src = cStringIO.StringIO(instr).readline
         self.tsrc = generate_tokens(string_src)
@@ -338,7 +345,12 @@ class ZmlParser():
         ''' Tries to import an appropriate handler, and then uses callbacks to
         modify the child, modify anything in the parse_tree, and build any
         structures that might be used for later emission.'''
-        pass
+        module_name = 'special_handle_' + child_dict['__name']
+        if not self.handlers.has_key(module_name):
+            self.handlers[module_name] = __import__(module_name)
+        self.handlers[module_name].change_parse_tree(child_dict, self.parse_tree)
+        self.handlers[module_name].get_misc_data(child_dict, self.misc_data)
+        self.handlers[module_name].real_child(child_dict)
 
     def _emit_output(self, curr_level, indlvl):
         ''' Takes the current parse tree and recursively emits it as
