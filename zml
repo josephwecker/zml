@@ -1,8 +1,12 @@
 #!/usr/bin/env python
+#
+# Author: Joseph Wecker
+#
+# Public domain
+#
 
 import sys, zml
 
 if sys.argv[1]:
     parser = zml.ZmlParser()
     translated = parser.parse_file(sys.argv[1])
-

@@ -4,6 +4,8 @@
 " Latest Revision: 2009-09-17
 "
 " ZML mode for (g)vim, unfortunately from scratch.
+"
+" Public Domain
 " 
 
 if version < 600
