@@ -1,8 +1,4 @@
 # Special handler for '*html' zml tags
-# TODO:
-#  - Insert docstring and normal html tag
-#  - Combine and Embed minimized css into html
-#  - Combine and add link to minimized js at bottom of html
 
 import os.path
 import hashlib
