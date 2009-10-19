@@ -62,7 +62,7 @@ class ZmlParser():
         being it needs to chunk out the dynamic parts before parsing.  The
         downside is, of course, it may be memory intensive for large files.'''
 
-        self.parse_string(open(filename).read())
+        return self.parse_string(open(filename).read())
 
     def parse_string(self, instr):
         ''' Take a zml string and return the xml. '''
@@ -79,7 +79,9 @@ class ZmlParser():
         self.parse_tree, _is_eof = self._parse_current_indent_level()
         self._reinsert_code_chunks(self.parse_tree)
         self._process_special_tags(self.parse_tree)
-        output = self._emit_output(self.parse_tree, 0)
+        output = self._build_output(self.parse_tree, 0)
+        #print output
+        return output
 
     def _swap_out_code_chunks(self, instr):
         ''' Before it starts tokenizing with the python tokenizer, it needs to
@@ -375,9 +377,10 @@ class ZmlParser():
         self.handlers[module_name].get_misc_data(child_dict, self.misc_data)
         self.handlers[module_name].real_child(child_dict)
 
-    def _emit_output(self, curr_level, indlvl):
+    def _build_output(self, curr_level, indlvl):
         ''' Takes the current parse tree and recursively emits it as
         xml.'''
+        instance_out = ''
         last_was_norm_child = False
         for child in curr_level:
             if isinstance(child, dict):
@@ -385,11 +388,13 @@ class ZmlParser():
                 name = child.pop('__name')
                 kind = child.pop('__type')
                 if kind == '`':
-                    self._emit_code_chunk(curr_level, indlvl, child)
+                    #self._emit_code_chunk(curr_level, indlvl, child)
+                    instance_out += self._build_code_chunk(curr_level, indlvl, child)
                 elif kind == '@':
-                    sys.stdout.write(child['__code_string'])
-                    self._emit_output(child['__children'], indlvl + 1)
-                # TODO Handle and emit other custom tag types
+                    instance_out += child['__code_string']
+                    #sys.stdout.write(child['__code_string'])
+                    instance_out += self._build_output(child['__children'], indlvl + 1)
+                    #self._emit_output(child['__children'], indlvl + 1)
                 else:
                     code_level = child.pop('__dindlvl') # used for code blocks
                     children = child.pop('__children')
@@ -397,48 +402,71 @@ class ZmlParser():
                     cind = ''  # No indentation / formating for now
 
                     if len(child) == 0 and len(children) == 0:
-                        sys.stdout.write(cind + '<'+name+'/>')
+                        instance_out += cind + '<'+name+'/>'
+                        #sys.stdout.write(cind + '<'+name+'/>')
                     elif len(child) == 0:  # i.e., no attributes but has children
-                        sys.stdout.write(cind + '<'+name+'>')
-                        if self._children_has_dict(children):
-                            self._emit_output(children, indlvl + 1)
-                            sys.stdout.write(cind + '</'+name+'>')
-                        else:
-                            self._emit_output(children, indlvl + 1)
-                            sys.stdout.write('</'+name+'>')
+                        instance_out += cind + '<'+name+'>'
+                        #sys.stdout.write(cind + '<'+name+'>')
+                        #if self._children_has_dict(children):
+                        instance_out += self._build_output(children, indlvl + 1)
+                        instance_out += cind + '</'+name+'>'
+                            #self._emit_output(children, indlvl + 1)
+                            #sys.stdout.write(cind + '</'+name+'>')
+                        #else:
+                            #instance_out += self._build_output(children, indlvl+1)
+                            #self._emit_output(children, indlvl + 1)
+                            #instance_out += '</'+name+'>'
+                            #sys.stdout.write('</'+name+'>')
                     elif len(children) == 0: # i.e., has attributes, no children
-                        sys.stdout.write(cind + '<'+name+' ')
-                        self._emit_attributes(child)
-                        sys.stdout.write('/>')
+                        instance_out += cind + '<'+name+' '
+                        instance_out += self._build_attributes(child)
+                        instance_out += '/>'
+                        #sys.stdout.write(cind + '<'+name+' ')
+                        #self._emit_attributes(child)
+                        #sys.stdout.write('/>')
                     else: # i.e., has attributes and children
-                        sys.stdout.write(cind + '<'+name+' ')
-                        self._emit_attributes(child)
-                        sys.stdout.write('>')
-                        if self._children_has_dict(children):
-                            self._emit_output(children, indlvl + 1)
-                            sys.stdout.write(cind + '</'+name+'>')
-                        else:
-                            self._emit_output(children, indlvl + 1)
-                            sys.stdout.write('</'+name+'>')
+                        instance_out += cind + '<' + name + ' '
+                        instance_out += self._build_attributes(child)
+                        instance_out += '>'
+                        #sys.stdout.write(cind + '<'+name+' ')
+                        #self._emit_attributes(child)
+                        #sys.stdout.write('>')
+                        #if self._children_has_dict(children):
+                        instance_out += self._build_output(children, indlvl+1)
+                        instance_out += '</' + name + '>'
+                            #self._emit_output(children, indlvl + 1)
+                            #sys.stdout.write(cind + '</'+name+'>')
+                        #else:
+                            #instance_out += self._build_output(children, indlvl+1)
+                            #self._emit_output(children, indlvl + 1)
+                            #sys.stdout.write('</'+name+'>')
             else:
                 if last_was_norm_child:
-                    sys.stdout.write(' ')
-                sys.stdout.write(child)
+                    #sys.stdout.write(' ')
+                    instance_out += ' '
+                #sys.stdout.write(child)
+                instance_out += child
                 last_was_norm_child = True
+        
+        return instance_out
 
-    def _emit_code_chunk(self, curr_level, indlvl, child):
-        sys.stdout.write(child['__code_string'])
-        self._emit_output(child['__children'], indlvl + 1)
-        sys.stdout.write('<?py\n' + self._add_indent('# end',
-            child['__dindlvl']) + '\n?>\n')
-    
+    def _build_code_chunk(self, curr_level, indlvl, child):
+        #sys.stdout.write(child['__code_string'])
+        #self._emit_output(child['__children'], indlvl + 1)
+        #sys.stdout.write('<?py\n' + self._add_indent('# end',
+        #    child['__dindlvl']) + '\n?>\n')
+        out = child['__code_string']
+        out += self._build_output(child['__children'], indlvl+1)
+        out += '<?py\n' + self._add_indent('# end', child['__dindlvl']) + '\n?>\n'
+        return out
+
     def _children_has_dict(self, children):
         for c in children:
             if isinstance(c, dict):
                 return True
         return False
 
-    def _emit_attributes(self, attr_list):
+    def _build_attributes(self, attr_list):
         out_str = []
         for k,v in attr_list.items():
             k = k[1:]
@@ -446,7 +474,7 @@ class ZmlParser():
                 out_str.append(k+'='+xml_attrib_string(' '.join(v)))
             else:
                 out_str.append(k+'='+xml_attrib_string(v))
-        sys.stdout.write(' '.join(out_str))
+        return ' '.join(out_str)
 
     def _fix_string(self, string):
         delim = string[0]

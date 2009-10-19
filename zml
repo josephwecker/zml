@@ -39,7 +39,7 @@ def main():
             help='Romanize the output (break into chunks for ngx-rome)')
     opts.add_option('-o', '--outfile', dest='outfile',
             default=None,metavar='FILENAME',
-            help='Output filename (defaults to stdout, which can be explicit dash)')
+            help='Output filename (defaults to same as input file but with extension changed)')
     opts.add_option('-d', '--dir', dest='outdir',
             default='./', metavar='DIRNAME',
             help='Output directory when there are multiple chunks (defaults to ./)')
@@ -60,20 +60,23 @@ def main():
         for infile in args:
             if options.verbose:
                 sys.stderr.write('Parsing %s' % infile)
+
+            # Actual parsing of the ZML file(s)
             zparser = zml.ZmlParser()
             translated = zparser.parse_file(infile)
-            if options.romanize:
-                if options.outfile:
-                    outfilecore = options.outfile
-                else:
-                    outfilecore = infile.replace('.zml','.html')
-                zparser.romanize(dir=options.outdir, filename=outfilecore)
-            elif options.outfile and options.outfile != '-':
-                outfile = os.path.join(options.outdir, options.outfile)
-                open(outfile, 'w+').writelines(translated)
+            
+            if options.outfile:
+                outfilecore = options.outfile
             else:
-                if translated:
-                    print ''.join(translated)
+                outfilecore = infile.replace('.zml','.html')
+
+            if options.romanize:
+                zparser.romanize(dir=options.outdir, filename=outfilecore)
+            elif options.outfile == '-' and translated:
+                print ''.join(translated)
+            else:
+                outfile = os.path.join(options.outdir, outfilecore)
+                open(outfile, 'w+').write(translated)
 
 
 if __name__ == '__main__':

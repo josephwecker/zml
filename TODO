@@ -1,2 +1,4 @@
+- Clean up cruft from changing from automatic stdout emissions
+- Make sure that paths to external script file are relative to the dump directory
 - Have emit produce an array of strings that can easily be combined or output in chunks
 - Break into ngx-rome chunks (based on command line options)
