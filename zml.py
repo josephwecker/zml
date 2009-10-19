@@ -388,79 +388,44 @@ class ZmlParser():
                 name = child.pop('__name')
                 kind = child.pop('__type')
                 if kind == '`':
-                    #self._emit_code_chunk(curr_level, indlvl, child)
                     instance_out += self._build_code_chunk(curr_level, indlvl, child)
                 elif kind == '@':
                     instance_out += child['__code_string']
-                    #sys.stdout.write(child['__code_string'])
                     instance_out += self._build_output(child['__children'], indlvl + 1)
-                    #self._emit_output(child['__children'], indlvl + 1)
                 else:
                     code_level = child.pop('__dindlvl') # used for code blocks
                     children = child.pop('__children')
                     full_line = child.pop('__full_line') # used for code blocks
-                    cind = ''  # No indentation / formating for now
 
                     if len(child) == 0 and len(children) == 0:
-                        instance_out += cind + '<'+name+'/>'
-                        #sys.stdout.write(cind + '<'+name+'/>')
+                        instance_out += '<'+name+'/>'
                     elif len(child) == 0:  # i.e., no attributes but has children
-                        instance_out += cind + '<'+name+'>'
-                        #sys.stdout.write(cind + '<'+name+'>')
-                        #if self._children_has_dict(children):
+                        instance_out += '<'+name+'>'
                         instance_out += self._build_output(children, indlvl + 1)
-                        instance_out += cind + '</'+name+'>'
-                            #self._emit_output(children, indlvl + 1)
-                            #sys.stdout.write(cind + '</'+name+'>')
-                        #else:
-                            #instance_out += self._build_output(children, indlvl+1)
-                            #self._emit_output(children, indlvl + 1)
-                            #instance_out += '</'+name+'>'
-                            #sys.stdout.write('</'+name+'>')
+                        instance_out += '</'+name+'>'
                     elif len(children) == 0: # i.e., has attributes, no children
-                        instance_out += cind + '<'+name+' '
-                        instance_out += self._build_attributes(child)
-                        instance_out += '/>'
-                        #sys.stdout.write(cind + '<'+name+' ')
-                        #self._emit_attributes(child)
-                        #sys.stdout.write('/>')
+                        instance_out += '<'+name+' '
+                        instance_out += self._build_attributes(child) + '/>'
                     else: # i.e., has attributes and children
-                        instance_out += cind + '<' + name + ' '
-                        instance_out += self._build_attributes(child)
-                        instance_out += '>'
-                        #sys.stdout.write(cind + '<'+name+' ')
-                        #self._emit_attributes(child)
-                        #sys.stdout.write('>')
-                        #if self._children_has_dict(children):
+                        instance_out += '<' + name + ' ' + self._build_attributes(child) + '>'
                         instance_out += self._build_output(children, indlvl+1)
                         instance_out += '</' + name + '>'
-                            #self._emit_output(children, indlvl + 1)
-                            #sys.stdout.write(cind + '</'+name+'>')
-                        #else:
-                            #instance_out += self._build_output(children, indlvl+1)
-                            #self._emit_output(children, indlvl + 1)
-                            #sys.stdout.write('</'+name+'>')
             else:
                 if last_was_norm_child:
-                    #sys.stdout.write(' ')
                     instance_out += ' '
-                #sys.stdout.write(child)
                 instance_out += child
                 last_was_norm_child = True
-        
         return instance_out
 
     def _build_code_chunk(self, curr_level, indlvl, child):
-        #sys.stdout.write(child['__code_string'])
-        #self._emit_output(child['__children'], indlvl + 1)
-        #sys.stdout.write('<?py\n' + self._add_indent('# end',
-        #    child['__dindlvl']) + '\n?>\n')
         out = child['__code_string']
         out += self._build_output(child['__children'], indlvl+1)
         out += '<?py\n' + self._add_indent('# end', child['__dindlvl']) + '\n?>\n'
         return out
 
     def _children_has_dict(self, children):
+        '''Depricated now- was used when figuring out how to emit
+        indentations.'''
         for c in children:
             if isinstance(c, dict):
                 return True
