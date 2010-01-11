@@ -1,7 +1,23 @@
-
+%% Takes a zml input file and tokenizes it for a parser.
+%% Should handle unicode just fine.
 %%
-%% For each line figure out tokens:
-%% INDENTS / DEDENTS | TAG | (ATT VAL+)
+%% AUTHOR: Joseph Wecker <joseph.wecker@gmail.com>
+%%
+%%
+%% TODO:
+%%   - Template coding
+%%
+%% EVENTUALLY:
+%%   - Factor out all the ugly "case CurrTAcc of" stuff all over
+%%   - Use macros or something to improve readability of the main tokenizing
+%%     loops.
+%%
+%% NOTES:
+%%   - I might just let the parser decide when to ignore false
+%%     "start/end_attrs" tokens
+%%   - Might need to generate a token for ";" for inline tags
+%%   - (Make sure inline is also terminated by EOL)
+%%
 
 -module(zml_tokenizer).
 
@@ -116,9 +132,8 @@ parse_inner(Line) ->
 	parse_inner(Line, none, [], []).
 
 %%
-%% parse_inner(CurrString, IsEscaped, CurrentTokenAcc, AllTokenAcc)
+%% parse_inner(CurrString, LastToken, CurrentTokenAcc, AllTokenAcc)
 %%
-
 % Line is finished.  Flush token and return results.
 parse_inner([], _, CurrTAcc, AllTAcc) ->
 	case CurrTAcc of
@@ -242,6 +257,9 @@ line_pull_in_str([], _, Acc) ->
 line_pull_in_str([H | T], _, Acc) ->
 	line_pull_in_str(T, H, [H | Acc]).
 
+% Should combine this with the above via macro probably.  Or something.  As far
+% as I can think at the moment I need the tokens compiled into the function
+% matchers, hence the two sets of almost the same thing.
 line_pull_in_ign(Line) ->
 	line_pull_in_ign(Line, none, []).
 line_pull_in_ign([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
@@ -252,14 +270,3 @@ line_pull_in_ign([], _, Acc) ->
 	{lists:reverse(Acc), false, []};
 line_pull_in_ign([H | T], _, Acc) ->
 	line_pull_in_ign(T, H, [H | Acc]).
-
-%% TODO:
-%%   - Comments
-%%   - Strings
-%%   - Template coding
-%%   - If possible- cognizant of whether () are really for attributes
-%%
-%%   - Factor out all the ugly "case CurrTAcc of" stuff all over
-%%   - Use macros or something to improve readability of the main tokenizing
-%%     loops.
-
