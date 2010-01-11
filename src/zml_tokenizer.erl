@@ -5,7 +5,11 @@
 %%
 %%
 %% TODO:
-%%   - Template coding
+%%   - Problem with spaces when inline tags are _way_ inline.  Might be more of
+%%     a parser problem...  "bol:strong ogna;-is-my-first-name" needs to be
+%%     rendered without any spaces, for example.
+%%   - Probably need to do something with tags.  We'll see when I do the
+%%     parser.
 %%
 %% EVENTUALLY:
 %%   - Factor out all the ugly "case CurrTAcc of" stuff all over
@@ -17,6 +21,7 @@
 %%     "start/end_attrs" tokens
 %%   - Might need to generate a token for ";" for inline tags
 %%   - (Make sure inline is also terminated by EOL)
+%%   - Template encoding ("[...]") will be handled post-parser probably
 %%
 
 -module(zml_tokenizer).
@@ -40,6 +45,8 @@
 -define(T_STR_MLT_ST_2, 34). % dbl-quote
 -define(T_STR_MLT_EN_1, 34).
 -define(T_STR_MLT_EN_2, $|).
+
+-define(T_INL_TAG_D, $;).
 
 
 parse_file(Filename) when is_list(Filename) ->
@@ -219,6 +226,17 @@ parse_inner([H | T], _Last, CurrTAcc, AllTAcc) when
 		_ ->
 			parse_inner(T, H, [],
 				[{{word, lists:reverse(CurrTAcc)}, get(line_num)} | AllTAcc])
+	end;
+
+% Inline tag delimiter
+parse_inner([?T_INL_TAG_D | T], _LAST, CurrTAcc, AllTAcc) ->
+	case CurrTAcc of
+		[] ->
+			parse_inner(T, ?T_INL_TAG_D, [], [{inline_delim, get(line_num)} | AllTAcc]);
+		_ ->
+			parse_inner(T, ?T_INL_TAG_D, [],
+				[[{inline_delim, get(line_num)},
+				  {{word, lists:reverse(CurrTAcc)}, get(line_num)}] | AllTAcc])
 	end;
 
 parse_inner([H | T], _Last, CurrTAcc, AllTAcc) ->
