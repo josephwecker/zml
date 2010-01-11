@@ -15,18 +15,15 @@
 -define(T_IGN_INL_1, $|).
 -define(T_IGN_INL_2, $|).
 
--define(T_COMMENT_MULTI_ST_1, $|).
--define(T_COMMENT_MULTI_ST_2, $#).
--define(T_COMMENT_MULTI_EN_1, $#).
--define(T_COMMENT_MULTI_EN_2, $|).
+-define(T_IGN_MLT_ST_1, $|).
+-define(T_IGN_MLT_ST_2, $#).
+-define(T_IGN_MLT_EN_1, $#).
+-define(T_IGN_MLT_EN_2, $|).
 
--define(T_STRING_TYPE1, 34). % dbl-quote
--define(T_STRING_TYPE2, 39). % single-quote
-
--define(T_STRING_MULTI_ST_1, $|).
--define(T_STRING_MULTI_ST_2, 34).
--define(T_STRING_MULTI_EN_1, 34).
--define(T_STRING_MULTI_EN_2, $|).
+-define(T_STR_MLT_ST_1, $|).
+-define(T_STR_MLT_ST_2, 34). % dbl-quote
+-define(T_STR_MLT_EN_1, 34).
+-define(T_STR_MLT_EN_2, $|).
 
 
 parse_file(Filename) when is_list(Filename) ->
@@ -37,6 +34,7 @@ parse_file(Filename) when is_list(Filename) ->
 	parse_lines(File, [0], []).  % Just ignore leading "indent" token if needed
 
 parse_lines(File, IndentStack, RTokens) ->
+	put(file, File),
 	put(line_num, get(line_num) + 1),
 	case io:get_line(File, "") of
 		eof ->
@@ -130,19 +128,37 @@ parse_inner([], _, CurrTAcc, AllTAcc) ->
 			[{{word, lists:reverse(CurrTAcc)}, get(line_num)} | AllTAcc]
 	end;
 
-% Begin escaping a character
-parse_inner([?T_ESC | T], _, CurrTAcc, AllTAcc) ->
-	parse_inner(T, ?T_ESC, CurrTAcc, AllTAcc);
-
 % Escaped characters always get added to current token
 % Adding "nothing" as last character ensures you can do
 % "\|# this is not a comment #|" etc.
-parse_inner([Any | T], ?T_ESC, CurrTAcc, AllTAcc) ->
+% Also note that it pops the esc code off CurrTAcc first.
+parse_inner([Any | T], ?T_ESC, [?T_ESC | CurrTAcc], AllTAcc) ->
 	parse_inner(T, nothing, [Any | CurrTAcc], AllTAcc);
 
 % String started
+parse_inner([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1, [_ | CurrTAcc], AllTAcc) ->
+	{Str, Remaining} = pull_in_string(T, fun line_pull_in_str/1),
+	case CurrTAcc of
+		[] ->
+			parse_inner(Remaining, none, [],
+				[{{word, Str}, get(line_num)} | AllTAcc]);
+		_ ->
+			parse_inner(Remaining, none, [],
+				[[{{word, Str}, get(line_num)},
+				  {{word, lists:reverse(CurrTAcc)}, get(line_num)}] | AllTAcc])
+	end;
+
 
 % Multi-line comment started
+parse_inner([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1, [_ | CurrTAcc], AllTAcc) ->
+	{_Comment, Remaining} = pull_in_string(T, fun line_pull_in_ign/1),
+	case CurrTAcc of
+		[] ->
+			parse_inner(Remaining, none, [], AllTAcc);
+		_ ->
+			parse_inner(Remaining, none, [],
+				[{{word, lists:reverse(CurrTAcc)}, get(line_num)} | AllTAcc])
+	end;
 
 % Inline comment started
 parse_inner([?T_IGN_INL_2 | _T], ?T_IGN_INL_1, CurrTAcc, AllTAcc) ->
@@ -194,6 +210,48 @@ parse_inner([H | T], _Last, CurrTAcc, AllTAcc) ->
 	parse_inner(T, H, [H | CurrTAcc], AllTAcc).
 
 
+pull_in_string(Line, InnerFun) ->
+	pull_in_string(Line, [], get(line_num), InnerFun).
+pull_in_string(Line, Acc, LN, InnerFun) ->
+	{StrAcc, Finished, Tail} = InnerFun(Line),
+	case Finished of
+		true ->
+			put(line_num, LN),
+			{lists:flatten(lists:reverse([StrAcc | Acc])), Tail};
+		false ->
+			File = get(file),
+			case io:get_line(File, "") of
+				eof ->
+					erlang:error({string_or_comment_not_closed_before_eof,
+							{line, get(line_num)}});
+				{error, Reason} ->
+					erlang:error({input_zml_file_read_error, Reason});
+				NewLine ->
+					pull_in_string(NewLine, [StrAcc | Acc], LN + 1, InnerFun)
+			end
+	end.
+
+line_pull_in_str(Line) ->
+	line_pull_in_str(Line, none, []).
+line_pull_in_str([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
+	line_pull_in_str(T, nothing, [Any | Acc]);
+line_pull_in_str([?T_STR_MLT_EN_2 | T], ?T_STR_MLT_EN_1, [_ | Acc]) ->
+	{lists:reverse(Acc), true, T};
+line_pull_in_str([], _, Acc) ->
+	{lists:reverse(Acc), false, []};
+line_pull_in_str([H | T], _, Acc) ->
+	line_pull_in_str(T, H, [H | Acc]).
+
+line_pull_in_ign(Line) ->
+	line_pull_in_ign(Line, none, []).
+line_pull_in_ign([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
+	line_pull_in_ign(T, nothing, [Any | Acc]);
+line_pull_in_ign([?T_IGN_MLT_EN_2 | T], ?T_IGN_MLT_EN_1, [_ | Acc]) ->
+	{lists:reverse(Acc), true, T};
+line_pull_in_ign([], _, Acc) ->
+	{lists:reverse(Acc), false, []};
+line_pull_in_ign([H | T], _, Acc) ->
+	line_pull_in_ign(T, H, [H | Acc]).
 
 %% TODO:
 %%   - Comments
@@ -201,3 +259,7 @@ parse_inner([H | T], _Last, CurrTAcc, AllTAcc) ->
 %%   - Template coding
 %%   - If possible- cognizant of whether () are really for attributes
 %%
+%%   - Factor out all the ugly "case CurrTAcc of" stuff all over
+%%   - Use macros or something to improve readability of the main tokenizing
+%%     loops.
+
