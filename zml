@@ -33,10 +33,10 @@ import sys, zml, os.path
 from optparse import OptionParser
 
 def main():
-    opts = OptionParser('Usage: %prog [options] INPUTFILE(s)')
-    opts.add_option('-r', '--romanize',dest='romanize',
-            action='store_true', default=False,
-            help='Romanize the output (break into chunks for ngx-rome)')
+    opts = OptionParser('Usage: %prog [-h] [OPTIONS] INPUTFILE(s)')
+    opts.add_option('-f', '--format', dest='outformat',
+            default='erlang', metavar='OUTPUT_FORMAT',
+            help='Output format, currently one of: erlang')
     opts.add_option('-o', '--outfile', dest='outfile',
             default=None,metavar='FILENAME',
             help='Output filename (defaults to same as input file but with extension changed)')

@@ -25,3 +25,17 @@
 # 
 # [{__tag='html', __children=[{__tag='head', title='hey there', __children=[...]}, {__tag='body'...}]}]
 # 
+
+:html
+  :head(title='george')
+  :body
+	:table
+	  [if i == 2]
+	    :tr
+	      :td 'i is 2 -- [crazy_text]'
+	  [else]
+	  	[for item, n in the_stuff]
+	      :tr
+	        :td '[item] was here'
+	        :td '[n]'
+	    
