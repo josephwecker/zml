@@ -61,7 +61,8 @@ parse_lines(File, IndentStack, RTokens) ->
 	put(line_num, get(line_num) + 1),
 	case io:get_line(File, "") of
 		eof ->
-			lists:reverse(lists:flatten(RTokens));
+			lists:reverse([{end_of_file, get(line_num) - 1} |
+					lists:flatten(RTokens)]);
 		{error, Reason} ->
 			erlang:error({input_zml_file_read_error, Reason});
 		Line ->
@@ -147,7 +148,7 @@ parse_inner([], _, CurrTAcc, AllTAcc) ->
 		[] ->
 			AllTAcc;
 		_ ->
-			[{{word, lists:reverse(CurrTAcc)}, get(line_num)} | AllTAcc]
+			[{word, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc]
 	end;
 
 % Escaped characters always get added to current token
@@ -163,11 +164,11 @@ parse_inner([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1, [_ | CurrTAcc], AllTAcc) ->
 	case CurrTAcc of
 		[] ->
 			parse_inner(Remaining, none, [],
-				[{{word, Str}, get(line_num)} | AllTAcc]);
+				[{word, get(line_num), Str} | AllTAcc]);
 		_ ->
 			parse_inner(Remaining, none, [],
-				[[{{word, Str}, get(line_num)},
-				  {{word, lists:reverse(CurrTAcc)}, get(line_num)}] | AllTAcc])
+				[[{word, get(line_num), Str},
+				  {word, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
 	end;
 
 
@@ -179,7 +180,7 @@ parse_inner([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1, [_ | CurrTAcc], AllTAcc) ->
 			parse_inner(Remaining, none, [], AllTAcc);
 		_ ->
 			parse_inner(Remaining, none, [],
-				[{{word, lists:reverse(CurrTAcc)}, get(line_num)} | AllTAcc])
+				[{word, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc])
 	end;
 
 % Inline comment started
@@ -188,7 +189,7 @@ parse_inner([?T_IGN_INL_2 | _T], ?T_IGN_INL_1, CurrTAcc, AllTAcc) ->
 		[?T_IGN_INL_1] ->
 			AllTAcc;
 		[?T_IGN_INL_1 | Earlier]  ->
-			[{{word, lists:reverse(Earlier)}, get(line_num)} | AllTAcc]
+			[{word, get(line_num), lists:reverse(Earlier)} | AllTAcc]
 	end;
 
 % Flush current token and start w/ attributes
@@ -201,7 +202,7 @@ parse_inner([?T_ATTR_ST | T], _Last, CurrTAcc, AllTAcc) ->
 		_ ->
 			parse_inner(T, ?T_ATTR_ST, [],
 				[[{start_attrs, get(line_num)},
-				  {{word, lists:reverse(CurrTAcc)}, get(line_num)}] | AllTAcc])
+				  {word, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
 	end;
 % Flush current token and finish attributes
 parse_inner([?T_ATTR_EN | T], _Last, CurrTAcc, AllTAcc) ->
@@ -213,7 +214,7 @@ parse_inner([?T_ATTR_EN | T], _Last, CurrTAcc, AllTAcc) ->
 		_ ->
 			parse_inner(T, ?T_ATTR_EN, [],
 				[[{finish_attrs, get(line_num)},
-				  {{word, lists:reverse(CurrTAcc)}, get(line_num)}] | AllTAcc])
+				  {word, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
 	end;
 
 % Whitespace.  Flush token.
@@ -225,7 +226,7 @@ parse_inner([H | T], _Last, CurrTAcc, AllTAcc) when
 			parse_inner(T, H, [], AllTAcc);
 		_ ->
 			parse_inner(T, H, [],
-				[{{word, lists:reverse(CurrTAcc)}, get(line_num)} | AllTAcc])
+				[{word, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc])
 	end;
 
 % Inline tag delimiter
@@ -236,7 +237,7 @@ parse_inner([?T_INL_TAG_D | T], _LAST, CurrTAcc, AllTAcc) ->
 		_ ->
 			parse_inner(T, ?T_INL_TAG_D, [],
 				[[{inline_delim, get(line_num)},
-				  {{word, lists:reverse(CurrTAcc)}, get(line_num)}] | AllTAcc])
+				  {word, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
 	end;
 
 parse_inner([H | T], _Last, CurrTAcc, AllTAcc) ->
