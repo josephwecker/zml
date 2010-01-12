@@ -8,8 +8,8 @@
 %%   - Problem with spaces when inline tags are _way_ inline.  Might be more of
 %%     a parser problem...  "bol:strong ogna;-is-my-first-name" needs to be
 %%     rendered without any spaces, for example.
-%%   - Probably need to do something with tags.  We'll see when I do the
-%%     parser.
+%%   - Move in_attributes to be processed similar to multi-line comments and
+%%     strings, so that they can be tokenized specially.
 %%
 %% EVENTUALLY:
 %%   - Factor out all the ugly "case CurrTAcc of" stuff all over
@@ -163,7 +163,7 @@ parse_inner([], _, CurrTAcc, AllTAcc) ->
 		[] ->
 			AllTAcc;
 		_ ->
-			[{word, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc]
+			[{string, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc]
 	end;
 
 % Escaped characters always get added to current token
@@ -179,11 +179,11 @@ parse_inner([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1, [_ | CurrTAcc], AllTAcc) ->
 	case CurrTAcc of
 		[] ->
 			parse_inner(Remaining, none, [],
-				[{word, get(line_num), Str} | AllTAcc]);
+				[{string, get(line_num), Str} | AllTAcc]);
 		_ ->
 			parse_inner(Remaining, none, [],
-				[[{word, get(line_num), Str},
-				  {word, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
+				[[{string, get(line_num), Str},
+				  {string, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
 	end;
 
 
@@ -195,7 +195,7 @@ parse_inner([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1, [_ | CurrTAcc], AllTAcc) ->
 			parse_inner(Remaining, none, [], AllTAcc);
 		_ ->
 			parse_inner(Remaining, none, [],
-				[{word, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc])
+				[{string, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc])
 	end;
 
 % Inline comment started
@@ -204,7 +204,7 @@ parse_inner([?T_IGN_INL_2 | _T], ?T_IGN_INL_1, CurrTAcc, AllTAcc) ->
 		[?T_IGN_INL_1] ->
 			AllTAcc;
 		[?T_IGN_INL_1 | Earlier]  ->
-			[{word, get(line_num), lists:reverse(Earlier)} | AllTAcc]
+			[{string, get(line_num), lists:reverse(Earlier)} | AllTAcc]
 	end;
 
 % Flush current token and start w/ attributes
@@ -217,7 +217,7 @@ parse_inner([?T_ATTR_ST | T], _Last, CurrTAcc, AllTAcc) ->
 		_ ->
 			parse_inner(T, ?T_ATTR_ST, [],
 				[[{start_attrs, get(line_num)},
-				  {word, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
+				  {string, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
 	end;
 % Flush current token and finish attributes
 parse_inner([?T_ATTR_EN | T], _Last, CurrTAcc, AllTAcc) ->
@@ -229,7 +229,7 @@ parse_inner([?T_ATTR_EN | T], _Last, CurrTAcc, AllTAcc) ->
 		_ ->
 			parse_inner(T, ?T_ATTR_EN, [],
 				[[{finish_attrs, get(line_num)},
-				  {word, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
+				  {string, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
 	end;
 
 % Whitespace.  Flush token.
@@ -241,18 +241,23 @@ parse_inner([H | T], _Last, CurrTAcc, AllTAcc) when
 			parse_inner(T, H, [], AllTAcc);
 		_ ->
 			parse_inner(T, H, [],
-				[{word, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc])
+				[{string, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc])
 	end;
 
 % Inline tag delimiter
 parse_inner([?T_INL_TAG_D | T], _LAST, CurrTAcc, AllTAcc) ->
-	case CurrTAcc of
-		[] ->
-			parse_inner(T, ?T_INL_TAG_D, [], [{inline_delim, get(line_num)} | AllTAcc]);
-		_ ->
-			parse_inner(T, ?T_INL_TAG_D, [],
-				[[{inline_delim, get(line_num)},
-				  {word, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
+	case get(in_attributes) of
+		true ->
+			parse_inner(T, ?T_INL_TAG_D, [?T_INL_TAG_D | CurrTAcc], AllTAcc);
+		false ->
+			case CurrTAcc of
+				[] ->
+					parse_inner(T, ?T_INL_TAG_D, [], [{inline_delim, get(line_num)} | AllTAcc]);
+				_ ->
+					parse_inner(T, ?T_INL_TAG_D, [],
+						[[{inline_delim, get(line_num)},
+						  {string, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
+			end
 	end;
 
 parse_inner([?T_TAG_ST | T], _, [], AllTAcc) ->
