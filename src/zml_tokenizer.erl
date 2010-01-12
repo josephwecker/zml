@@ -61,8 +61,9 @@ parse_lines(File, IndentStack, RTokens) ->
 	put(line_num, get(line_num) + 1),
 	case io:get_line(File, "") of
 		eof ->
-			lists:reverse([{end_of_file, get(line_num) - 1} |
-					lists:flatten(RTokens)]);
+			[{indent, 0} | lists:reverse(lists:flatten([
+							[{end_of_file, get(line_num) - 1},
+							 {dedent,get(line_num) - 1}] | RTokens]))];
 		{error, Reason} ->
 			erlang:error({input_zml_file_read_error, Reason});
 		Line ->
@@ -101,15 +102,26 @@ parse_line(Dents, CStack, Line) ->
 	ParsedLine = parse_inner(Line),
 	case ParsedLine of
 		[] ->
+			% Blank lines (after comments removed etc.) are ignored
 			{CStack, []};
 		_ ->
+			% Newline appended if we're not still in the middle of attributes
+			AlteredPLine = 
+				case get(in_attributes) of
+					true ->
+						ParsedLine;
+					false ->
+						[{newline, get(line_num)} | ParsedLine]
+				end,
+			% Dedents/indent prepended if we didn't start inside of attributes
 			case StartingInAttributes of
 				true ->
-					{CStack, ParsedLine};
+					{CStack, AlteredPLine};
 				false ->
-					do_parse_line(Dents, CStack, ParsedLine)
+					do_parse_line(Dents, CStack, AlteredPLine)
 			end
 	end.
+
 do_parse_line(Dents, [NLast | _] = CStack, PLine) when Dents == NLast ->
 	{CStack, PLine};
 do_parse_line(Dents, [NLast | _] = CStack, PLine) when Dents > NLast ->
