@@ -46,8 +46,11 @@
 -define(T_STR_MLT_EN_1, 34).
 -define(T_STR_MLT_EN_2, $|).
 
+-define(T_TAG_ST, $:).
+-define(T_TAG_SPECIAL_ST, $*).
+-define(T_TAG_CLASS_ST, $.).
+-define(T_TAG_ID_ST, $#).
 -define(T_INL_TAG_D, $;).
-
 
 parse_file(Filename) when is_list(Filename) ->
 	{ok, File} = file:open(Filename, [read]),
@@ -250,6 +253,31 @@ parse_inner([?T_INL_TAG_D | T], _LAST, CurrTAcc, AllTAcc) ->
 			parse_inner(T, ?T_INL_TAG_D, [],
 				[[{inline_delim, get(line_num)},
 				  {word, get(line_num), lists:reverse(CurrTAcc)}] | AllTAcc])
+	end;
+
+parse_inner([?T_TAG_ST | T], _, [], AllTAcc) ->
+	case get(in_attributes) of
+		true ->  parse_inner(T, ?T_TAG_ST, [?T_TAG_ST], AllTAcc);
+		false -> parse_inner(T, ?T_TAG_ST, [],
+				[{start_tag, get(line_num), normal} | AllTAcc])
+	end;
+parse_inner([?T_TAG_SPECIAL_ST | T], _, [], AllTAcc) ->
+	case get(in_attributes) of
+		true ->  parse_inner(T, ?T_TAG_SPECIAL_ST, [?T_TAG_SPECIAL_ST], AllTAcc);
+		false -> parse_inner(T, ?T_TAG_SPECIAL_ST, [],
+				[{start_tag, get(line_num), special} | AllTAcc])
+	end;
+parse_inner([?T_TAG_CLASS_ST | T], _, [], AllTAcc) ->
+	case get(in_attributes) of
+		true ->  parse_inner(T, ?T_TAG_CLASS_ST, [?T_TAG_CLASS_ST], AllTAcc);
+		false -> parse_inner(T, ?T_TAG_CLASS_ST, [],
+				[{start_tag, get(line_num), class} | AllTAcc])
+	end;
+parse_inner([?T_TAG_ID_ST | T], _, [], AllTAcc) ->
+	case get(in_attributes) of
+		true ->  parse_inner(T, ?T_TAG_ID_ST, [?T_TAG_ID_ST], AllTAcc);
+		false -> parse_inner(T, ?T_TAG_ID_ST, [],
+				[{start_tag, get(line_num), id} | AllTAcc])
 	end;
 
 parse_inner([H | T], _Last, CurrTAcc, AllTAcc) ->
