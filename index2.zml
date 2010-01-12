@@ -1,1 +1,25 @@
-../ws/index2.zml
+|# Awesome little page
+   That should be a lot of fun
+#|
+
+*html(stylesheet: css/main.css
+      script: js/jquery-1.3.2.min.js
+              js/main.js
+              :inside ;
+              http://s7.addthis.com/js/250/addthis_widget.js
+      encoding: utf-8)
+  :head
+    :title Spreezio &bull\; :strong(class:awesome) Let's; make a deal!
+  :body
+    #home |"Some text that will be here"|
+      #wrapper
+        .title#betaTitle Start a Shopping Spree now!
+        .subtitle You decide what you pay
+        .logo#betaLogo
+          :object(width: 156 heigh: 100)
+            :param(name: movie value: images/avatar.swf)
+            :param(name: wmode value: transparent)
+            :embed(src: images/avatar.swf wmode: transparent
+                width: 156 height: 100)
+        .spreez
+	
