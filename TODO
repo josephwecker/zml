@@ -10,3 +10,11 @@ FUTURE
   accordingly
 - Automatically figure out which CSS rules are irrelevant and exclude them
   (flag to disallow this somehow)
+
+
+SPECIALIZED
+
+- New VIM highlighter
+- New textmate highlighter
+- Special tag modules
+- gen_server / batcher / whatever
