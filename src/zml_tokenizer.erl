@@ -8,8 +8,11 @@
 %%   - Problem with spaces when inline tags are _way_ inline.  Might be more of
 %%     a parser problem...  "bol:strong ogna;-is-my-first-name" needs to be
 %%     rendered without any spaces, for example.
-%%   - Move in_attributes to be processed similar to multi-line comments and
-%%     strings, so that they can be tokenized specially.
+%%   - Error currently if entire file is indented.  i.e., first line isn't
+%%     currently allowed to be indented.  This is a problem- needs to be
+%%     factored out.
+%%   - Figure out either here or in the parser how to handle normal text that
+%%     has a hanging indent.
 %%
 %% EVENTUALLY:
 %%   - Factor out all the ugly "case CurrTAcc of" stuff all over
@@ -19,14 +22,12 @@
 %% NOTES:
 %%   - I might just let the parser decide when to ignore false
 %%     "start/end_attrs" tokens
-%%   - Might need to generate a token for ";" for inline tags
-%%   - (Make sure inline is also terminated by EOL)
 %%   - Template encoding ("[...]") will be handled post-parser probably
 %%
 
 -module(zml_tokenizer).
 
--compile(export_all).
+-export([tokenize_stream/1, tokenize_file/1]).
 
 
 -define(T_ATTR_ST, $().
@@ -52,12 +53,15 @@
 -define(T_TAG_ID_ST, $#).
 -define(T_INL_TAG_D, $;).
 
-parse_file(Filename) when is_list(Filename) ->
+tokenize_file(Filename) when is_list(Filename) ->
 	{ok, File} = file:open(Filename, [read]),
 	erase(),
 	put(line_num, 0),
 	put(in_attributes, false),
 	parse_lines(File, [0], []).  % Just ignore leading "indent" token if needed
+
+tokenize_stream(Stream) ->
+  parse_lines(Stream, [0], []).
 
 parse_lines(File, IndentStack, RTokens) ->
 	put(file, File),
