@@ -1,60 +1,20 @@
-:html
-  :head
-    :title hi!
-  :there
-
-this is great.
-
-eh?
-
-:first.guy
-
-:second.blah.doink#fred(class: heya
-		there seems to be) hey some .red children :emph.bold Work!;;
-george
-
-Awesome little page
-That should be a lot of fun
-
-rand
-
-:first
-
-:second()
-
-:third(hey: there)
-
-:fourth(he: there) dude
-
-:fifth(hey:there) dudeanother
-  how are you?
-
-:sixth(hey: there)
-  how are you?
-
-:seventh()
-  how are you?
-
-:eight
-  how are you?
-
-*html(stylesheet: css/main.css
-      script: js/jquery-1.3.2.min.js
+*html(stylesheet: css/main.css || And what a stylesheet it is!
+      script: js/jquery-1.3.2.min.js||More random
               js/main.js
-              :inside ;
-              http://s7.addthis.com/js/250/addthis_widget.js
+              ||:inside ;
+              http\://s7.addthis.com/js/250/addthis_widget.js
       encoding: utf-8)
   :head
     :title :strong(class:awesome) Great; stuff here
   :body
-    #home |"Some text that will be here"|
+    #home And|"Some text that will be here"|
       #wrapper
-        .title#betaTitle Start a Shopping Spree now!
-        .subtitle You decide what you pay
+        .title#betaTitle Do some great stuff!
+        .subtitle You decide what we're doing today!
         .logo#betaLogo
           :object(width: 156 heigh: 100)
             :param(name: movie value: images/avatar.swf)
             :param(name: wmode value: transparent)
             :embed(src: images/avatar.swf wmode: transparent
                 width: 156 height: 100)
-        .spreez
+        .awesomeness
