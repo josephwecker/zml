@@ -63,17 +63,18 @@
 -define(T_TAG_ID_ST, $#).
 -define(T_INL_TAG_D, $;).
 
+-define(T_ATTR_DELIM, $:).
+
 tokenize_file(Filename) when is_list(Filename) ->
 	{ok, File} = file:open(Filename, [read]),
 	erase(),
 	put(line_num, 0),
-	put(in_attributes, false),
-	parse_lines(File, [0], []).  % Just ignore leading "indent" token if needed
+	parse_lines(File, [0], [], false).  % Just ignore leading "indent" token if needed
 
 tokenize_stream(Stream) ->
-  parse_lines(Stream, [0], []).
+  parse_lines(Stream, [0], [], false).
 
-parse_lines(File, IndentStack, RTokens) ->
+parse_lines(File, IndentStack, RTokens, InAttr) ->
 	put(file, File),
 	put(line_num, get(line_num) + 1),
 	case io:get_line(File, "") of
@@ -89,15 +90,15 @@ parse_lines(File, IndentStack, RTokens) ->
 			{NumDents, RemainingLine} = get_dent(Line),
 			case RemainingLine of
 				[] -> % Blank line
-					parse_lines(File, IndentStack, RTokens);
+					parse_lines(File, IndentStack, RTokens, InAttr);
 				_ ->
-					{NewStack, MoreTokens} =
-						parse_line(NumDents, IndentStack, RemainingLine),
+					{NewStack, MoreTokens, InAttr2} =
+						parse_line(NumDents, IndentStack, RemainingLine, InAttr),
 					case MoreTokens of
 						[] ->
-							parse_lines(File, NewStack, RTokens);
+							parse_lines(File, NewStack, RTokens, InAttr2);
 						_ ->
-							parse_lines(File, NewStack, [MoreTokens | RTokens])
+							parse_lines(File, NewStack, [MoreTokens | RTokens], InAttr2)
 					end
 			end
 	end.
@@ -116,28 +117,25 @@ get_dent(Rest,N) ->
 %% Figures out indent / dedent tokens and then calls parse_inner to figure out
 %% the rest of whatever is there.  Skips indent/outdent if currently processing
 %% attributes.
-parse_line(Dents, CStack, Line) ->
-	StartingInAttributes = get(in_attributes),
-	ParsedLine = parse_inner(Line),
+parse_line(Dents, CStack, Line, InAttr) ->
+  {ParsedLine, InAttr2} = parse_inner(Line, InAttr),
 	case ParsedLine of
 		[] ->
 			% Blank lines (after comments removed etc.) are ignored
-			{CStack, []};
+			{CStack, [], InAttr};
 		_ ->
 			% Newline appended if we're not still in the middle of attributes
 			AlteredPLine = 
-				case get(in_attributes) of
-					true ->
-						ParsedLine;
-					false ->
-						[{newline, get(line_num)} | ParsedLine]
+        case InAttr2 of
+					true -> ParsedLine;
+					false -> [{newline, get(line_num)} | ParsedLine]
 				end,
 			% Dedents/indent prepended if we didn't start inside of attributes
-			case StartingInAttributes of
-				true ->
-					{CStack, AlteredPLine};
+			case InAttr of
+				true -> {CStack, AlteredPLine, InAttr2};
 				false ->
-					do_parse_line(Dents, CStack, AlteredPLine)
+          {CS2, APL2} = do_parse_line(Dents, CStack, AlteredPLine),
+          {CS2, APL2, InAttr2}
 			end
 	end.
 
@@ -167,89 +165,79 @@ do_dedent(Dents, [H | T], TokenAcc) when Dents < H ->
 	do_dedent(Dents, T, [{dedent, get(line_num)} | TokenAcc]).
 
 
-parse_inner(Line) ->
-	parse_inner(Line, none, [], []).
+parse_inner(Line, InAttr) ->
+	parse_inner(Line, none, [], [], InAttr).
 
 %%
 %% parse_inner(CurrString, LastToken, CurrentTokenAcc, AllTokenAcc)
 %%
 % Line is finished.  Flush token and return results.
-parse_inner([], _, CurrTAcc, AllTAcc) ->
-  ?SFLUSH;
+parse_inner([], _, CurrTAcc, AllTAcc, InAttr) ->
+  {?SFLUSH, InAttr};
 
 % Escaped characters always get added to current token
 % Adding "nothing" as last character ensures you can do
 % "\|# this is not a comment #|" etc.
 % Also note that it pops the esc code off CurrTAcc first.
-parse_inner([Any | T], ?T_ESC, [?T_ESC | CurrTAcc], AllTAcc) ->
-	parse_inner(T, nothing, [Any | CurrTAcc], AllTAcc);
+parse_inner([Any | T], ?T_ESC, [?T_ESC | CurrTAcc], AllTAcc, InAttr) ->
+	parse_inner(T, nothing, [Any | CurrTAcc], AllTAcc, InAttr);
 
 % String started
-parse_inner([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1, [_ | CurrTAcc], AllTAcc) ->
+parse_inner([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1, [_ | CurrTAcc], AllTAcc, InAttr) ->
 	{Str, Remaining} = pull_in_string(T, fun line_pull_in_str/1),
-  parse_inner(Remaining, none, [], ?FLUSH({string, get(line_num), Str}));
+  parse_inner(Remaining, none, [], ?FLUSH({string, get(line_num), Str}), InAttr);
 
 % Multi-line comment started
-parse_inner([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1, [_ | CurrTAcc], AllTAcc) ->
+parse_inner([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1, [_ | CurrTAcc], AllTAcc, InAttr) ->
 	{_Comment, Remaining} = pull_in_string(T, fun line_pull_in_ign/1),
-  parse_inner(Remaining, none, [], ?SFLUSH);
+  parse_inner(Remaining, none, [], ?SFLUSH, InAttr);
 
 % Inline comment started
-parse_inner([?T_IGN_INL_2 | _T], ?T_IGN_INL_1, [_ | CurrTAcc], AllTAcc) ->
-  ?SFLUSH;
+parse_inner([?T_IGN_INL_2 | _T], ?T_IGN_INL_1, [_ | CurrTAcc], AllTAcc, InAttr) ->
+  {?SFLUSH, InAttr};
 
 % Flush current token and start w/ attributes
-parse_inner([?T_ATTR_ST | T], _Last, CurrTAcc, AllTAcc) ->
-	put(in_attributes, true),
-  parse_inner(T, ?T_ATTR_ST, [], ?FLUSH({start_attrs, get(line_num)}));
+parse_inner([?T_ATTR_ST | T], _Last, CurrTAcc, AllTAcc, false) ->
+  parse_inner(T, ?T_ATTR_ST, [],
+    ?FLUSH({start_attrs, get(line_num)}), true);
 
 % Flush current token and finish attributes
-parse_inner([?T_ATTR_EN | T], _Last, CurrTAcc, AllTAcc) ->
-	put(in_attributes, false),
-  parse_inner(T, ?T_ATTR_EN, [], ?FLUSH({finish_attrs, get(line_num)}));
+parse_inner([?T_ATTR_EN | T], _Last, CurrTAcc, AllTAcc, true) ->
+  parse_inner(T, ?T_ATTR_EN, [], ?FLUSH({finish_attrs, get(line_num)}), false);
 
 % Whitespace.  Flush token.
-parse_inner([H | T], _Last, CurrTAcc, AllTAcc) when
+parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) when
 		((H >= $\x{0009}) and (H =< $\x{000D}))
 		or (H == $\x{0020}) or (H == $\x{00A0}) ->
-  parse_inner(T, H, [], ?SFLUSH);
+  parse_inner(T, H, [], ?SFLUSH, InAttr);
 
 % Inline tag delimiter
-parse_inner([?T_INL_TAG_D | T], _LAST, CurrTAcc, AllTAcc) ->
-	case get(in_attributes) of
-		true ->
-			parse_inner(T, ?T_INL_TAG_D, [?T_INL_TAG_D | CurrTAcc], AllTAcc);
-		false ->
-      parse_inner(T, ?T_INL_TAG_D, [], ?FLUSH({inline_delim, get(line_num)}))
-	end;
+parse_inner([?T_INL_TAG_D | T], _LAST, CurrTAcc, AllTAcc, false) ->
+  parse_inner(T, ?T_INL_TAG_D, [],
+    ?FLUSH({inline_delim, get(line_num)}), false);
 
-parse_inner([?T_TAG_ST | T], _, [], AllTAcc) ->
-	case get(in_attributes) of
-		true ->  parse_inner(T, ?T_TAG_ST, [?T_TAG_ST], AllTAcc);
-		false -> parse_inner(T, ?T_TAG_ST, [],
-				[{start_tag, get(line_num), normal} | AllTAcc])
-	end;
-parse_inner([?T_TAG_SPECIAL_ST | T], _, [], AllTAcc) ->
-	case get(in_attributes) of
-		true ->  parse_inner(T, ?T_TAG_SPECIAL_ST, [?T_TAG_SPECIAL_ST], AllTAcc);
-		false -> parse_inner(T, ?T_TAG_SPECIAL_ST, [],
-				[{start_tag, get(line_num), special} | AllTAcc])
-	end;
-parse_inner([?T_TAG_CLASS_ST | T], _, [], AllTAcc) ->
-	case get(in_attributes) of
-		true ->  parse_inner(T, ?T_TAG_CLASS_ST, [?T_TAG_CLASS_ST], AllTAcc);
-		false -> parse_inner(T, ?T_TAG_CLASS_ST, [],
-				[{start_tag, get(line_num), class} | AllTAcc])
-	end;
-parse_inner([?T_TAG_ID_ST | T], _, [], AllTAcc) ->
-	case get(in_attributes) of
-		true ->  parse_inner(T, ?T_TAG_ID_ST, [?T_TAG_ID_ST], AllTAcc);
-		false -> parse_inner(T, ?T_TAG_ID_ST, [],
-				[{start_tag, get(line_num), id} | AllTAcc])
-	end;
+parse_inner([?T_TAG_ST | T], _, [], AllTAcc, false) ->
+	parse_inner(T, ?T_TAG_ST, [],
+    [{start_tag, get(line_num), normal} | AllTAcc], false);
 
-parse_inner([H | T], _Last, CurrTAcc, AllTAcc) ->
-	parse_inner(T, H, [H | CurrTAcc], AllTAcc).
+parse_inner([?T_TAG_SPECIAL_ST | T], _, [], AllTAcc, false) ->
+	parse_inner(T, ?T_TAG_SPECIAL_ST, [],
+    [{start_tag, get(line_num), special} | AllTAcc], false);
+
+parse_inner([?T_TAG_CLASS_ST | T], _, [], AllTAcc, false) ->
+	parse_inner(T, ?T_TAG_CLASS_ST, [],
+    [{start_tag, get(line_num), class} | AllTAcc], false);
+
+parse_inner([?T_TAG_ID_ST | T], _, [], AllTAcc, false) ->
+	parse_inner(T, ?T_TAG_ID_ST, [],
+    [{start_tag, get(line_num), id} | AllTAcc], false);
+
+parse_inner([?T_ATTR_DELIM | T], _, CurrTAcc, AllTAcc, true) ->
+  parse_inner(T, ?T_ATTR_DELIM, [],
+    ?FLUSH({attr_delim, get(line_num)}), true);
+
+parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) ->
+	parse_inner(T, H, [H | CurrTAcc], AllTAcc, InAttr).
 
 
 pull_in_string(Line, InnerFun) ->
