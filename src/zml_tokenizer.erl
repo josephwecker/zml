@@ -64,11 +64,10 @@ parse_lines(File, IndentStack, RTokens) ->
 	put(line_num, get(line_num) + 1),
 	case io:get_line(File, "") of
 		eof ->
-			%[{indent, 0} | lists:reverse(lists:flatten([
-			%				[{end_of_file, get(line_num) - 1},
-			%				 {dedent,get(line_num) - 1}] | RTokens]))];
-      lists:reverse(lists:flatten([{end_of_file, get(line_num) - 1} |
-            RTokens]));
+      LN = get(line_num) - 1,
+      Tokens2 = lists:reverse(lists:flatten(RTokens)),
+      ExtraDedents = lists:map(fun(_) -> {dedent, LN} end, IndentStack),
+      Tokens2 ++ ExtraDedents ++ [{end_of_file, LN}];
 		{error, Reason} ->
 			erlang:error({input_zml_file_read_error, Reason});
 		Line ->
