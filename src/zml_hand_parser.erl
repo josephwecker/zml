@@ -9,6 +9,8 @@ parse([{end_of_file,_}], CurrLvl) ->
   parse([], CurrLvl);
 parse([], CurrLvl) ->
   lists:reverse(CurrLvl);
+parse([{dedent,_}|{end_of_file,_}], CurrLvl) ->
+  lists:reverse(CurrLvl);
 parse([{dedent,_}|T], CurrLvl) ->
   {T, lists:reverse(CurrLvl)};
 parse([{start_tag, _, Type} |
@@ -18,10 +20,8 @@ parse([{start_tag, _, Type} |
   {T4, Children} = pull_children(T3),
   Tag = tricky_attributes(TagText, Type, Attr, LChildren ++ Children),
   parse(T4, [Tag | CurrLvl]);
-
 parse([{string, _, Text} | T], CurrLvl) ->
   parse(T, [Text | CurrLvl]);
-
 parse([{newline, _} | T], CurrLvl) ->
   parse(T, CurrLvl).
 
@@ -91,11 +91,11 @@ tricky_attributes(Tag, Type, Attr, Children) ->
   {Name2, Attr2} = tricky_attributes(lists:reverse(Tag), [], Attr),
   case Type of
     class ->
-      {"div", normal, merge_attr(Attr2, [{class, [Name2]}]), Children};
+      {"div", normal, dict:to_list(merge_attr(Attr2, [{class, [Name2]}])), Children};
     id ->
-      {"div", normal, merge_attr(Attr2, [{id, [Name2]}]), Children};
+      {"div", normal, dict:to_list(merge_attr(Attr2, [{id, [Name2]}])), Children};
     _ ->
-      {Name2, Type, Attr2, Children}
+      {Name2, Type, dict:to_list(Attr2), Children}
   end.
  
 tricky_attributes([], CurrName, Attr) ->
