@@ -25,41 +25,31 @@ parse([{string, _, Text} | T], CurrLvl) ->
 parse([{newline, _} | T], CurrLvl) ->
   parse(T, CurrLvl).
 
+
 pull_attributes([{start_attrs,_} | T]) ->
   pull_inner_attributes(T, [], [], []);
 pull_attributes(AnythingElse) ->  % No attributes for this tag
   {AnythingElse, dict:new()}.
 
-pull_inner_attributes([{string, _, Text} | T], [], [], AttrAcc) ->
-  {CAName2, CAVals2, AttrAcc2} =
-    case is_new_attr(Text) of
-      {yes, {Name, []}} -> {Name, [], AttrAcc};
-      {yes, {Name, Rest}} -> {Name, [Rest], AttrAcc}; 
-      nope -> {[], [Text], AttrAcc}
-    end,
-  pull_inner_attributes(T, CAName2, CAVals2, AttrAcc2);
+pull_inner_attributes([{attr_delim, _} | T], [], [], AttrAcc) ->
+  pull_inner_attributes(T, [], [], AttrAcc);
+
+pull_inner_attributes([{attr_delim, _} | T], CAName, [], AttrAcc) -> % weird edge case
+  pull_inner_attributes(T, [], [], [{CAName, []} | AttrAcc]);
+
+pull_inner_attributes([{attr_delim, _} | T], [], [NewName], AttrAcc) -> % weird edge case
+  pull_inner_attributes(T, NewName, [], AttrAcc);
+
+pull_inner_attributes([{attr_delim, _} | T], CAName, [NewName | CAVals], AttrAcc) ->
+  pull_inner_attributes(T, NewName, [], [{CAName, lists:reverse(CAVals)} | AttrAcc]);
+
 pull_inner_attributes([{string, _, Text} | T], CAName, CAVals, AttrAcc) ->
-  {CAName2, CAVals2, AttrAcc2} =
-    case is_new_attr(Text) of
-      {yes, {Name, []}} -> {Name, [], [{CAName, lists:reverse(CAVals)} | AttrAcc]};
-      {yes, {Name, Rest}} -> {Name, [Rest],[{CAName, lists:reverse(CAVals)} | AttrAcc]}; 
-      nope -> {CAName, [Text | CAVals], AttrAcc}
-    end,
-  pull_inner_attributes(T, CAName2, CAVals2, AttrAcc2);
+  pull_inner_attributes(T, CAName, [Text | CAVals], AttrAcc);
+
 pull_inner_attributes([{finish_attrs,_} | T], [], [], AttrAcc) ->
   {T, dict:from_list(AttrAcc)};
 pull_inner_attributes([{finish_attrs,_} | T], CAName, CAVals, AttrAcc) ->
   {T, dict:from_list([{CAName, lists:reverse(CAVals)} | AttrAcc])}.
-
-is_new_attr(Text) ->
-  case string:chr(Text, $:) of
-    0 ->
-      nope;
-    Pos -> 
-      {Left, Right} = lists:split(Pos, Text),
-      [_ | Backwards] = lists:reverse(Left), % pull off ":"
-      {yes, {list_to_atom(lists:reverse(Backwards)), Right}}
-  end.
 
 pull_line_children(Toks) ->
   pull_line_children(Toks,[]).
@@ -91,9 +81,9 @@ tricky_attributes(Tag, Type, Attr, Children) ->
   {Name2, Attr2} = tricky_attributes(lists:reverse(Tag), [], Attr),
   case Type of
     class ->
-      {"div", normal, dict:to_list(merge_attr(Attr2, [{class, [Name2]}])), Children};
+      {"div", normal, dict:to_list(merge_attr(Attr2, [{"class", [Name2]}])), Children};
     id ->
-      {"div", normal, dict:to_list(merge_attr(Attr2, [{id, [Name2]}])), Children};
+      {"div", normal, dict:to_list(merge_attr(Attr2, [{"id", [Name2]}])), Children};
     _ ->
       {Name2, Type, dict:to_list(Attr2), Children}
   end.
@@ -101,9 +91,9 @@ tricky_attributes(Tag, Type, Attr, Children) ->
 tricky_attributes([], CurrName, Attr) ->
   {CurrName, Attr};
 tricky_attributes([$.|T], CurrName, Attr) ->
-  tricky_attributes(T, [], merge_attr(Attr, [{class, [CurrName]}]));
+  tricky_attributes(T, [], merge_attr(Attr, [{"class", [CurrName]}]));
 tricky_attributes([$#|T], CurrName, Attr) ->
-  tricky_attributes(T, [], merge_attr(Attr, [{id, [CurrName]}]));
+  tricky_attributes(T, [], merge_attr(Attr, [{"id", [CurrName]}]));
 tricky_attributes([H|T], CurrName, Attr) ->
   tricky_attributes(T, [H | CurrName], Attr).
 

@@ -33,4 +33,4 @@ translate_attributes(Atts) when is_tuple(Atts) ->
 translate_attributes(Atts) ->
   lists:foldl(fun out_attr/2, [], Atts).
 out_attr({Name, Values}, Acc) ->
-  [" ", atom_to_list(Name), "=\"", string:join(Values, " "), "\"" | Acc].
+  [" ", Name, "=\"", string:join(Values, " "), "\"" | Acc].
