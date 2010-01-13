@@ -70,7 +70,8 @@ parse_lines(File, IndentStack, RTokens) ->
 		eof ->
       LN = get(line_num) - 1,
       Tokens2 = lists:reverse(lists:flatten(RTokens)),
-      ExtraDedents = lists:map(fun(_) -> {dedent, LN} end, IndentStack),
+      ExtraDedents = lists:map(fun(_) -> {dedent, LN} end,
+        lists:seq(1,length(IndentStack) - 1)),
       Tokens2 ++ ExtraDedents ++ [{end_of_file, LN}];
 		{error, Reason} ->
 			erlang:error({input_zml_file_read_error, Reason});
