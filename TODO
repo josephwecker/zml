@@ -14,7 +14,6 @@ FUTURE
 
 SPECIALIZED
 
-- New VIM highlighter
-- New textmate highlighter
 - Special tag modules
+- Server-side directives / code - compiled in - main template compiler
 - gen_server / batcher / whatever

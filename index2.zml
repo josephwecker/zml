@@ -4,10 +4,13 @@
               ||:inside ;
               http\://s7.addthis.com/js/250/addthis_widget.js
       encoding: utf-8)
+  :one#home.game.fast.fun
+  #two#hey.there
+  .three#howsit.going
   :head
     :title :strong(class:awesome) Great; stuff here
   :body
-    #home And|"Some text that will be here"|
+    #home And|"Some text that will be here"| :br#how;
       #wrapper
         .title#betaTitle Do some great stuff!
         .subtitle You decide what we're doing today!
