@@ -13,6 +13,12 @@ parse([{dedent,_}|{end_of_file,_}], CurrLvl) ->
   lists:reverse(CurrLvl);
 parse([{dedent,_}|T], CurrLvl) ->
   {T, lists:reverse(CurrLvl)};
+parse([{start_code, _} | T], CurrLvl) ->
+  {T2, InnerCode} = pull_code_children(T),
+  {T3, LChildren} = pull_line_children(T2),
+  {T4, Children} = pull_children(T3),
+  CodeTag = {InnerCode, code, [], LChildren ++ Children},
+  parse(T4, [CodeTag | CurrLvl]);
 parse([{start_tag, _, Type} |
     [{string, _, TagText} | T]], CurrLvl) ->
   {T2, Attr} = pull_attributes(T),
@@ -50,6 +56,15 @@ pull_inner_attributes([{finish_attrs,_} | T], [], [], AttrAcc) ->
   {T, dict:from_list(AttrAcc)};
 pull_inner_attributes([{finish_attrs,_} | T], CAName, CAVals, AttrAcc) ->
   {T, dict:from_list([{CAName, lists:reverse(CAVals)} | AttrAcc])}.
+
+pull_code_children(Toks) ->
+  pull_code_children(Toks, []).
+pull_code_children([],Acc) ->
+  {[], lists:reverse(Acc)};
+pull_code_children([{string, _, Text} | T], Acc) ->
+  pull_code_children(T, [Text | Acc]);
+pull_code_children([{finish_code, _} | T], Acc) ->
+  {T, lists:reverse(Acc)}.
 
 pull_line_children(Toks) ->
   pull_line_children(Toks,[]).

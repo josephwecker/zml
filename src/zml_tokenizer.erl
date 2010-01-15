@@ -65,6 +65,9 @@
 
 -define(T_ATTR_DELIM, $:).
 
+-define(T_CODE_ST, $[).
+-define(T_CODE_EN, $]).
+
 tokenize_file(Filename) when is_list(Filename) ->
 	{ok, File} = file:open(Filename, [read]),
 	erase(),
@@ -204,6 +207,12 @@ parse_inner([?T_ATTR_ST | T], _Last, CurrTAcc, AllTAcc, false) ->
 % Flush current token and finish attributes
 parse_inner([?T_ATTR_EN | T], _Last, CurrTAcc, AllTAcc, true) ->
   parse_inner(T, ?T_ATTR_EN, [], ?FLUSH({finish_attrs, get(line_num)}), false);
+
+% Code chunk in main body
+parse_inner([?T_CODE_ST | T], _, CurrTAcc, AllTAcc, false) ->
+  parse_inner(T, ?T_CODE_ST, [], ?FLUSH({start_code, get(line_num)}), false);
+parse_inner([?T_CODE_EN | T], _, CurrTAcc, AllTAcc, false) ->
+  parse_inner(T, ?T_CODE_EN, [], ?FLUSH({finish_code, get(line_num)}), false);
 
 % Whitespace.  Flush token.
 parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) when

@@ -14,6 +14,13 @@ translate_ast_item([String | [Next | _] = T], Acc)
   translate_ast_item(T, [" " | [String | Acc]]);
 translate_ast_item([String | T], Acc) when is_list(String) ->
   translate_ast_item(T, [String | Acc]);
+translate_ast_item([{Code,code,[],Children} | T], Acc) ->
+  ToAppend = ["!!CODE!!",
+    string:join(Code, " "),
+    "!!",
+    translate_ast_item(Children, []),
+    "!!END!!"],
+  translate_ast_item(T, [ToAppend | Acc]);
 translate_ast_item([{Name,Type,Attributes,[]} | T], Acc) ->
   ToAppend = ["<", Name,
     translate_attributes(Attributes), "/>"],
