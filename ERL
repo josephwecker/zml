@@ -1,0 +1,43 @@
+zml 
+    <- zml source
+    <- dependency db for quick builds
+    <- [special tag handlers] (how often? pretty concrete?)
+
+zwapp
+    [Server configs (dev,test,prod,etc.)] (pointed to in app or small .conf file)
+      - Flags (watches, reload-monitors, reporting, etc.)
+      - View source directory
+      - Controller directory
+      - Helper directory
+      - Vhost info (hopefully mostly auto-populated) & hook-in options
+      - DB config
+      - Logdir
+      - Cachedir
+      - Compiled static files dir
+      - Launch restrictions(? for example, make sure no other "prod" servers)
+
+    *- deployment server
+    *- admin server
+    	*- app compiling
+	*- auto app compiling
+	*- auto self compiling
+	*- secure command interface
+	*- start/stop/reload
+	*- hotswapping
+    *- web server
+        *- nginx<->misultin coupling
+	*- self vhost management
+	*- dev environment
+	*- test environment
+	*- production environment
+    *- reporting
+    *- test server
+    	*- unit
+	*- pre-deployment
+	*- acceptance
+
+Load tester
+
+Analytics engine
+
+Meta zwapp monitor / admin tool?
