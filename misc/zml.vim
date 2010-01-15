@@ -21,13 +21,16 @@ syn keyword zmlToDo      TODO FIXME XXX contained
 
 syn region zmlMLString   start="|\"" end="\"|"
 
-syn match zmlGenericTag		"\(\s\+\|^\):\w*"
-syn match zmlIdTag              "\(\s\+\|^\)#\w*"
-syn match zmlClassTag           "\(\s\+\|^\)\.\w*"
-syn match zmlSpecialTag         "\(\s\+\|^\)\*\w*"
+syn match zmlGenericTag		"\(\s\+\|^\):[^ \t(;]*" contains=zmlTrickyAttrId,zmlTrickyAttrClass
+syn match zmlIdTag              "\(\s\+\|^\)#[^ \t(;]*" contains=zmlTrickyAttrId,zmlTrickyAttrClass
+syn match zmlClassTag           "\(\s\+\|^\)\.[^ \t(;]*" contains=zmlTrickyAttrId,zmlTrickyAttrClass
+syn match zmlSpecialTag         "\(\s\+\|^\)\*[^ \t(;]*" contains=zmlTrickyAttrId,zmlTrickyAttrClass
 
-syn match zmlAttrName           "[^ \t]\+\:" contained
+syn match zmlAttrName           "[^ \t]\+[^\\]\:" contained contains=zmlComment
 syn region zmlAttributes start="("ms=s+1 end=")"me=e-1 contains=zmlMLString,zmlMLComment,zmlAttrName,zmlComment
+
+syn match zmlTrickyAttrId       "#[^\. \t;]\+" contained
+syn match zmlTrickyAttrClass    "\.[^# \t;]\+" contained
 
 if version >= 508 || !exists("did_zml_syn_inits")
   if version <= 508
@@ -41,9 +44,11 @@ if version >= 508 || !exists("did_zml_syn_inits")
   HiLink zmlMLComment           Comment
   HiLink zmlMLString            String
 
-  HiLink zmlGenericTag          Type
-  HiLink zmlIdTag               Type
-  HiLink zmlClassTag            Type
+  HiLink zmlGenericTag          Function
+  HiLink zmlIdTag               Number
+  HiLink zmlTrickyAttrId        Number
+  HiLink zmlClassTag            Float
+  HiLink zmlTrickyAttrClass     Float
   HiLink zmlSpecialTag          Statement
 
   HiLink zmlAttributes          String
