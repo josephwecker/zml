@@ -1,7 +1,8 @@
-- Clean up cruft from changing from automatic stdout emissions
-- Make sure that paths to external script file are relative to the dump directory
-- Have emit produce an array of strings that can easily be combined or output in chunks
-- Break into ngx-rome chunks (based on command line options)
+SPECIALIZED
+
+- Special tag modules
+- Templates compiled for very fast erlang execution
+- gen_server / batcher / zwapp-minimal
 
 
 FUTURE
@@ -10,10 +11,6 @@ FUTURE
   accordingly
 - Automatically figure out which CSS rules are irrelevant and exclude them
   (flag to disallow this somehow)
+- Apply other CSS optimization techniques- safe equivalents that are rendered faster or more broadly.
 
 
-SPECIALIZED
-
-- Special tag modules
-- Server-side directives / code - compiled in - main template compiler
-- gen_server / batcher / whatever
