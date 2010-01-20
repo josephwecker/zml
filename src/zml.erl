@@ -5,6 +5,10 @@
 
 compile(InFile) ->
   AST = zml_hand_parser:parse(zml_tokenizer:tokenize_file(InFile)),
+  SourceDir = filename:dirname(filename:absname(InFile)),
+  StagingDirName = erlang:phash2(make_ref()),
+  % TODO: you are here
+  AST2 = run_specialized_handlers(AST, SourceDir, 
   translate_ast_item(AST, []).
 
 translate_ast_item([], Acc) ->
