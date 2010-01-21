@@ -41,13 +41,14 @@ pull_inner_attributes([{attr_delim, _} | T], [], [], AttrAcc) ->
 	pull_inner_attributes(T, [], [], AttrAcc);
 
 pull_inner_attributes([{attr_delim, _} | T], CAName, [], AttrAcc) -> % weird edge case
-	pull_inner_attributes(T, [], [], [{CAName, []} | AttrAcc]);
+	pull_inner_attributes(T, [], [], [{string:to_lower(CAName), []} | AttrAcc]);
 
 pull_inner_attributes([{attr_delim, _} | T], [], [NewName], AttrAcc) -> % weird edge case
 	pull_inner_attributes(T, NewName, [], AttrAcc);
 
 pull_inner_attributes([{attr_delim, _} | T], CAName, [NewName | CAVals], AttrAcc) ->
-	pull_inner_attributes(T, NewName, [], [{CAName, lists:reverse(CAVals)} | AttrAcc]);
+	pull_inner_attributes(T, NewName, [],
+		[{string:to_lower(CAName), lists:reverse(CAVals)} | AttrAcc]);
 
 pull_inner_attributes([{string, _, Text} | T], CAName, CAVals, AttrAcc) ->
 	pull_inner_attributes(T, CAName, [Text | CAVals], AttrAcc);
@@ -96,14 +97,14 @@ tricky_attributes(Tag, Type, Attr, Children) ->
 	{Name2, Attr2} = tricky_attributes(lists:reverse(Tag), [], Attr),
 	case Type of
 		class ->
-			{"div", normal, dict:to_list(merge_attr(Attr2, [{"class", [Name2]}])), Children};
+			{"div", normal, merge_attr(Attr2, [{"class", [Name2]}]), Children};
 		id ->
-			{"div", normal, dict:to_list(merge_attr(Attr2, [{"id", [Name2]}])), Children};
+			{"div", normal, merge_attr(Attr2, [{"id", [Name2]}]), Children};
 		special ->
 			ID = integer_to_list(erlang:phash2(make_ref())),
-			{{Name2, ID}, special, dict:to_list(Attr2), Children};
+			{{Name2, ID}, special, Attr2, Children};
 		_ ->
-			{Name2, Type, dict:to_list(Attr2), Children}
+			{Name2, Type, Attr2, Children}
 	end.
 
 tricky_attributes([], CurrName, Attr) ->
