@@ -6,10 +6,25 @@
 compile(InFile) ->
   AST = zml_hand_parser:parse(zml_tokenizer:tokenize_file(InFile)),
   SourceDir = filename:dirname(filename:absname(InFile)),
-  StagingDirName = erlang:phash2(make_ref()),
-  % TODO: you are here
-  AST2 = run_specialized_handlers(AST, SourceDir, 
-  translate_ast_item(AST, []).
+  StagingDirName = integer_to_list(erlang:phash2(make_ref())),
+  {ok, CurrDir} = file:get_cwd(),
+  StagingDir = filename:join([CurrDir, StagingDirName]),
+  file:make_dir(StagingDir),
+  AST2 = run_specialized_handlers(AST, SourceDir, StagingDir),
+  Out = translate_ast_item(AST2, []),
+  file:write_file(filename:join([StagingDir, "output.html"]), Out),
+  io:format("~s", [Out]),
+  StagingDir.
+
+run_specialized_handlers(AST, SourceDir, StagingDir) ->
+  run_spec_handlers_inner(AST, SourceDir, StagingDir, AST).
+
+run_spec_handlers_inner([{Name, special, Attr, Children} | T], DSource, DStage, FullAST) ->
+  % Call handler TODO
+  nyi;
+run_spec_handler_inner([H|T],DSource,DStage,FullAST) ->
+  run_spec_handler_inner(T, DSource, DStage, FullAST).
+  
 
 translate_ast_item([], Acc) ->
   lists:reverse(Acc);
