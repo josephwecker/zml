@@ -3,8 +3,12 @@
 %% Author: Joseph Wecker <joseph.wecker@gmail.com>
 %%
 %% TODO:
+%%  - Put js loader etc. in correct spot in AST
+%%  - Simplified case for loader if inline JS is empty
 %%  - Check environment variable for closure jar before trying the command in
 %%    order to make the error less cryptic.
+%%  - Shorten the library js filename - look in that dir. and see what's
+%%    already there, etc.?
 %%
 
 -module(zml_special_html).
@@ -37,6 +41,14 @@
 			"<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML//EN\">\n"}]).
 
 -define(DEFAULT_TYPE, xhtml_strict).
+
+-define(JS_LOADER(LibSrc, Inner), [
+		"var _zmlll=0,_zmljs=document.createElement('script');_zmljs.src='",
+		LibSrc,"';",
+		"var head=document.getElementsByTagName('head')[0];",
+		"head.appendChild(_zmljs);_zmlw();function _zmlw(){",
+		"_zmlll?_zmlc():setTimeout('_zmlw()',150)}function _zmlc(){",
+		Inner,"};"]).
 
 run_handler(_ID, Attr, _Children, FAST, SourceFN, StagingDir) ->
 	% TODO:
@@ -79,16 +91,25 @@ add_or_replace_doctype(AST, Attr) ->
 	[DoctypeString | AST].
 
 handle_javascript(AST, Attr, SourceFN, {_, DTmp, DJS, _, _, _}) ->
-	BaseName = filename:basename(SourceFN, ".zml"),
+	{LibFiles, IndFiles} = get_js_list(Attr, SourceFN),
 
-	JSFileList = get_js_list(Attr, SourceFN),
-	LoadedFiles = load_js_files(JSFileList, DTmp),
-	Result = optimize_js(LoadedFiles, filename:join([DJS, BaseName ++ ".js"])),
-	case Result of
-		[] -> great;
-		_ -> erlang:error({"Javascript Error", Result})
-	end,
-	AST.
+	% Optimize "lib" js files
+	LoadedFiles = load_js_files(LibFiles, DTmp),
+	OptLibFName = filename:join([DTmp, zml:tmp_filename()]),
+	optimize_js(LoadedFiles, OptLibFName),
+	file:write_file(OptLibFName, "_zmlll=1;", [append]),
+	[MD5Sum | _] = string:tokens(os:cmd("md5sum '"++OptLibFName++"'")," "),
+	FinLibFName = filename:join([DJS, MD5Sum ++ ".js"]),
+	file:rename(OptLibFName, FinLibFName),
+
+	% Optimize inline js
+	LF2 = load_js_files(IndFiles, DTmp),
+	OptIndFName = filename:join([DTmp, zml:tmp_filename()]),
+	optimize_js(LF2, OptIndFName, false),
+	{ok, Inner} = file:read_file(OptIndFName),
+	Inline = ?JS_LOADER("js/" ++ MD5Sum ++ ".js", Inner),
+	% TODO! you are here.  Put this in the correct spot in the AST
+	AST ++ [Inline].
 
 % Look in the attributes and in the source directory to see which javascript
 % files should be associated with this html block.  Resolves paths relative to
@@ -102,18 +123,20 @@ get_js_list(Attr, Source) ->
 			error -> TwinJSFiles;
 			{ok, Scripts} -> Scripts ++ TwinJSFiles
 		end,
-	lists:map(
-		fun([First | _T] = FName) ->
-			case First of
-				$/ -> FName;
-				_ ->
-					case string:str(FName, "://") of
-						0 -> filename:join([Dir, FName]);
-						_ -> FName
-					end
-			end
-		end, AllFiles).
-
+	AllFilesAbs =
+		lists:map(
+			fun([First | _T] = FName) ->
+				case First of
+					$/ -> FName;
+					_ ->
+						case string:str(FName, "://") of
+							0 -> filename:join([Dir, FName]);
+							_ -> FName
+						end
+				end
+			end, AllFiles),
+	lists:partition(fun(FN) -> filename:basename(FN, ".js") /= BaseName end,
+		AllFilesAbs).
 
 % Take the potential list of javascript files and load them into a temporary
 % staging directory.  Ignore duplicate files.  Pull any remote files.
@@ -146,12 +169,21 @@ load_js_files([Try | T], DTmp, LoadedKeys, Loaded) ->
 			end
 	end.
 
-optimize_js([], _) ->
-	[];
 optimize_js(Files, Dest) ->
+	optimize_js(Files, Dest, true).
+
+optimize_js([], _, _) ->
+	[];
+optimize_js(Files, Dest, Advanced) ->
 	Cmd = lists:flatten(["java -jar $ZML_CLOSURE_JAR",
 		lists:map(fun(A) -> [" --js=",A] end, Files),
 		" --js_output_file=", Dest,
-		" --compilation_level=ADVANCED_OPTIMIZATIONS",
+		case Advanced of
+			true -> " --compilation_level=ADVANCED_OPTIMIZATIONS";
+			false -> ""
+		end,
 		" --warning_level=QUIET"]),
-	string:strip(os:cmd(Cmd)).
+	case string:strip(os:cmd(Cmd)) of
+		[] -> ok;
+		Result -> erlang:error({"Javascript Error", Result})
+	end.
