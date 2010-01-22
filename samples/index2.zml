@@ -2,6 +2,8 @@
       type: xhtml_frameset
       ScrIpt: js/jquery-1.3.2.min.js||More random
               js/main.js
+              js/main.js  || Should ignore
+              js/jquery-wow.js || Copy of first one. should ignore
               ||:inside ;
               http\://s7.addthis.com/js/250/addthis_widget.js
       encoding: utf-8)
