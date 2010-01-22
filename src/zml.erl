@@ -146,3 +146,13 @@ pull_in_file(Name, DestDirAndName) ->
 				Error -> {error, Error}
 			end
 	end.
+
+new_tag(Name, AttrList, Children) when is_atom(Name) ->
+  {atom_to_list(Name), normal, dict:from_list(AttrList), Children}.
+
+edit_elements(AST, Name, NewAttr, NewChildren) ->
+  edit_elements_inner(AST, Name, NewAttr, NewChildren, []).
+
+edit_elements_inner([], _, _, _, Acc) ->
+  lists:reverse(Acc);
+edit_elements_inner([{  % TODO: You are here!

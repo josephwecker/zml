@@ -2,13 +2,16 @@
 %%
 %% Author: Joseph Wecker <joseph.wecker@gmail.com>
 %%
-%% TODO:
+%% TODO (Bugs and Polish):
 %%  - Put js loader etc. in correct spot in AST
 %%  - Simplified case for loader if inline JS is empty
 %%  - Check environment variable for closure jar before trying the command in
 %%    order to make the error less cryptic.
 %%  - Shorten the library js filename - look in that dir. and see what's
 %%    already there, etc.?
+%%
+%% TODO Functionality:
+%%  - Make sure that there is a head and body- insert empty ones if not.
 %%
 
 -module(zml_special_html).
@@ -50,7 +53,7 @@
 		"_zmlll?_zmlc():setTimeout('_zmlw()',150)}function _zmlc(){",
 		Inner,"};"]).
 
-run_handler(_ID, Attr, _Children, FAST, SourceFN, StagingDir) ->
+run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
 	% TODO:
 	%  - preprocess javascript files, combine, and move to staging & AST
 	%  - preprocess css files, combine, filter, and inline into AST
@@ -59,7 +62,7 @@ run_handler(_ID, Attr, _Children, FAST, SourceFN, StagingDir) ->
 	%  - add encoding to meta-tags- default one if there is none specified
 	%  - pull in and preprocess all images
 	FAST2 = add_or_replace_doctype(FAST, Attr),
-	FAST3 = handle_javascript(FAST2, Attr, SourceFN, StagingDir),
+	FAST3 = handle_javascript(ID, Attr, Children, FAST2, SourceFN, StagingDir),
 	FAST3.
 
 add_or_replace_doctype(AST, Attr) ->
@@ -90,7 +93,7 @@ add_or_replace_doctype(AST, Attr) ->
 		end,
 	[DoctypeString | AST].
 
-handle_javascript(AST, Attr, SourceFN, {_, DTmp, DJS, _, _, _}) ->
+handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
 	{LibFiles, IndFiles} = get_js_list(Attr, SourceFN),
 
 	% Optimize "lib" js files
@@ -108,8 +111,13 @@ handle_javascript(AST, Attr, SourceFN, {_, DTmp, DJS, _, _, _}) ->
 	optimize_js(LF2, OptIndFName, false),
 	{ok, Inner} = file:read_file(OptIndFName),
 	Inline = ?JS_LOADER("js/" ++ MD5Sum ++ ".js", Inner),
-	% TODO! you are here.  Put this in the correct spot in the AST
-	AST ++ [Inline].
+
+  NewAttr = dict:erase("script", Attr),
+  NewChildren = Children ++
+    [zml:new_tag(script, [{type, "text/javascript"}], [Inline])],
+
+  AST2 = zml:alter_first(AST, {"html", ID}, NewAttr, NewChildren),
+	AST2.
 
 % Look in the attributes and in the source directory to see which javascript
 % files should be associated with this html block.  Resolves paths relative to
@@ -170,7 +178,7 @@ load_js_files([Try | T], DTmp, LoadedKeys, Loaded) ->
 	end.
 
 optimize_js(Files, Dest) ->
-	optimize_js(Files, Dest, true).
+	optimize_js(Files, Dest, false).
 
 optimize_js([], _, _) ->
 	[];
