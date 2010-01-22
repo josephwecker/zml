@@ -4,7 +4,7 @@
 -export([compile/1, compile/2]).
 
 % Utilities for special handlers:
--export([search_for_file/2, tmp_filename/0, pull_in_file/2]).
+-export([search_for_file/2, tmp_filename/0, tmp_filename/1, pull_in_file/2]).
 
 -define(DIR_TMP, ".tmp").
 -define(DIR_JS,  "js").
@@ -119,7 +119,9 @@ search_for_file(File, Path) ->
 	string:tokens(Res, "\n").
 
 tmp_filename() ->
-	".tmp_" ++ integer_to_list(erlang:phash2(make_ref())).
+	tmp_filename(".tmp_").
+tmp_filename(Pref) ->
+	Pref ++ integer_to_list(erlang:phash2(make_ref())).
 
 % Tries to copy a file to the destination.  Tries loading it with curl if a
 % normal file copy doesn't seem to work.  Returns ok or {error, Reason}

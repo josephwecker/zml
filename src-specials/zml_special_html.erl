@@ -72,7 +72,6 @@ add_or_replace_doctype(AST, Attr) ->
 handle_javascript(AST, Attr, SourceFN, {_, DTmp, DJS, _, _, _}) ->
 	JSFileList = get_js_list(Attr, SourceFN),
 	LoadedFiles = load_js_files(JSFileList, DTmp),
-	io:format("~p ~n ~p", [JSFileList, LoadedFiles]),
 	AST.
 
 % Look in the attributes and in the source directory to see which javascript
