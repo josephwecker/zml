@@ -3,3 +3,5 @@
 *~
 *.pyc
 *.beam
+.deps
+tmp_*
