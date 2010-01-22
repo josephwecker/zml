@@ -13,3 +13,13 @@ Requires the following utilities (which it calls as os:cmd calls):
  * find   # For looking at the source dir for "twin" files automatically
  * md5sum # For making sure duplicate files aren't added
 
+Mac OSX
+ * Should have "find," "java," and "curl."
+ * To install md5sum -
+    - Download source from http://www.microbrew.org/tools/md5sha1sum/
+    - tar -xvzf it in some temporary directory
+    - Go into the unzipped dir and run "./configure"
+    - Run "make"
+    - Run "sudo make install"
+    - It will throw an error that doesn't matter- ignore it.
+ * You still have to download closure/compiler as per above and set the path
