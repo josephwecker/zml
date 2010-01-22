@@ -4,4 +4,4 @@
 *.pyc
 *.beam
 .deps
-tmp_*
+.tmp_*
