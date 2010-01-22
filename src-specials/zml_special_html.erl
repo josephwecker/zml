@@ -1,3 +1,12 @@
+%% Special handler for *html tags in zml
+%%
+%% Author: Joseph Wecker <joseph.wecker@gmail.com>
+%%
+%% TODO:
+%%  - Check environment variable for closure jar before trying the command in
+%%    order to make the error less cryptic.
+%%
+
 -module(zml_special_html).
 
 -export([run_handler/6]).
@@ -70,8 +79,15 @@ add_or_replace_doctype(AST, Attr) ->
 	[DoctypeString | AST].
 
 handle_javascript(AST, Attr, SourceFN, {_, DTmp, DJS, _, _, _}) ->
+	BaseName = filename:basename(SourceFN, ".zml"),
+
 	JSFileList = get_js_list(Attr, SourceFN),
 	LoadedFiles = load_js_files(JSFileList, DTmp),
+	Result = optimize_js(LoadedFiles, filename:join([DJS, BaseName ++ ".js"])),
+	case Result of
+		[] -> great;
+		_ -> erlang:error({"Javascript Error", Result})
+	end,
 	AST.
 
 % Look in the attributes and in the source directory to see which javascript
@@ -130,3 +146,12 @@ load_js_files([Try | T], DTmp, LoadedKeys, Loaded) ->
 			end
 	end.
 
+optimize_js([], _) ->
+	[];
+optimize_js(Files, Dest) ->
+	Cmd = lists:flatten(["java -jar $ZML_CLOSURE_JAR",
+		lists:map(fun(A) -> [" --js=",A] end, Files),
+		" --js_output_file=", Dest,
+		" --compilation_level=ADVANCED_OPTIMIZATIONS",
+		" --warning_level=QUIET"]),
+	string:strip(os:cmd(Cmd)).
