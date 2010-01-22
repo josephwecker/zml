@@ -1,0 +1,15 @@
+==== *html ====
+For javascript optimization you need to download the latest "Closure"
+http://code.google.com/closure/compiler/
+
+Unzip the jar file and put it somewhere safe, then set an environment variable
+that points to it:
+
+export ZML_CLOSURE_JAR=/home/me/sbin/compiler.jar # or whatever
+
+It requires Java 6 to run (bleh.  I know I know, but I don't have time to port
+it).
+
+
+
+

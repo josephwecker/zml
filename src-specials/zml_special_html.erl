@@ -31,7 +31,6 @@
 
 run_handler(ID, Attr, Children, FAST, SourceDir, StagingDir) ->
 	% TODO:
-	%  - add doctype
 	%  - preprocess javascript files, combine, and move to staging & AST
 	%  - preprocess css files, combine, filter, and inline into AST
 	%  - add javascript directive to bottom of AST
