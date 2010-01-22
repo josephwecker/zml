@@ -1,0 +1,4 @@
+*html(scripts: jstest_lib.js)
+  :head
+  :body
+    :h4 Testing the js
