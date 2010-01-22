@@ -29,15 +29,17 @@
 
 -define(DEFAULT_TYPE, xhtml_strict).
 
-run_handler(ID, Attr, Children, FAST, SourceDir, StagingDir) ->
+run_handler(_ID, Attr, _Children, FAST, SourceFN, StagingDir) ->
 	% TODO:
 	%  - preprocess javascript files, combine, and move to staging & AST
 	%  - preprocess css files, combine, filter, and inline into AST
 	%  - add javascript directive to bottom of AST
 	%  - be able to pull in external scripts etc.
 	%  - add encoding to meta-tags- default one if there is none specified
+	%  - pull in and preprocess all images
 	FAST2 = add_or_replace_doctype(FAST, Attr),
-	FAST2.
+	FAST3 = handle_javascript(FAST2, Attr, SourceFN, StagingDir),
+	FAST3.
 
 add_or_replace_doctype(AST, Attr) ->
 	[FirstLine | _] = AST,
@@ -67,4 +69,65 @@ add_or_replace_doctype(AST, Attr) ->
 		end,
 	[DoctypeString | AST].
 
+handle_javascript(AST, Attr, SourceFN, {_, DTmp, DJS, _, _, _}) ->
+	JSFileList = get_js_list(Attr, SourceFN),
+	LoadedFiles = load_js_files(JSFileList, DTmp),
+	io:format("~p ~n ~p", [JSFileList, LoadedFiles]),
+	AST.
+
+% Look in the attributes and in the source directory to see which javascript
+% files should be associated with this html block.  Resolves paths relative to
+% the source file.
+get_js_list(Attr, Source) ->
+	Dir = filename:dirname(Source),
+	BaseName = filename:basename(Source, ".zml"),
+	TwinJSFiles = zml:search_for_file(BaseName ++ ".js", Dir),
+	AllFiles =
+		case dict:find("script", Attr) of
+			error -> TwinJSFiles;
+			{ok, Scripts} -> Scripts ++ TwinJSFiles
+		end,
+	lists:map(
+		fun([First | _T] = FName) ->
+			case First of
+				$/ -> FName;
+				_ ->
+					case string:str(FName, "://") of
+						0 -> filename:join([Dir, FName]);
+						_ -> FName
+					end
+			end
+		end, AllFiles).
+
+
+% Take the potential list of javascript files and load them into a temporary
+% staging directory.  Ignore duplicate files.  Pull any remote files.
+% Ignores dups first by exact filename/path, and then by md5sum.
+load_js_files(JSList, DTmp) ->
+	load_js_files(JSList, DTmp, dict:new(), []).
+load_js_files([], _, _, Loaded) ->
+	lists:reverse(Loaded);
+load_js_files([Try | T], DTmp, LoadedKeys, Loaded) ->
+	case dict:find("FN" ++ Try, LoadedKeys) of
+		{ok, _} ->
+			load_js_files(T, DTmp, LoadedKeys, Loaded);
+		error ->
+			DestName = filename:join([DTmp, zml:tmp_filename()]),
+			case zml:pull_in_file(Try, DestName) of
+				ok ->
+					[MD5Sum | _Junk] = string:tokens(
+						os:cmd("md5sum '" ++ DestName ++ "'"), " "),
+					case dict:find("MD5" ++ MD5Sum, LoadedKeys) of
+						{ok, _} ->
+							ok = file:delete(DestName),
+							load_js_files(T, DTmp, LoadedKeys, Loaded);
+						error ->
+							D2 = dict:store("FN" ++ Try, true, LoadedKeys),
+							D3 = dict:store("MD5"++MD5Sum, true, D2),
+							load_js_files(T, DTmp, D3, [DestName | Loaded])
+					end;
+				{error, Reason} ->
+					erlang:error(["Couldn't copy JS file ", Try, Reason])
+			end
+	end.
 
