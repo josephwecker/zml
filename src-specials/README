@@ -7,6 +7,9 @@ that points to it:
 
 export ZML_CLOSURE_JAR=/home/me/sbin/compiler.jar # or whatever
 
-It requires Java 6 to run (bleh.  I know I know, but I don't have time to port
-it).
+Requires the following utilities (which it calls as os:cmd calls):
+ * java   # Java 6 or later for the js optimizer. I know I know.
+ * curl   # For pulling all js files together, even if they're remote
+ * find   # For looking at the source dir for "twin" files automatically
+ * md5sum # For making sure duplicate files aren't added
 
