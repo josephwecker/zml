@@ -9,7 +9,7 @@ compile(InFile) ->
 compile(InFile, SpecialDir) ->
 	AST = zml_hand_parser:parse(zml_tokenizer:tokenize_file(InFile)),
 	SourceDir = filename:dirname(filename:absname(InFile)),
-	StagingDirName = "tmp_" ++ integer_to_list(erlang:phash2(make_ref())),
+	StagingDirName = ".tmp_" ++ integer_to_list(erlang:phash2(make_ref())),
 	{ok, CurrDir} = file:get_cwd(),
 	StagingDir = filename:join([CurrDir, StagingDirName]),
 	file:make_dir(StagingDir),

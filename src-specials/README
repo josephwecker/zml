@@ -10,6 +10,3 @@ export ZML_CLOSURE_JAR=/home/me/sbin/compiler.jar # or whatever
 It requires Java 6 to run (bleh.  I know I know, but I don't have time to port
 it).
 
-
-
-
