@@ -4,7 +4,8 @@
 -export([compile/1, compile/2]).
 
 % Utilities for special handlers:
--export([search_for_file/2, tmp_filename/0, tmp_filename/1, pull_in_file/2]).
+-export([search_for_file/2, tmp_filename/0, tmp_filename/1, pull_in_file/2,
+    new_tag/3, new_tag/4, get_tag/2, replace_tag/3]).
 
 -define(DIR_TMP, ".tmp").
 -define(DIR_JS,  "js").
@@ -147,12 +148,63 @@ pull_in_file(Name, DestDirAndName) ->
 			end
 	end.
 
-new_tag(Name, AttrList, Children) when is_atom(Name) ->
-  {atom_to_list(Name), normal, dict:from_list(AttrList), Children}.
+new_tag(Name, AttrList, Children) when is_list(AttrList) ->
+  new_tag(Name, dict:from_list(AttrList), Children);
+new_tag(Name, Attr, Children) when is_atom(Name) ->
+  new_tag(atom_to_list(Name), normal, Attr, Children);
+new_tag(Name, Attr, Children) when is_tuple(Name) ->
+  new_tag(Name, special, Attr, Children).
 
-edit_elements(AST, Name, NewAttr, NewChildren) ->
-  edit_elements_inner(AST, Name, NewAttr, NewChildren, []).
+new_tag(Name, Type, Attr, Children) when is_atom(Name) ->
+  new_tag(atom_to_list(Name), Type, Attr, Children);
+new_tag(Name, Type, Attr, Children) ->
+  {Name, Type, Attr, Children}.
 
-edit_elements_inner([], _, _, _, Acc) ->
+
+%% Recursively replaces any tags with existing Name with the new attributes and
+%% children specified. Search is the search path as a list of tag names, such as:
+%% [{"html", ID}, "body", "table"] to find the table tag within the body tag
+%% within the special html tag with the given ID.  No mechanism yet for
+%% wildcard IDs, wildcard tagnames, looking at attributes, or "lookahead" at
+%% children.
+replace_tag(AST, Search, NewTag) ->
+  replace_tag(AST, lists:reverse(Search), NewTag, [], []).
+replace_tag([], _, _, _, Acc) ->
   lists:reverse(Acc);
-edit_elements_inner([{  % TODO: You are here!
+replace_tag([H|T], Search, NewTag, CurrPath, Acc) when is_list(H) ->
+  replace_tag(T, Search, NewTag, CurrPath, [H | Acc]);
+replace_tag([{Name,Tp,Att,Children} | T], Search, NewTag, CurrPath, Acc) ->
+  EqPath = lists:sublist([Name | CurrPath], length(Search)),
+  case EqPath == Search of
+    true ->
+      % We won't recurse into new children, because that would inevitably lead
+      % to infinite recursion if someone tried to take advantage of it.
+      replace_tag(T, Search, NewTag, CurrPath, [NewTag | Acc]);
+    false ->
+      NewChildren = replace_tag(Children,Search,NewTag, [Name | CurrPath],[]),
+      replace_tag(T, Search, NewTag, CurrPath,
+        [{Name,Tp,Att,NewChildren} | Acc])
+  end.
+
+%% Similar to replace_tag, only is stops when it finds it and returns it
+%% instead of returning a rebuilt full AST.
+get_tag(AST, Search) ->
+  get_tag(AST, lists:reverse(Search), []).
+get_tag([], _, _) ->
+  undefined;
+get_tag([H|T], Search, CurrPath) when is_list(H) ->
+  get_tag(T, Search, CurrPath);
+get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
+  EqPath = lists:sublist([Name | CurrPath], length(Search)),
+  case EqPath == Search of
+    true ->
+      Tag;
+    false ->
+      case get_tag(Children, Search, [Name | CurrPath]) of
+        undefined ->
+          get_tag(T, Search, CurrPath);
+        FoundTag ->
+          FoundTag
+      end
+  end.
+

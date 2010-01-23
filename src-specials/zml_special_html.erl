@@ -2,15 +2,17 @@
 %%
 %% Author: Joseph Wecker <joseph.wecker@gmail.com>
 %%
+%% TODO Functionality:
+%%  - preprocess css files, combine, filter, and inline into AST
+%%  - add encoding to meta-tags- default one if there is none specified
+%%  - pull in and preprocess all images
+%%
 %% TODO (Bugs and Polish):
-%%  - Put js loader etc. in correct spot in AST
 %%  - Simplified case for loader if inline JS is empty
 %%  - Check environment variable for closure jar before trying the command in
 %%    order to make the error less cryptic.
 %%  - Shorten the library js filename - look in that dir. and see what's
 %%    already there, etc.?
-%%
-%% TODO Functionality:
 %%  - Make sure that there is a head and body- insert empty ones if not.
 %%
 
@@ -46,21 +48,15 @@
 -define(DEFAULT_TYPE, xhtml_strict).
 
 -define(JS_LOADER(LibSrc, Inner), [
+    "//<![CDATA[\n",
 		"var _zmlll=0,_zmljs=document.createElement('script');_zmljs.src='",
 		LibSrc,"';",
 		"var head=document.getElementsByTagName('head')[0];",
 		"head.appendChild(_zmljs);_zmlw();function _zmlw(){",
 		"_zmlll?_zmlc():setTimeout('_zmlw()',150)}function _zmlc(){",
-		Inner,"};"]).
+		Inner,"};\n", "//]]>\n"]).
 
 run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
-	% TODO:
-	%  - preprocess javascript files, combine, and move to staging & AST
-	%  - preprocess css files, combine, filter, and inline into AST
-	%  - add javascript directive to bottom of AST
-	%  - be able to pull in external scripts etc.
-	%  - add encoding to meta-tags- default one if there is none specified
-	%  - pull in and preprocess all images
 	FAST2 = add_or_replace_doctype(FAST, Attr),
 	FAST3 = handle_javascript(ID, Attr, Children, FAST2, SourceFN, StagingDir),
 	FAST3.
@@ -94,7 +90,15 @@ add_or_replace_doctype(AST, Attr) ->
 	[DoctypeString | AST].
 
 handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
-	{LibFiles, IndFiles} = get_js_list(Attr, SourceFN),
+  NormAttr =
+    case dict:find("script", Attr) of
+      {ok, Val} ->
+        D2 = dict:erase("script"),
+        dict:store("scripts", Val, D2);
+      _ -> Attr
+    end,
+
+	{LibFiles, IndFiles} = get_js_list(NormAttr, SourceFN),
 
 	% Optimize "lib" js files
 	LoadedFiles = load_js_files(LibFiles, DTmp),
@@ -110,14 +114,20 @@ handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
 	OptIndFName = filename:join([DTmp, zml:tmp_filename()]),
 	optimize_js(LF2, OptIndFName, false),
 	{ok, Inner} = file:read_file(OptIndFName),
-	Inline = ?JS_LOADER("js/" ++ MD5Sum ++ ".js", Inner),
+  Inline = lists:flatten(?JS_LOADER("js/" ++ MD5Sum ++ ".js",
+      binary_to_list(Inner))),
 
-  NewAttr = dict:erase("script", Attr),
-  NewChildren = Children ++
-    [zml:new_tag(script, [{type, "text/javascript"}], [Inline])],
+  % Put inline script in body
+  ScriptTag = zml:new_tag(script, [{"type", ["text/javascript"]}], [Inline]),
+  {"body", normal, BAttr, BChildren} = zml:get_tag(Children, ["body"]),
+  Children2 = zml:replace_tag(Children, ["body"],
+    zml:new_tag(body, normal, BAttr, BChildren ++ [ScriptTag])),
 
-  AST2 = zml:alter_first(AST, {"html", ID}, NewAttr, NewChildren),
-	AST2.
+  % Remove scripts from html parameters
+  NewAttr = dict:erase("scripts", NormAttr),
+  AST3 = zml:replace_tag(AST, [{"html", ID}],
+    zml:new_tag({"html", ID}, special, NewAttr, Children2)),
+	AST3.
 
 % Look in the attributes and in the source directory to see which javascript
 % files should be associated with this html block.  Resolves paths relative to
@@ -127,7 +137,7 @@ get_js_list(Attr, Source) ->
 	BaseName = filename:basename(Source, ".zml"),
 	TwinJSFiles = zml:search_for_file(BaseName ++ ".js", Dir),
 	AllFiles =
-		case dict:find("script", Attr) of
+		case dict:find("scripts", Attr) of
 			error -> TwinJSFiles;
 			{ok, Scripts} -> Scripts ++ TwinJSFiles
 		end,

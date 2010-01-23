@@ -1,11 +1,15 @@
 SPECIALIZED
 
-- Special tag modules
+- Special tag module for HTML
+- Fix space issues for inline tags (honor spaces before, inside, and after)
+- Special tag module for include
+- Special tag module for include_layout
+  - Ability to include multiple chunks in different parts / complex layout?
 - Templates compiled for very fast erlang execution
 - gen_server / batcher / zwapp-minimal
 - Updated readme
 - Make this the new master branch
-- Fix space issues for inline tags (honor spaces before, inside, and after)
+- New SASS-like language for CSS
 
 
 FUTURE
