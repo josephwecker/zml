@@ -69,107 +69,107 @@
 -define(T_CODE_EN, $]).
 
 tokenize_file(Filename) when is_list(Filename) ->
-	{ok, File} = file:open(Filename, [read]),
-	erase(),
-	put(line_num, 0),
-	parse_lines(File, [0], [], false).  % Just ignore leading "indent" token if needed
+  {ok, File} = file:open(Filename, [read]),
+  erase(),
+  put(line_num, 0),
+  parse_lines(File, [0], [], false).  % Just ignore leading "indent" token if needed
 
 tokenize_stream(Stream) ->
   parse_lines(Stream, [0], [], false).
 
 parse_lines(File, IndentStack, RTokens, InAttr) ->
-	put(file, File),
-	put(line_num, get(line_num) + 1),
-	case io:get_line(File, "") of
-		eof ->
+  put(file, File),
+  put(line_num, get(line_num) + 1),
+  case io:get_line(File, "") of
+    eof ->
       LN = get(line_num) - 1,
       Tokens2 = lists:reverse(lists:flatten(RTokens)),
       ExtraDedents = lists:map(fun(_) -> {dedent, LN} end,
         lists:seq(1,length(IndentStack) - 1)),
       Tokens2 ++ ExtraDedents ++ [{end_of_file, LN}];
-		{error, Reason} ->
-			erlang:error({input_zml_file_read_error, Reason});
-		Line ->
-			{NumDents, RemainingLine} = get_dent(Line),
-			case RemainingLine of
-				[] -> % Blank line
-					parse_lines(File, IndentStack, RTokens, InAttr);
-				_ ->
-					{NewStack, MoreTokens, InAttr2} =
-						parse_line(NumDents, IndentStack, RemainingLine, InAttr),
-					case MoreTokens of
-						[] ->
-							parse_lines(File, NewStack, RTokens, InAttr2);
-						_ ->
-							parse_lines(File, NewStack, [MoreTokens | RTokens], InAttr2)
-					end
-			end
-	end.
+    {error, Reason} ->
+      erlang:error({input_zml_file_read_error, Reason});
+    Line ->
+      {NumDents, RemainingLine} = get_dent(Line),
+      case RemainingLine of
+        [] -> % Blank line
+          parse_lines(File, IndentStack, RTokens, InAttr);
+        _ ->
+          {NewStack, MoreTokens, InAttr2} =
+            parse_line(NumDents, IndentStack, RemainingLine, InAttr),
+          case MoreTokens of
+            [] ->
+              parse_lines(File, NewStack, RTokens, InAttr2);
+            _ ->
+              parse_lines(File, NewStack, [MoreTokens | RTokens], InAttr2)
+          end
+      end
+  end.
 
 %% How many whitespace characters lead up the line.
 %% (Calculated with unicode characters- that's why it looks funny)
 get_dent(Line) ->
-	get_dent(Line, 0).
+  get_dent(Line, 0).
 get_dent([H|T],N) when
-		((H >= $\x{0009}) and (H =< $\x{000D}))
-		or (H == $\x{0020}) or (H == $\x{00A0}) ->
-	get_dent(T,N+1);
+    ((H >= $\x{0009}) and (H =< $\x{000D}))
+    or (H == $\x{0020}) or (H == $\x{00A0}) ->
+  get_dent(T,N+1);
 get_dent(Rest,N) ->
-	{N, Rest}.
+  {N, Rest}.
 
 %% Figures out indent / dedent tokens and then calls parse_inner to figure out
 %% the rest of whatever is there.  Skips indent/outdent if currently processing
 %% attributes.
 parse_line(Dents, CStack, Line, InAttr) ->
   {ParsedLine, InAttr2} = parse_inner(Line, InAttr),
-	case ParsedLine of
-		[] ->
-			% Blank lines (after comments removed etc.) are ignored
-			{CStack, [], InAttr};
-		_ ->
-			% Newline appended if we're not still in the middle of attributes
-			AlteredPLine = 
+  case ParsedLine of
+    [] ->
+      % Blank lines (after comments removed etc.) are ignored
+      {CStack, [], InAttr};
+    _ ->
+      % Newline appended if we're not still in the middle of attributes
+      AlteredPLine = 
         case InAttr2 of
-					true -> ParsedLine;
-					false -> [{newline, get(line_num)} | ParsedLine]
-				end,
-			% Dedents/indent prepended if we didn't start inside of attributes
-			case InAttr of
-				true -> {CStack, AlteredPLine, InAttr2};
-				false ->
+          true -> ParsedLine;
+          false -> [{newline, get(line_num)} | ParsedLine]
+        end,
+      % Dedents/indent prepended if we didn't start inside of attributes
+      case InAttr of
+        true -> {CStack, AlteredPLine, InAttr2};
+        false ->
           {CS2, APL2} = do_parse_line(Dents, CStack, AlteredPLine),
           {CS2, APL2, InAttr2}
-			end
-	end.
+      end
+  end.
 
 do_parse_line(Dents, [NLast | _] = CStack, PLine) when Dents == NLast ->
-	{CStack, PLine};
+  {CStack, PLine};
 do_parse_line(Dents, [NLast | _] = CStack, PLine) when Dents > NLast ->
-	{[Dents | CStack], [PLine, {indent, get(line_num)}]};
+  {[Dents | CStack], [PLine, {indent, get(line_num)}]};
 do_parse_line(Dents, CStack, PLine) ->
-	{NewStack, DentTokens} = do_dedent(Dents, CStack, []),
-	{NewStack, [PLine, DentTokens]}.
+  {NewStack, DentTokens} = do_dedent(Dents, CStack, []),
+  {NewStack, [PLine, DentTokens]}.
 
 %% Pops indents off the stack until it matches the current indent- issuing a
 %% "dedent" for each one.
 %% Throws an error if the current indent is not aligned with some past
 %% indentation level.
 do_dedent(_, [], TokenAcc) ->
-	{[], TokenAcc};
+  {[], TokenAcc};
 do_dedent(Dents, [H | _] = CStack, TokenAcc) when Dents > H ->
-	erlang:error({strange_indentation,
-			{line, get(line_num)},
-			{curr_dents, Dents},
-			{ind_stack, CStack},
-			{token_acc, TokenAcc}});
+  erlang:error({strange_indentation,
+      {line, get(line_num)},
+      {curr_dents, Dents},
+      {ind_stack, CStack},
+      {token_acc, TokenAcc}});
 do_dedent(Dents, [H | _] = CStack, TokenAcc) when Dents == H ->
-	{CStack, TokenAcc};
+  {CStack, TokenAcc};
 do_dedent(Dents, [H | T], TokenAcc) when Dents < H ->
-	do_dedent(Dents, T, [{dedent, get(line_num)} | TokenAcc]).
+  do_dedent(Dents, T, [{dedent, get(line_num)} | TokenAcc]).
 
 
 parse_inner(Line, InAttr) ->
-	parse_inner(Line, none, [], [], InAttr).
+  parse_inner(Line, none, [], [], InAttr).
 
 %%
 %% parse_inner(CurrString, LastToken, CurrentTokenAcc, AllTokenAcc)
@@ -183,16 +183,16 @@ parse_inner([], _, CurrTAcc, AllTAcc, InAttr) ->
 % "\|# this is not a comment #|" etc.
 % Also note that it pops the esc code off CurrTAcc first.
 parse_inner([Any | T], ?T_ESC, [?T_ESC | CurrTAcc], AllTAcc, InAttr) ->
-	parse_inner(T, nothing, [Any | CurrTAcc], AllTAcc, InAttr);
+  parse_inner(T, nothing, [Any | CurrTAcc], AllTAcc, InAttr);
 
 % String started
 parse_inner([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1, [_ | CurrTAcc], AllTAcc, InAttr) ->
-	{Str, Remaining} = pull_in_string(T, fun line_pull_in_str/1),
+  {Str, Remaining} = pull_in_string(T, fun line_pull_in_str/1),
   parse_inner(Remaining, none, [], ?FLUSH({string, get(line_num), Str}), InAttr);
 
 % Multi-line comment started
 parse_inner([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1, [_ | CurrTAcc], AllTAcc, InAttr) ->
-	{_Comment, Remaining} = pull_in_string(T, fun line_pull_in_ign/1),
+  {_Comment, Remaining} = pull_in_string(T, fun line_pull_in_ign/1),
   parse_inner(Remaining, none, [], ?SFLUSH, InAttr);
 
 % Inline comment started
@@ -216,8 +216,8 @@ parse_inner([?T_CODE_EN | T], _, CurrTAcc, AllTAcc, false) ->
 
 % Whitespace.  Flush token.
 parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) when
-		((H >= $\x{0009}) and (H =< $\x{000D}))
-		or (H == $\x{0020}) or (H == $\x{00A0}) ->
+    ((H >= $\x{0009}) and (H =< $\x{000D}))
+    or (H == $\x{0020}) or (H == $\x{00A0}) ->
   parse_inner(T, H, [], ?SFLUSH, InAttr);
 
 % Inline tag delimiter
@@ -226,19 +226,19 @@ parse_inner([?T_INL_TAG_D | T], _LAST, CurrTAcc, AllTAcc, false) ->
     ?FLUSH({inline_delim, get(line_num)}), false);
 
 parse_inner([?T_TAG_ST | T], _, [], AllTAcc, false) ->
-	parse_inner(T, ?T_TAG_ST, [],
+  parse_inner(T, ?T_TAG_ST, [],
     [{start_tag, get(line_num), normal} | AllTAcc], false);
 
 parse_inner([?T_TAG_SPECIAL_ST | T], _, [], AllTAcc, false) ->
-	parse_inner(T, ?T_TAG_SPECIAL_ST, [],
+  parse_inner(T, ?T_TAG_SPECIAL_ST, [],
     [{start_tag, get(line_num), special} | AllTAcc], false);
 
 parse_inner([?T_TAG_CLASS_ST | T], _, [], AllTAcc, false) ->
-	parse_inner(T, ?T_TAG_CLASS_ST, [],
+  parse_inner(T, ?T_TAG_CLASS_ST, [],
     [{start_tag, get(line_num), class} | AllTAcc], false);
 
 parse_inner([?T_TAG_ID_ST | T], _, [], AllTAcc, false) ->
-	parse_inner(T, ?T_TAG_ID_ST, [],
+  parse_inner(T, ?T_TAG_ID_ST, [],
     [{start_tag, get(line_num), id} | AllTAcc], false);
 
 parse_inner([?T_ATTR_DELIM | T], _, CurrTAcc, AllTAcc, true) ->
@@ -246,51 +246,51 @@ parse_inner([?T_ATTR_DELIM | T], _, CurrTAcc, AllTAcc, true) ->
     ?FLUSH({attr_delim, get(line_num)}), true);
 
 parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) ->
-	parse_inner(T, H, [H | CurrTAcc], AllTAcc, InAttr).
+  parse_inner(T, H, [H | CurrTAcc], AllTAcc, InAttr).
 
 
 pull_in_string(Line, InnerFun) ->
-	pull_in_string(Line, [], get(line_num), InnerFun).
+  pull_in_string(Line, [], get(line_num), InnerFun).
 pull_in_string(Line, Acc, LN, InnerFun) ->
-	{StrAcc, Finished, Tail} = InnerFun(Line),
-	case Finished of
-		true ->
-			put(line_num, LN),
-			{lists:flatten(lists:reverse([StrAcc | Acc])), Tail};
-		false ->
-			File = get(file),
-			case io:get_line(File, "") of
-				eof ->
-					erlang:error({string_or_comment_not_closed_before_eof,
-							{line, get(line_num)}});
-				{error, Reason} ->
-					erlang:error({input_zml_file_read_error, Reason});
-				NewLine ->
-					pull_in_string(NewLine, [StrAcc | Acc], LN + 1, InnerFun)
-			end
-	end.
+  {StrAcc, Finished, Tail} = InnerFun(Line),
+  case Finished of
+    true ->
+      put(line_num, LN),
+      {lists:flatten(lists:reverse([StrAcc | Acc])), Tail};
+    false ->
+      File = get(file),
+      case io:get_line(File, "") of
+        eof ->
+          erlang:error({string_or_comment_not_closed_before_eof,
+              {line, get(line_num)}});
+        {error, Reason} ->
+          erlang:error({input_zml_file_read_error, Reason});
+        NewLine ->
+          pull_in_string(NewLine, [StrAcc | Acc], LN + 1, InnerFun)
+      end
+  end.
 
 line_pull_in_str(Line) ->
-	line_pull_in_str(Line, none, []).
+  line_pull_in_str(Line, none, []).
 line_pull_in_str([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
-	line_pull_in_str(T, nothing, [Any | Acc]);
+  line_pull_in_str(T, nothing, [Any | Acc]);
 line_pull_in_str([?T_STR_MLT_EN_2 | T], ?T_STR_MLT_EN_1, [_ | Acc]) ->
-	{lists:reverse(Acc), true, T};
+  {lists:reverse(Acc), true, T};
 line_pull_in_str([], _, Acc) ->
-	{lists:reverse(Acc), false, []};
+  {lists:reverse(Acc), false, []};
 line_pull_in_str([H | T], _, Acc) ->
-	line_pull_in_str(T, H, [H | Acc]).
+  line_pull_in_str(T, H, [H | Acc]).
 
 % Should combine this with the above via macro probably.  Or something.  As far
 % as I can think at the moment I need the tokens compiled into the function
 % matchers, hence the two sets of almost the same thing.
 line_pull_in_ign(Line) ->
-	line_pull_in_ign(Line, none, []).
+  line_pull_in_ign(Line, none, []).
 line_pull_in_ign([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
-	line_pull_in_ign(T, nothing, [Any | Acc]);
+  line_pull_in_ign(T, nothing, [Any | Acc]);
 line_pull_in_ign([?T_IGN_MLT_EN_2 | T], ?T_IGN_MLT_EN_1, [_ | Acc]) ->
-	{lists:reverse(Acc), true, T};
+  {lists:reverse(Acc), true, T};
 line_pull_in_ign([], _, Acc) ->
-	{lists:reverse(Acc), false, []};
+  {lists:reverse(Acc), false, []};
 line_pull_in_ign([H | T], _, Acc) ->
-	line_pull_in_ign(T, H, [H | Acc]).
+  line_pull_in_ign(T, H, [H | Acc]).
