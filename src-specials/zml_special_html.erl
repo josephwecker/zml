@@ -10,6 +10,7 @@
 %%  - Title from html to header
 %%
 %% TODO (Bugs and Polish):
+%%  - Fix whitespace in front of doctype (on zml.erl side)
 %%  - Simplified case for loader if inline JS is empty
 %%  - Check environment variable for closure jar before trying the command in
 %%    order to make the error less cryptic.
@@ -67,6 +68,8 @@
 -define(ENC_META_H(Enc),
   "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" ++
   string:to_lower(Enc) ++ "\">").
+
+-define(ENCODING_DEFAULT, "utf-8").
 
 run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
 	FAST2 = add_or_replace_doctype(FAST, Attr),
@@ -127,7 +130,27 @@ add_or_replace_doctype(AST, Attr) ->
 	[DoctypeString | AST].
 
 handle_encoding(ID, Attr, Children, AST) ->
-  AST.
+  [TypeFC | _] = 
+		case dict:find("type", Attr) of
+			{ok, [Val]} -> string:to_lower(Val);
+			error -> atom_to_list(?DEFAULT_TYPE)
+		end,
+
+  Encoding =
+    case dict:find("encoding", Attr) of
+      {ok, [Val2]} -> string:to_lower(Val2);
+      error -> ?ENCODING_DEFAULT
+    end,
+
+  % TODO: Add in meta-tag for both kinds
+
+  % Top line just for xhtml
+  case TypeFC == $x of
+    true ->
+      [?ENC_TOP_X(Encoding) | AST];
+    false ->
+      AST
+  end.
 
 handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
   NormAttr =

@@ -10,6 +10,8 @@ SPECIALIZED
 - Updated readme
 - Make this the new master branch
 - New SASS-like language for CSS
+- Figure out some way to cache results of "closure" because it's sooo slowww...
+- Auto reload compilation for development
 
 
 FUTURE
