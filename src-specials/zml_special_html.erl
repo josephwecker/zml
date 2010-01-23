@@ -6,6 +6,8 @@
 %%  - preprocess css files, combine, filter, and inline into AST
 %%  - add encoding to meta-tags- default one if there is none specified
 %%  - pull in and preprocess all images
+%%  - For xhtml docs, put namespace in html tag
+%%  - Title from html to header
 %%
 %% TODO (Bugs and Polish):
 %%  - Simplified case for loader if inline JS is empty
@@ -14,15 +16,15 @@
 %%  - Shorten the library js filename - look in that dir. and see what's
 %%    already there, etc.?
 %%  - Make sure that there is a head and body- insert empty ones if not.
+%%  - Some way to transfer html attribs to body?
 %%
 
 -module(zml_special_html).
 
 -export([run_handler/6]).
 
--define(TYPES,
-	[
-		{strict,
+-define(TYPES,[
+    {strict,
 			"<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"" ++
 			" \"http://www.w3.org/TR/html4/strict.dtd\">\n"},
 		{transitional,
@@ -56,10 +58,45 @@
 		"_zmlll?_zmlc():setTimeout('_zmlw()',150)}function _zmlc(){",
 		Inner,"};\n", "//]]>\n"]).
 
+-define(ENC_META_X(Enc),
+  "<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset="
+  ++ string:to_upper(Enc) ++ "\" />").
+-define(ENC_TOP_X(Enc),
+  "<?xml version=\"1.0\" encoding=\"" ++ string:to_upper(Enc) ++ "\"?>\n").
+
+-define(ENC_META_H(Enc),
+  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" ++
+  string:to_lower(Enc) ++ "\">").
+
 run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
 	FAST2 = add_or_replace_doctype(FAST, Attr),
-	FAST3 = handle_javascript(ID, Attr, Children, FAST2, SourceFN, StagingDir),
-	FAST3.
+  FAST3 = ensure_head_and_body(ID, Attr, Children, FAST2),
+	FAST4 = handle_javascript(ID, Attr, Children, FAST3, SourceFN, StagingDir),
+  FAST5 = handle_encoding(ID, Attr, Children, FAST4),
+	FAST5.
+
+ensure_head_and_body(ID, Attr, Children, AST) ->
+  {AST2, CurrChildren} =
+    case zml:get_tag(Children, ["body"]) of
+      undefined ->
+        RemovedHead = zml:replace_tag(Children, ["head"], []),
+        NewChildren = [zml:new_tag(body, normal, dict:new(), RemovedHead)],
+        {zml:replace_tag(AST, [{"html", ID}],
+            zml:new_tag({"html", ID}, special, Attr, NewChildren)),
+          NewChildren};
+      _ ->
+        {AST, Children}
+    end,
+  case zml:get_tag(Children, ["head"]) of % Looking in old children here
+    undefined ->
+      zml:replace_tag(AST2, [{"html", ID}],
+        zml:new_tag({"html", ID}, special, Attr,
+          [zml:new_tag("head",normal,dict:new(),[]) | CurrChildren]));
+    ExistingHead ->
+      zml:replace_tag(AST2, [{"html", ID}],
+        zml:new_tag({"html", ID}, special, Attr,
+          [ExistingHead | CurrChildren]))
+  end.
 
 add_or_replace_doctype(AST, Attr) ->
 	[FirstLine | _] = AST,
@@ -89,6 +126,9 @@ add_or_replace_doctype(AST, Attr) ->
 		end,
 	[DoctypeString | AST].
 
+handle_encoding(ID, Attr, Children, AST) ->
+  AST.
+
 handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
   NormAttr =
     case dict:find("script", Attr) of
@@ -98,36 +138,38 @@ handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
       _ -> Attr
     end,
 
-	{LibFiles, IndFiles} = get_js_list(NormAttr, SourceFN),
+    case get_js_list(NormAttr, SourceFN) of
+      {[],[]} ->
+        AST;
+      {LibFiles, IndFiles} ->
+        % Optimize "lib" js files
+        LoadedFiles = load_js_files(LibFiles, DTmp),
+        OptLibFName = filename:join([DTmp, zml:tmp_filename()]),
+        optimize_js(LoadedFiles, OptLibFName),
+        file:write_file(OptLibFName, "_zmlll=1;", [append]),
+        [MD5Sum | _] = string:tokens(os:cmd("md5sum '"++OptLibFName++"'")," "),
+        FinLibFName = filename:join([DJS, MD5Sum ++ ".js"]),
+        file:rename(OptLibFName, FinLibFName),
 
-	% Optimize "lib" js files
-	LoadedFiles = load_js_files(LibFiles, DTmp),
-	OptLibFName = filename:join([DTmp, zml:tmp_filename()]),
-	optimize_js(LoadedFiles, OptLibFName),
-	file:write_file(OptLibFName, "_zmlll=1;", [append]),
-	[MD5Sum | _] = string:tokens(os:cmd("md5sum '"++OptLibFName++"'")," "),
-	FinLibFName = filename:join([DJS, MD5Sum ++ ".js"]),
-	file:rename(OptLibFName, FinLibFName),
+        % Optimize inline js
+        LF2 = load_js_files(IndFiles, DTmp),
+        OptIndFName = filename:join([DTmp, zml:tmp_filename()]),
+        optimize_js(LF2, OptIndFName, false),
+        {ok, Inner} = file:read_file(OptIndFName),
+        Inline = lists:flatten(?JS_LOADER("js/" ++ MD5Sum ++ ".js",
+            binary_to_list(Inner))),
 
-	% Optimize inline js
-	LF2 = load_js_files(IndFiles, DTmp),
-	OptIndFName = filename:join([DTmp, zml:tmp_filename()]),
-	optimize_js(LF2, OptIndFName, false),
-	{ok, Inner} = file:read_file(OptIndFName),
-  Inline = lists:flatten(?JS_LOADER("js/" ++ MD5Sum ++ ".js",
-      binary_to_list(Inner))),
+        % Put inline script in body
+        ScriptTag = zml:new_tag(script, [{"type", ["text/javascript"]}], [Inline]),
+        {"body", normal, BAttr, BChildren} = zml:get_tag(Children, ["body"]),
+        Children2 = zml:replace_tag(Children, ["body"],
+          zml:new_tag(body, normal, BAttr, BChildren ++ [ScriptTag])),
 
-  % Put inline script in body
-  ScriptTag = zml:new_tag(script, [{"type", ["text/javascript"]}], [Inline]),
-  {"body", normal, BAttr, BChildren} = zml:get_tag(Children, ["body"]),
-  Children2 = zml:replace_tag(Children, ["body"],
-    zml:new_tag(body, normal, BAttr, BChildren ++ [ScriptTag])),
-
-  % Remove scripts from html parameters
-  NewAttr = dict:erase("scripts", NormAttr),
-  AST3 = zml:replace_tag(AST, [{"html", ID}],
-    zml:new_tag({"html", ID}, special, NewAttr, Children2)),
-	AST3.
+        % Remove scripts from html parameters
+        NewAttr = dict:erase("scripts", NormAttr),
+        zml:replace_tag(AST, [{"html", ID}],
+          zml:new_tag({"html", ID}, special, NewAttr, Children2))
+    end.
 
 % Look in the attributes and in the source directory to see which javascript
 % files should be associated with this html block.  Resolves paths relative to
