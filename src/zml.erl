@@ -76,6 +76,9 @@ run_spec_handler_inner([_H|T],FSource,DStage,DSpec,FullAST) ->
 
 translate_ast_item([], Acc) ->
   lists:reverse(Acc);
+translate_ast_item([[$< | _] = String | [Next | _] = T], Acc)
+when is_list(Next) ->
+  translate_ast_item(T, [String | Acc]);
 translate_ast_item([String | [Next | _] = T], Acc)
 when is_list(String) and is_list(Next) ->
   translate_ast_item(T, [" " | [String | Acc]]);
