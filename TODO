@@ -14,6 +14,14 @@ SPECIALIZED
 - Auto reload compilation for development
 
 
+POLISH
+
+- Say you have a big paragraph of text over multiple lines, and you have lots
+  of :strong ...; stuff like that embedded all over, and your text editor puts
+  one of those :strong ...; things at the beginning of the line- will the
+  compiler choke on the ';'?  It needs to not choke, and needs to, in that
+  case, not allow indented children either.
+
 FUTURE
 
 - Analyze class attributes and decide to change them to ID's- change CSS
