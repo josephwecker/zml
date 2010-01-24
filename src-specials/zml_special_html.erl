@@ -4,12 +4,13 @@
 %%
 %% TODO Functionality:
 %%  - preprocess css files, combine, filter, and inline into AST
-%%  - add encoding to meta-tags- default one if there is none specified
 %%  - pull in and preprocess all images
 %%  - For xhtml docs, put namespace in html tag
-%%  - Title from html to header
+%%  - For xhtml, language in html tag
 %%
 %% TODO (Bugs and Polish):
+%%  - Put emptiness inside open/close tags for tags who need it (like <script>)
+%%    instead of allowing xml closing, when type is html.
 %%  - Fix whitespace in front of doctype (on zml.erl side)
 %%  - Simplified case for loader if inline JS is empty
 %%  - Check environment variable for closure jar before trying the command in
@@ -18,11 +19,16 @@
 %%    already there, etc.?
 %%  - Make sure that there is a head and body- insert empty ones if not.
 %%  - Some way to transfer html attribs to body?
+%%  - auto-fix double quotes in attribute values
+%%  - At some point actually validate against type (maybe in zml module
+%%    instead).
 %%
 
 -module(zml_special_html).
 
 -export([run_handler/6]).
+
+-import(string, [to_lower/1, to_upper/1, join/2]).
 
 -define(TYPES,[
     {strict,
@@ -59,24 +65,72 @@
     "_zmlll?_zmlc():setTimeout('_zmlw()',150)}function _zmlc(){",
     Inner,"};\n", "//]]>\n"]).
 
--define(ENC_META_X(Enc),
-  "<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset="
-  ++ string:to_upper(Enc) ++ "\" />").
 -define(ENC_TOP_X(Enc),
   "<?xml version=\"1.0\" encoding=\"" ++ string:to_upper(Enc) ++ "\"?>\n").
 
--define(ENC_META_H(Enc),
-  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" ++
-  string:to_lower(Enc) ++ "\">").
-
 -define(ENCODING_DEFAULT, "utf-8").
+-define(LANGUAGE_DEFAULT, "en-us").
+
+metatag(encoding, $x, [Val]) ->
+  % Skipping application/xhtml+xml for now
+  %"<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; " ++
+  "<meta http-equiv=\"content-type\" content=\"text/html; " ++
+  "charset="++to_upper(Val)++"\" />";
+metatag(encoding, _, [Val]) ->
+  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" ++
+  to_lower(Val)++"\">";
+metatag(language, $x, [Val]) ->
+  "<meta http-equiv=\"content-language\" content=\""++to_lower(Val)++"\" />";
+metatag(language, _, [Val]) ->
+  "<meta http-equiv=\"Content-Language\" content=\""++to_lower(Val)++"\">";
+metatag(description, $x, Vals) ->
+  "<meta name=\"description\" content=\""++join(Vals," ")++"\" />";
+metatag(description, _, Vals) ->
+  "<meta name=\"description\" content=\""++join(Vals," ")++"\">";
+metatag(keywords, $x, Vals) ->
+  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\" />";
+metatag(keywords, _, Vals) ->
+  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\">";
+metatag(copyright, $x, Vals) ->
+  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\" />";
+metatag(copyright, _, Vals) ->
+  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\">";
+metatag(nosmarttag, $x, _) ->
+  "<meta name=\"MSSmartTagsPreventParsing\" content=\"true\" />";
+metatag(nosmarttag, _, _) ->
+  "<meta name=\"MSSmartTagsPreventParsing\" content=\"TRUE\">";
+metatag(title, _, Vals) ->
+  zml:new_tag(title, [], Vals).
 
 run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
   FAST2 = add_or_replace_doctype(FAST, Attr),
   FAST3 = ensure_head_and_body(ID, Attr, Children, FAST2),
   FAST4 = handle_javascript(ID, Attr, Children, FAST3, SourceFN, StagingDir),
-  FAST5 = handle_encoding(ID, Attr, Children, FAST4),
-  FAST5.
+  FAST5 = handle_xhtml(ID, Attr, Children, FAST4),
+  _FAST6 = handle_metas(ID, Attr, FAST5).
+
+get_html_attr(Find, Attr, Default) when is_atom(Find) ->
+  get_html_attr(atom_to_list(Find), Attr, Default);
+get_html_attr(Find, Attr, Default) ->
+  case dict:find(Find, Attr) of
+    {ok, Val} -> Val;
+    error when is_atom(Default) ->
+      [atom_to_list(Default)];
+    error ->
+      [Default]
+  end.
+
+pop_html_attr(Find, Attr, Default) when is_atom(Find) ->
+  pop_html_attr(atom_to_list(Find), Attr, Default);
+pop_html_attr(Find, Attr, Default) ->
+  case dict:find(Find, Attr) of
+    {ok, Val} ->
+      {dict:erase(Find, Attr), Val};
+    error when is_atom(Default) ->
+      {Attr, [atom_to_list(Default)]};
+    error ->
+      {Attr, [Default]}
+  end.
 
 ensure_head_and_body(ID, Attr, Children, AST) ->
   {AST2, CurrChildren} =
@@ -112,51 +166,65 @@ add_or_replace_doctype(AST, Attr) ->
       end;
     _ -> ok
   end,
-  Type =
-    case dict:find("type", Attr) of
-      {ok, [Val]} -> list_to_atom(string:to_lower(Val));
-      error -> ?DEFAULT_TYPE
-    end,
+  [Type] = get_html_attr(type, Attr, ?DEFAULT_TYPE),
   DoctypeString =
-    case proplists:get_value(Type, ?TYPES) of
+    case proplists:get_value(list_to_atom(Type), ?TYPES) of
       undefined ->
         Allowed = string:join(lists:map(
             fun atom_to_list/1,
             proplists:get_keys(?TYPES)),", "),
-        erlang:error("'" ++ atom_to_list(Type) ++
+        erlang:error("'" ++ Type ++
           "' html type unknown. Try one of: " ++ Allowed);
       DS -> DS
     end,
   [DoctypeString | AST].
 
-handle_encoding(ID, Attr, Children, AST) ->
-  [TypeFC | _] = 
-    case dict:find("type", Attr) of
-      {ok, [Val]} -> string:to_lower(Val);
-      error -> atom_to_list(?DEFAULT_TYPE)
-    end,
+handle_metas(ID, Attr, AST) ->
+  {_,_,_,Children} = zml:get_tag(AST, [{"html",ID}]),
+  [[Tp | _]] = get_html_attr(type, Attr, ?DEFAULT_TYPE),
 
-  Encoding =
-    case dict:find("encoding", Attr) of
-      {ok, [Val2]} -> string:to_lower(Val2);
-      error -> ?ENCODING_DEFAULT
-    end,
+  {NewAttr, Metas} = lists:foldr(fun new_metas/2, {Attr, []}, [
+      {encoding,    Tp, ?ENCODING_DEFAULT},
+      {language,    Tp, ?LANGUAGE_DEFAULT},
+      {description, Tp, none},
+      {keywords,    Tp, none},
+      {copyright,   Tp, none},
+      {nosmarttag,  Tp, true},
+      {title,       Tp, none}]),
+  {_,_,HAttr,HChildren} = zml:get_tag(Children, ["head"]),
+  NewHead = zml:new_tag("head", normal, HAttr, HChildren ++ Metas),
+  NewChildren = zml:replace_tag(Children, ["head"], NewHead),
+  NewFull = zml:new_tag({"html",ID}, special, NewAttr, NewChildren),
+  zml:replace_tag(AST, [{"html",ID}], NewFull).
 
-  % TODO: Add in meta-tag for both kinds
+new_metas({Name, Type, Def}, {Attr, Acc}) ->
+  case pop_html_attr(Name, Attr, Def) of
+    {NewAttr, ["none"]} -> {NewAttr, Acc};
+    {NewAttr, Val} -> {NewAttr, [metatag(Name, Type, Val) | Acc]}
+  end.
 
-  % Top line just for xhtml
-  case TypeFC == $x of
-    true ->
-      [?ENC_TOP_X(Encoding) | AST];
+handle_xhtml(ID, Attr, Children, AST) ->
+  % TODO: html namespace and language attribute
+  [TypeFC | _] = get_html_attr(type, Attr, ?DEFAULT_TYPE),
+
+  case true of
+    true -> % Skipping xml prolog for now
+      AST;
     false ->
-      AST
+      Encoding = get_html_attr(encoding, Attr, ?ENCODING_DEFAULT),
+      case TypeFC == $x of
+        true ->
+          [?ENC_TOP_X(Encoding) | AST];
+        false ->
+          AST
+      end
   end.
 
 handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
   NormAttr =
     case dict:find("script", Attr) of
       {ok, Val} ->
-        D2 = dict:erase("script"),
+        D2 = dict:erase("script", Attr),
         dict:store("scripts", Val, D2);
       _ -> Attr
     end,
