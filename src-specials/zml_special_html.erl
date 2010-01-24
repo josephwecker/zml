@@ -5,6 +5,10 @@
 %% TODO Functionality:
 %%  - preprocess css files, combine, filter, and inline into AST
 %%  - pull in and preprocess all images
+%%    - Add height / width if none specified, jiving w/ actual
+%%    - Pre shrink/expand image if h/w is specified and different from actual.
+%%    - Size optimization filter on actual image files & move to staging
+%%    - Name with hash like JS for url-fingerprinted caching
 %%  - For xhtml docs, put namespace in html tag
 %%  - For xhtml, language in html tag
 %%
@@ -22,6 +26,10 @@
 %%  - auto-fix double quotes in attribute values
 %%  - At some point actually validate against type (maybe in zml module
 %%    instead).
+%%  - Special "input" handling for html -
+%%    - Normal HTML:  <input selected="true">...
+%%    - XHTML:        <input selected="selected">...
+%%    - No selected:  <input>...
 %%
 
 -module(zml_special_html).
