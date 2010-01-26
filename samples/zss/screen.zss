@@ -1,0 +1,128 @@
+|#
+ # Adapted from the BlueTrip CSS Framework,
+ #   Mike Crittenden, mike@capsizedesigns.com, Copyright 2008 Mike Crittenden
+ #   Used under the MIT license
+ #
+ # TODO:
+ #   - Font family presets for the different types for easy inclusion
+ #   - Easy replacements for input[type='...']  - input-password, etc.
+ #   - Make colors and sizes relative to some foundation (at least colors)
+ #|
+
+|| MEYER RESET v1.0
+
+a, abbr, acronym, address, applet,
+b, big, blockquote, body,
+caption, center, cite, code,
+dd, del, dfn, div, dl, dt,
+em,
+fieldset, font, form,
+h1, h2, h3, h4, h5, h6, html,
+i, iframe, img, ins, kbd, label, legend, li,
+object, ol,
+p, pre,
+q,
+s, samp, small, span, strike, strong, sub, sup,
+table, tbody, td, tfoot, th, thead, tr, tt,
+u, ul,
+var
+	:margin 0
+	:padding 0
+	:border 0
+	:outline 0
+	:font-size 100%
+	:vertical-align baseline
+	:background transparent
+body
+	:line-height 1
+
+blockquote, q
+	:quotes none
+
+blockquote:, q:
+	before, after
+		:content ''
+		:content none
+\:focus
+	:outline 0
+
+ins
+	:text-decoration none
+del
+	:text-decoration line-through
+table
+	:border-collapse collapse
+	:border-spacing 0
+
+
+|| Basic Typography
+html
+	:font
+		:size 62.5%
+		:family "Liberation Sans", Helvetica, Arial, sans-serif;
+
+h1, h2, h3, h4, h5, h6, strong, th, thead td
+	:font-weight bold
+
+cite, dfn, em
+	:font-style italic
+code, input[type='password'], input[type='text'],
+kbd, pre, samp, textarea, tt, var
+	:font-size 92%
+	:font-family monaco, "Lucida Console", courier, monospace
+del
+	:text-decoration line-through
+	:color #666
+dfn, ins
+	:border-bottom 1px solid #ccc
+
+small, sub, sup
+	:font-size 85%
+
+abbr, acronym
+	:text-transform uppercase
+	:font-size 85%
+	:letter-spacing .1em
+
+a abbr, a acronym
+	:border none
+
+abbr[title], acronym[title], dfn[title]
+	:cursor help
+	:border-bottom 1px solid #ccc
+sup
+	:vertical-align super
+sub
+	:vertical-align sub
+
+|| Quotes
+
+blockquote
+	:border
+		:top 1px soid #ccc
+		:bottom 1px solid #ccc
+	:color #666
+
+blockquote
+	*:first-child:before
+		:content "\201C"   || Quotes here??
+	*:first-child:after
+		:content "\201D"
+
+|| Forms
+
+fieldset
+	:padding 1.4em
+	:margin 0 0 1.5em 0
+	:border 1px solid #ccc
+legend
+	:font-weight bold
+	:font-size 1.2em
+label
+	:font-weight bold
+
+input[type='password'], input[type='text'], select, textarea
+	:border 1px solid #ccc
+	:background #fff
+
+
