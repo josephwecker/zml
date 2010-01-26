@@ -36,6 +36,8 @@
   [ ] Analyze class attributes and decide to change them to ID's- change CSS
 	  accordingly.
   [ ] Alphabetize attributes on render
+  [ ] Replace closure with an erlang based transformation engine so that we
+      have some real speed and can even compile on the fly.
 
 ==== ZSS ====
 
@@ -76,8 +78,8 @@
   [ ] Sample data compilation / autocompile
 
 -- Functional --
-
   [ ] gen_server / batcher / zwapp-minimal
+  [ ] Hot code swapping / upgrading mechanisms
 
 -- Polish / Bugs --
 
