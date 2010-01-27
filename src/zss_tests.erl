@@ -56,3 +56,48 @@ cstr("
     :font-size .1em")),
 
   % Attached parent
+  ?_assertEqual([
+    {[todo]}],
+cstr("
+.a b c, d
+  &.wow
+    :color 0
+  &:hover, &:active
+    :color #111
+")),
+  ?_assertEqual([
+    {[todo]}],
+cstr("div
+  &.span-
+    &1, &2
+      :color 0")),
+
+
+  
+  % Comments
+  % Multi-line comments
+  % Ignored whitespaces
+  % Parents over multiple lines
+  % Nested parents over multiple lines
+  % Escape codes (inc. for would-be variables)
+  % Combined attribute families
+  % Attribute values + families ( :border blah blah\n  :top blah blah\n  :bottom blah blah )
+  % Special characters like in input
+  % Colons before attributes ( *:first-child:before :content "blah"
+  % Inline attribute
+  % Children with inline attributes
+  % Multiple inline attributes
+  % Multiple parents with an inline attribute
+  % Inline attributes plus children attributes
+  % Inline plush children plus children selectors
+
+  % Variable assign & echo
+  % Variable echo alternate syntax
+  % Variable reassign
+  % Expression evaluation
+  % Expressions with static ( :margin (!gi*6) 0 1.5em (-!gi+3)
+  % Special variable type expressions
+  % Special variable type warnings / errors on non-compatible
+  % Type coersion
+
+  % Includes

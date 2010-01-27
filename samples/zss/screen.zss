@@ -39,8 +39,8 @@ body
 blockquote, q
 	:quotes none
 
-blockquote:, q:
-	before, after
+blockquote, q
+	&:before, &:after
 		:content ''
 		:content none
 \:focus
@@ -253,8 +253,8 @@ div
 	&.last
 		:margin-right 0
 
-!gs 30px
-!gi 40px
+[gs = 30px]
+[gi = 40px]
 .span-
 	&1  :width !gs
 	&2  :width !gs+!gi
