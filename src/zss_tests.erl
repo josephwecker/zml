@@ -2,7 +2,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 
--import(zss, [cstr]).
+-import(zss, [cstr/1]).
 
 %% Basic
 basic_test_() -> [
@@ -49,7 +49,7 @@ cstr("a, b
   % Class and ID
   ?_assertEqual([
     {[".a .b .small", "#c .small", "#d.e .small", ".e#fgh .small"],
-     [{"font-size", ".1em"}]],
+      [{"font-size", ".1em"}]}],
 cstr("
 .a .b, #c, #d.e, .e#fgh
   .small
@@ -70,7 +70,9 @@ cstr("
 cstr("div
   &.span-
     &1, &2
-      :color 0")),
+      :color 0"))
+
+  ].
 
 
   

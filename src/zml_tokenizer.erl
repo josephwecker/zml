@@ -75,6 +75,8 @@ tokenize_file(Filename) when is_list(Filename) ->
   parse_lines(File, [0], [], false).  % Just ignore leading "indent" token if needed
 
 tokenize_stream(Stream) ->
+  erase(),
+  put(line_num, 0),
   parse_lines(Stream, [0], [], false).
 
 parse_lines(File, IndentStack, RTokens, InAttr) ->
