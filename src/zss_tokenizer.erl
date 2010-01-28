@@ -2,6 +2,33 @@
 
 -export([tokenize_str/1, tokenize_file/1, tokenize_stream/1]).
 
+-define(FLUSH(Other),
+  case CurrTAcc of
+    [] -> [Other | AllTAcc];
+    _ -> [[Other, {string, ?LN, lists:reverse(CurrTAcc)}] | AllTAcc]
+  end).
+-define(SFLUSH,
+  case CurrTAcc of
+    [] -> AllTAcc;
+    _ -> [{string, ?LN, lists:reverse(CurrTAcc)} | AllTAcc]
+  end).
+-define(LN, get(line_num)).
+
+-define(T_IGN_INL_1, $|).
+-define(T_IGN_INL_2, $|).
+
+-define(T_IGN_MLT_ST_1, $|).
+-define(T_IGN_MLT_ST_2, $#).
+-define(T_IGN_MLT_EN_1, $#).
+-define(T_IGN_MLT_EN_2, $|).
+
+-define(T_STR_MLT_ST_1, $|).
+-define(T_STR_MLT_ST_2, 34). % dbl-quote
+-define(T_STR_MLT_EN_1, 34).
+-define(T_STR_MLT_EN_2, $|).
+
+-define(T_ESC, $\\).
+
 tokenize_str(InStr) ->
   erase(),
   put(line_num, 0),
@@ -33,11 +60,11 @@ string_feed() ->
   Res.
 
 tokenize_lines(Next, IndStack, RTokens, State) ->
-  put(line_num, get(line_num) + 1),
+  put(line_num, ?LN + 1),
   put(next_fun, Next),
   case Next() of
     eof ->
-      LN = get(line_num) - 1,
+      LN = ?LN - 1,
       Tokens2 = lists:reverse(lists:flatten(RTokens)),
       ExtraDedents = lists:map(fun(_) -> {dedent, LN} end,
         lists:seq(1,length(IndStack) - 1)),
@@ -83,7 +110,7 @@ process_line(Dents, IStack, Line, State) ->
     [] ->
       {IStack, [], State2};
     _ ->
-      LineTokens2 = [{newline, get(line_num)} | LineTokens],
+      LineTokens2 = [{newline, ?LN} | LineTokens],
       {IStack2, LineTokens3} = process_dents(Dents, IStack, LineTokens2),
       {IStack2, LineTokens3, State2}
   end.
@@ -92,7 +119,7 @@ process_line(Dents, IStack, Line, State) ->
 process_dents(Dents, [NLast | _] = IStack, Toks) when Dents == NLast ->
   {IStack, Toks};
 process_dents(Dents, [NLast | _] = IStack, Toks) when Dents > NLast ->
-  {[Dents | IStack], [Toks, {indent, get(line_num)}]};
+  {[Dents | IStack], [Toks, {indent, ?LN}]};
 process_dents(Dents, IStack, Toks) ->
   {NewStack, DentTokens} = do_dedent(Dents, IStack, []),
   %{NewStack, [Toks, DentTokens]}.
@@ -106,15 +133,75 @@ do_dedent(_, [], TokenAcc) ->
   {[], TokenAcc};
 do_dedent(Dents, [H | _] = IStack, TokenAcc) when Dents > H ->
   erlang:error({strange_indentation,
-      {line, get(line_num)},
+      {line, ?LN},
       {curr_dents, Dents},
       {ind_stack, IStack},
       {token_acc, TokenAcc}});
 do_dedent(Dents, [H | _] = IStack, TokenAcc) when Dents == H ->
   {IStack, TokenAcc};
 do_dedent(Dents, [H | T], TokenAcc) when Dents < H ->
-  do_dedent(Dents, T, [{dedent, get(line_num)} | TokenAcc]).
+  do_dedent(Dents, T, [{dedent, ?LN} | TokenAcc]).
 
 
 line_tokens(Line, State) ->
-  {[{general, Line}], State}.
+  line_tokens(Line, none, [], [], State).
+  %{[{general, Line}], State}.
+
+% Line is finished- move current-token to all, and return
+line_tokens([], _, CurrTAcc, AllTAcc, State) ->
+  {?SFLUSH, State};
+
+% Escaped character.  Pops the escape char off current token, adds this
+% character to the token no matter what it is, and sends 'none' as last token
+% so that double-character tokens like |# can be escaped.
+line_tokens([Any | T], ?T_ESC, [?T_ESC | CurrTAcc], AllTAcc, State) ->
+  line_tokens(T, none, [Any | CurrTAcc], AllTAcc, State);
+
+% String
+line_tokens([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1,
+[_ | CurrTAcc], AllTAcc, State) ->
+  {Str, Remaining} = pull_inner(T, fun line_pull_in_str/1),
+  line_tokens(Remaining, string, [], ?FLUSH({string, ?LN, Str}), State);
+
+% Whitespace.  Flush token.
+line_tokens([H | T], _Last, CurrTAcc, AllTAcc, State) when
+    ((H >= $\x{0009}) and (H =< $\x{000D}))
+    or (H == $\x{0020}) or (H == $\x{00A0}) ->
+  line_tokens(T, H, [], ?SFLUSH, State);
+
+line_tokens([H | T], _Last, CurrTAcc, AllTAcc, State) ->
+  line_tokens(T, H, [H | CurrTAcc], AllTAcc, State).
+
+
+pull_inner(Line, InnerFun) ->
+  pull_inner(Line, [], ?LN, InnerFun).
+pull_inner(Line, Acc, LN, InnerFun) ->
+  {StrAcc, Finished, Tail} = InnerFun(Line),
+  case Finished of
+    true ->
+      put(line_num, LN),
+      {lists:flatten(lists:reverse([StrAcc | Acc])), Tail};
+    false ->
+      Next = get(next_fun),
+      case Next() of
+        eof ->
+          erlang:error({string_or_comment_not_closed_before_eof,
+              {line, ?LN}});
+        {error, Reason} ->
+          erlang:error({input_zss_read_error, Reason});
+        NewLine ->
+          pull_inner(NewLine, [StrAcc | Acc], LN + 1, InnerFun)
+      end
+  end.
+
+line_pull_in_str(Line) ->
+  line_pull_in_str(Line, none, []).
+line_pull_in_str([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
+  line_pull_in_str(T, nothing, [Any | Acc]);
+line_pull_in_str([?T_STR_MLT_EN_2 | T], ?T_STR_MLT_EN_1, [_ | Acc]) ->
+  {lists:reverse(Acc), true, T};
+line_pull_in_str([], _, Acc) ->
+  {lists:reverse(Acc), false, []};
+line_pull_in_str([H | T], _, Acc) ->
+  line_pull_in_str(T, H, [H | Acc]).
+
