@@ -159,9 +159,19 @@ line_tokens([Any | T], ?T_ESC, [?T_ESC | CurrTAcc], AllTAcc, State) ->
 
 % String
 line_tokens([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1,
-[_ | CurrTAcc], AllTAcc, State) ->
+    [_ | CurrTAcc], AllTAcc, State) ->
   {Str, Remaining} = pull_inner(T, fun line_pull_in_str/1),
   line_tokens(Remaining, string, [], ?FLUSH({string, ?LN, Str}), State);
+
+% Inline comment - pretend we're at the end of the string
+line_tokens([?T_IGN_INL_2 |_], ?T_IGN_INL_1, [_ | CurrTAcc], AllTAcc, State) ->
+  {?SFLUSH, State};
+
+% Multiline comment
+line_tokens([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1,
+    [_ | CurrTAcc], AllTAcc, State) ->
+  {_Comment, Remaining} = pull_inner(T, fun line_pull_in_ign/1),
+  line_tokens(Remaining, none, [], ?SFLUSH, State);
 
 % Whitespace.  Flush token.
 line_tokens([H | T], _Last, CurrTAcc, AllTAcc, State) when
@@ -204,4 +214,15 @@ line_pull_in_str([], _, Acc) ->
   {lists:reverse(Acc), false, []};
 line_pull_in_str([H | T], _, Acc) ->
   line_pull_in_str(T, H, [H | Acc]).
+
+line_pull_in_ign(Line) ->
+  line_pull_in_ign(Line, none, []).
+line_pull_in_ign([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
+  line_pull_in_ign(T, nothing, [Any | Acc]);
+line_pull_in_ign([?T_IGN_MLT_EN_2 | T], ?T_IGN_MLT_EN_1, [_ | Acc]) ->
+  {lists:reverse(Acc), true, T};
+line_pull_in_ign([], _, Acc) ->
+  {lists:reverse(Acc), false, []};
+line_pull_in_ign([H | T], _, Acc) ->
+  line_pull_in_ign(T, H, [H | Acc]).
 
