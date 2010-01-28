@@ -29,6 +29,9 @@
 
 -define(T_ESC, $\\).
 
+-define(T_ATTR_ST, $:).
+-define(T_PAR_SEP, $,).
+
 tokenize_str(InStr) ->
   erase(),
   put(line_num, 0),
@@ -42,7 +45,7 @@ tokenize_file(FName) ->
 tokenize_stream(Stream) ->
   erase(),
   put(line_num, 0),
-  tokenize_lines(fun() -> io:get_line(Stream, "") end, [0], [], {}).
+  tokenize_lines(fun() -> io:get_line(Stream, "") end, [0], [], {false}).
 
 % Fake string equivalent of io:get_line
 string_feed() ->
@@ -101,7 +104,7 @@ get_dent(Rest,N) ->
   {N, Rest}.
 
 
-% Process the line as if no indents/dedents, then only adds the newline,
+% Process the line as if no indents/dedents, then only adds the newline (n/a),
 % indents, dedents, etc. if there are tokens from the line (instead of, say
 % just comments).
 process_line(Dents, IStack, Line, State) ->
@@ -110,8 +113,8 @@ process_line(Dents, IStack, Line, State) ->
     [] ->
       {IStack, [], State2};
     _ ->
-      LineTokens2 = [{newline, ?LN} | LineTokens],
-      {IStack2, LineTokens3} = process_dents(Dents, IStack, LineTokens2),
+      %LineTokens2 = [{newline, ?LN} | LineTokens],
+      {IStack2, LineTokens3} = process_dents(Dents, IStack, LineTokens),
       {IStack2, LineTokens3, State2}
   end.
 
@@ -147,9 +150,10 @@ line_tokens(Line, State) ->
   line_tokens(Line, none, [], [], State).
   %{[{general, Line}], State}.
 
-% Line is finished- move current-token to all, and return
-line_tokens([], _, CurrTAcc, AllTAcc, State) ->
-  {?SFLUSH, State};
+% Line is finished- move current-token to all, and return.
+% Reset in-attribute state
+line_tokens([], _, CurrTAcc, AllTAcc, _State) ->
+  {?SFLUSH, {false}};
 
 % Escaped character.  Pops the escape char off current token, adds this
 % character to the token no matter what it is, and sends 'none' as last token
@@ -173,11 +177,23 @@ line_tokens([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1,
   {_Comment, Remaining} = pull_inner(T, fun line_pull_in_ign/1),
   line_tokens(Remaining, none, [], ?SFLUSH, State);
 
+% Starting an attribute
+line_tokens([?T_ATTR_ST | T], _, [], AllTAcc, _State) ->
+  line_tokens(T, ?T_ATTR_ST, [], [{start_attrib, ?LN} | AllTAcc], {true});
+line_tokens([?T_ATTR_ST | T], $ , CurrTAcc, AllTAcc, _State) ->
+  line_tokens(T, ?T_ATTR_ST, [], ?FLUSH({start_attrib, ?LN}), {true});
+
+% Parent separator
+line_tokens([?T_PAR_SEP | T], _, CurrTAcc, AllTAcc, {false}) ->
+  line_tokens(T, ?T_PAR_SEP, [], ?FLUSH({parent_sep, ?LN}), {false});
+
 % Whitespace.  Flush token.
-line_tokens([H | T], _Last, CurrTAcc, AllTAcc, State) when
+line_tokens([$\n | T], _, CurrTAcc, AllTAcc, State) ->
+  line_tokens(T, $\n, [], ?SFLUSH, State);
+line_tokens([H | T], _Last, CurrTAcc, AllTAcc, {false}) when
     ((H >= $\x{0009}) and (H =< $\x{000D}))
     or (H == $\x{0020}) or (H == $\x{00A0}) ->
-  line_tokens(T, H, [], ?SFLUSH, State);
+  line_tokens(T, H, [], ?SFLUSH, {false});
 
 line_tokens([H | T], _Last, CurrTAcc, AllTAcc, State) ->
   line_tokens(T, H, [H | CurrTAcc], AllTAcc, State).
