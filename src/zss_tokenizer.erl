@@ -5,12 +5,26 @@
 -define(FLUSH(Other),
   case CurrTAcc of
     [] -> [Other | AllTAcc];
-    _ -> [[Other, {string, ?LN, lists:reverse(CurrTAcc)}] | AllTAcc]
+    _ ->
+      case State of
+        {true} ->
+          [[{attr, ?LN, Other}, {attr, ?LN, string:strip(lists:reverse(CurrTAcc))}] |
+            AllTAcc];
+        {false} ->
+          [[{sel, ?LN, Other}, {sel, ?LN, string:strip(lists:reverse(CurrTAcc))}] |
+            AllTAcc]
+      end
   end).
 -define(SFLUSH,
   case CurrTAcc of
     [] -> AllTAcc;
-    _ -> [{string, ?LN, lists:reverse(CurrTAcc)} | AllTAcc]
+    _ ->
+      case State of
+        {true} ->
+          [{attr, ?LN, string:strip(lists:reverse(CurrTAcc))} | AllTAcc];
+        {false} ->
+          [{sel, ?LN, string:strip(lists:reverse(CurrTAcc))} | AllTAcc]
+      end
   end).
 -define(LN, get(line_num)).
 
@@ -69,9 +83,9 @@ tokenize_lines(Next, IndStack, RTokens, State) ->
     eof ->
       LN = ?LN - 1,
       Tokens2 = lists:reverse(lists:flatten(RTokens)),
-      ExtraDedents = lists:map(fun(_) -> {dedent, LN} end,
+      ExtraDedents = lists:map(fun(_) -> {dedent, LN, none} end,
         lists:seq(1,length(IndStack) - 1)),
-      Tokens2 ++ ExtraDedents ++ [{end_of_file, LN}];
+      Tokens2 ++ ExtraDedents ++ [{end_of_file, LN, none}];
     {error, Reason} ->
       erlang:error({input_zss_read_error, Reason});
     Line ->
@@ -122,7 +136,7 @@ process_line(Dents, IStack, Line, State) ->
 process_dents(Dents, [NLast | _] = IStack, Toks) when Dents == NLast ->
   {IStack, Toks};
 process_dents(Dents, [NLast | _] = IStack, Toks) when Dents > NLast ->
-  {[Dents | IStack], [Toks, {indent, ?LN}]};
+  {[Dents | IStack], [Toks, {indent, ?LN, none}]};
 process_dents(Dents, IStack, Toks) ->
   {NewStack, DentTokens} = do_dedent(Dents, IStack, []),
   %{NewStack, [Toks, DentTokens]}.
@@ -143,16 +157,15 @@ do_dedent(Dents, [H | _] = IStack, TokenAcc) when Dents > H ->
 do_dedent(Dents, [H | _] = IStack, TokenAcc) when Dents == H ->
   {IStack, TokenAcc};
 do_dedent(Dents, [H | T], TokenAcc) when Dents < H ->
-  do_dedent(Dents, T, [{dedent, ?LN} | TokenAcc]).
+  do_dedent(Dents, T, [{dedent, ?LN, none} | TokenAcc]).
 
 
 line_tokens(Line, State) ->
   line_tokens(Line, none, [], [], State).
-  %{[{general, Line}], State}.
 
 % Line is finished- move current-token to all, and return.
 % Reset in-attribute state
-line_tokens([], _, CurrTAcc, AllTAcc, _State) ->
+line_tokens([], _, CurrTAcc, AllTAcc, State) ->
   {?SFLUSH, {false}};
 
 % Escaped character.  Pops the escape char off current token, adds this
@@ -165,7 +178,7 @@ line_tokens([Any | T], ?T_ESC, [?T_ESC | CurrTAcc], AllTAcc, State) ->
 line_tokens([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1,
     [_ | CurrTAcc], AllTAcc, State) ->
   {Str, Remaining} = pull_inner(T, fun line_pull_in_str/1),
-  line_tokens(Remaining, string, [], ?FLUSH({string, ?LN, Str}), State);
+  line_tokens(Remaining, string, [], ?FLUSH(Str), State);
 
 % Inline comment - pretend we're at the end of the string
 line_tokens([?T_IGN_INL_2 |_], ?T_IGN_INL_1, [_ | CurrTAcc], AllTAcc, State) ->
@@ -179,21 +192,30 @@ line_tokens([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1,
 
 % Starting an attribute
 line_tokens([?T_ATTR_ST | T], _, [], AllTAcc, _State) ->
-  line_tokens(T, ?T_ATTR_ST, [], [{start_attrib, ?LN} | AllTAcc], {true});
-line_tokens([?T_ATTR_ST | T], $ , CurrTAcc, AllTAcc, _State) ->
-  line_tokens(T, ?T_ATTR_ST, [], ?FLUSH({start_attrib, ?LN}), {true});
+  %line_tokens(T, ?T_ATTR_ST, [], [{start_attrib, ?LN} | AllTAcc], {true});
+  line_tokens(T, ?T_ATTR_ST, [], AllTAcc, {true});
+line_tokens([?T_ATTR_ST | T], $ , CurrTAcc, AllTAcc, State) ->
+  %line_tokens(T, ?T_ATTR_ST, [], ?FLUSH({start_attrib, ?LN}), {true});
+  line_tokens(T, ?T_ATTR_ST, [], ?SFLUSH, {true});
 
 % Parent separator
-line_tokens([?T_PAR_SEP | T], _, CurrTAcc, AllTAcc, {false}) ->
-  line_tokens(T, ?T_PAR_SEP, [], ?FLUSH({parent_sep, ?LN}), {false});
+line_tokens([?T_PAR_SEP | T], _, CurrTAcc, AllTAcc, {false} = State) ->
+  %line_tokens(T, ?T_PAR_SEP, [], ?FLUSH({parent_sep, ?LN}), {false});
+  line_tokens(T, ?T_PAR_SEP, [], ?SFLUSH, {false});
 
 % Whitespace.  Flush token.
 line_tokens([$\n | T], _, CurrTAcc, AllTAcc, State) ->
   line_tokens(T, $\n, [], ?SFLUSH, State);
-line_tokens([H | T], _Last, CurrTAcc, AllTAcc, {false}) when
-    ((H >= $\x{0009}) and (H =< $\x{000D}))
-    or (H == $\x{0020}) or (H == $\x{00A0}) ->
-  line_tokens(T, H, [], ?SFLUSH, {false});
+%line_tokens([H | T], _Last, CurrTAcc, AllTAcc, {false}) when
+%    ((H >= $\x{0009}) and (H =< $\x{000D}))
+%    or (H == $\x{0020}) or (H == $\x{00A0}) ->
+%  line_tokens(T, H, [], ?SFLUSH, {false});
+
+% Ignore consecutive spaces
+line_tokens([$  | T], $ , CurrTAcc, AllTAcc, State) ->
+  line_tokens(T, $ , CurrTAcc, AllTAcc, State);
+line_tokens([$  | T], _, [], AllTAcc, State) ->
+  line_tokens(T, $ , [], AllTAcc, State);
 
 line_tokens([H | T], _Last, CurrTAcc, AllTAcc, State) ->
   line_tokens(T, H, [H | CurrTAcc], AllTAcc, State).
