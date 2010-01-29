@@ -48,7 +48,7 @@ cstr("a, b
 
   % Class and ID
   ?_assertEqual([
-    {[".a .b .small", "#c .small", "#d.e .small", ".e#fgh .small"],
+    {["#c .small", "#d.e .small", ".a .b .small", ".e#fgh .small"],
       [{"font-size", ".1em"}]}],
 cstr("
 .a .b, #c, #d.e, .e#fgh
