@@ -1,4 +1,4 @@
--module(zss_parser2).
+-module(zss_parser).
 
 -export([parse/1]).
 
