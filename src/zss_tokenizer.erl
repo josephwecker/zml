@@ -159,7 +159,7 @@ do_dedent(Dents, [H | T], TokenAcc) when Dents < H ->
 
 
 line_tokens(Line, State) ->
-  line_tokens(Line, none, [], [], State).
+  line_tokens(Line, none, [], [], {false}).
 % Line is finished- move current-token to all, and return.
 % Reset in-attribute state
 line_tokens([], _, CurrTAcc, AllTAcc, State) ->
@@ -199,7 +199,7 @@ line_tokens([?T_PAR_SEP | T], _, CurrTAcc, AllTAcc, {false} = State) ->
 
 % Whitespace.  Flush token.
 line_tokens([$\n | T], _, CurrTAcc, AllTAcc, State) ->
-  line_tokens(T, $\n, [], ?SFLUSH, State);
+  line_tokens(T, $\n, [], ?SFLUSH, {false});
 
 % Ignore consecutive spaces
 line_tokens([$  | T], $ , CurrTAcc, AllTAcc, State) ->

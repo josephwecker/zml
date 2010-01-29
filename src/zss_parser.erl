@@ -11,7 +11,13 @@ parse(Tokens) ->
 
 format_rules({Selectors, Attributes}) ->
   {lists:sort(lists:map(fun tuple_to_list/1, Selectors)),
-    lists:sort(Attributes)}.
+    lists:sort(lists:map(
+        fun({Key,Val}) ->
+            case Val of
+              "" -> {Key, "0"};
+              _ -> {Key, Val}
+            end
+        end, Attributes))}.
 
 clumper([]) ->
   [];
@@ -43,7 +49,7 @@ format_clump(attr, Attrs) ->
   {attr,lists:map(
       fun({attr,_,A}) ->
           case string:chr(A, $ ) of
-            0 -> {A, "0"};
+            0 -> {A, ""};
             P ->
               {Key, Val} = lists:split(P, A),
               {string:strip(Key), Val}
@@ -56,39 +62,33 @@ get_children(Parents, Clumps) ->
   get_children(Parents, Clumps, {[],[]}).
 
 get_children(_Parents, [{end_of_file,_} | T], {RuleAcc, AttAcc}) ->
-  %io:format("{~p}",[?LINE]),
   {T, {lists:sort(lists:flatten(RuleAcc)),
       lists:sort(lists:flatten(AttAcc))}};
 
 get_children(_Parents, [{dedent,_} | T], {RuleAcc, AttAcc}) ->
-  %io:format("{~p}",[?LINE]),
   {T, {lists:sort(lists:flatten(RuleAcc)),
       lists:sort(lists:flatten(AttAcc))}};
 
 get_children(Parents, [{attr,Atts} | T], {RuleAcc, AttAcc}) ->
-  %io:format("{~p}",[?LINE]),
   {T2, NewAtts} = get_attributes(Atts, T),
   get_children(Parents, T2, {RuleAcc, [NewAtts | AttAcc]});
 
-%get_children(Parents, [{sel,Sels} | [{att, Attr} | [{indent,_} | T]]],
-%    {RuleAcc, AttAcc}) ->
-  % Build combined selectors
-  % Get children rules & attributes
-  % Combine children attributes with Attr
-  % Combine Attributes with combined sels for current rules
-  % Update RuleAcc with children rules and current rules - no update to AttAcc
-
-get_children(Parents, [{sel,Sels} | [{indent,_} | T]], {RuleAcc, AttAcc}) ->
-  %io:format("{~p}",[?LINE]),
+get_children(Parents, [{sel,Sels} | [{attr, Attr} | [{indent,_} | T]]],
+    {RuleAcc, AttAcc}) ->
   ActualSels = multiply_selectors(Parents, Sels),
   {T2, {Rules, Atts}} = get_children(ActualSels, T),
   get_children(Parents, T2,
-    {[Rules | [new_rules(ActualSels, Atts) | RuleAcc]], AttAcc}).
+    {[Rules | [new_rules(ActualSels, Atts ++ Attr) | RuleAcc]], AttAcc});
 
-%get_children(Parents, [{sel,Sels} | [{att, Attr} | T]], {RuleAcc, AttAcc}) ->
-  % Build combined selectors
-  % Combine Attributes with selectors for current rules
-  % Update RuleAcc, ignore AttAcc
+get_children(Parents, [{sel,Sels} | [{indent,_} | T]], {RuleAcc, AttAcc}) ->
+  ActualSels = multiply_selectors(Parents, Sels),
+  {T2, {Rules, Atts}} = get_children(ActualSels, T),
+  get_children(Parents, T2,
+    {[Rules | [new_rules(ActualSels, Atts) | RuleAcc]], AttAcc});
+
+get_children(Parents, [{sel,Sels} | [{attr, Attr} | T]], {RuleAcc, AttAcc}) ->
+  ActualSels = multiply_selectors(Parents, Sels),
+  get_children(Parents, T, {[new_rules(ActualSels, Attr) | RuleAcc], AttAcc}).
 
 multiply_selectors([{}], Sel2) ->
   Sel2;
@@ -117,12 +117,18 @@ new_rules(Sels, Atts) ->
 
 % Only one level of attribute nesting allowed (:font\n\n:family, for example)
 get_attributes(Atts, [{indent,_} | [{attr,ChildAtts} | [{dedent,_} | T]]]) ->
-  %io:format("{~p}",[?LINE]),
-  % TODO: combine atts and children of last Att
-  {T, ChildAtts};
+  [{Last, Val} | Rest] = Atts,
+  case Val of
+    "" -> {T, combine_atts(Last, ChildAtts) ++ Rest};
+    _ -> {T, combine_atts(Last, ChildAtts) ++ Rest ++ [{Last, Val}]}
+  end;
 get_attributes(_Atts, [{indent,_} | _]) ->
-  %io:format("{~p}",[?LINE]),
   erlang:error("Only attributes can be children of attributes");
 get_attributes(Atts, T) ->
-  %io:format("{~p}",[?LINE]),
   {T, Atts}.
+
+combine_atts(ParName, ChildAtts) ->
+  lists:map(
+    fun({OldKey, Val}) ->
+        {ParName ++ "-" ++ OldKey, Val}
+    end, ChildAtts).
