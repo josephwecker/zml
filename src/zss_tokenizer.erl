@@ -127,7 +127,6 @@ process_line(Dents, IStack, Line, State) ->
     [] ->
       {IStack, [], State2};
     _ ->
-      %LineTokens2 = [{newline, ?LN} | LineTokens],
       {IStack2, LineTokens3} = process_dents(Dents, IStack, LineTokens),
       {IStack2, LineTokens3, State2}
   end.
@@ -139,7 +138,6 @@ process_dents(Dents, [NLast | _] = IStack, Toks) when Dents > NLast ->
   {[Dents | IStack], [Toks, {indent, ?LN, none}]};
 process_dents(Dents, IStack, Toks) ->
   {NewStack, DentTokens} = do_dedent(Dents, IStack, []),
-  %{NewStack, [Toks, DentTokens]}.
   {NewStack, Toks ++ DentTokens}.
 
 % Pops indents off the stack until it matches the current indent- issuing a
@@ -162,7 +160,6 @@ do_dedent(Dents, [H | T], TokenAcc) when Dents < H ->
 
 line_tokens(Line, State) ->
   line_tokens(Line, none, [], [], State).
-
 % Line is finished- move current-token to all, and return.
 % Reset in-attribute state
 line_tokens([], _, CurrTAcc, AllTAcc, State) ->
@@ -192,24 +189,17 @@ line_tokens([?T_IGN_MLT_ST_2 | T], ?T_IGN_MLT_ST_1,
 
 % Starting an attribute
 line_tokens([?T_ATTR_ST | T], _, [], AllTAcc, _State) ->
-  %line_tokens(T, ?T_ATTR_ST, [], [{start_attrib, ?LN} | AllTAcc], {true});
   line_tokens(T, ?T_ATTR_ST, [], AllTAcc, {true});
 line_tokens([?T_ATTR_ST | T], $ , CurrTAcc, AllTAcc, State) ->
-  %line_tokens(T, ?T_ATTR_ST, [], ?FLUSH({start_attrib, ?LN}), {true});
   line_tokens(T, ?T_ATTR_ST, [], ?SFLUSH, {true});
 
 % Parent separator
 line_tokens([?T_PAR_SEP | T], _, CurrTAcc, AllTAcc, {false} = State) ->
-  %line_tokens(T, ?T_PAR_SEP, [], ?FLUSH({parent_sep, ?LN}), {false});
   line_tokens(T, ?T_PAR_SEP, [], ?SFLUSH, {false});
 
 % Whitespace.  Flush token.
 line_tokens([$\n | T], _, CurrTAcc, AllTAcc, State) ->
   line_tokens(T, $\n, [], ?SFLUSH, State);
-%line_tokens([H | T], _Last, CurrTAcc, AllTAcc, {false}) when
-%    ((H >= $\x{0009}) and (H =< $\x{000D}))
-%    or (H == $\x{0020}) or (H == $\x{00A0}) ->
-%  line_tokens(T, H, [], ?SFLUSH, {false});
 
 % Ignore consecutive spaces
 line_tokens([$  | T], $ , CurrTAcc, AllTAcc, State) ->
