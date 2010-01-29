@@ -50,7 +50,7 @@ tokenize_str(InStr) ->
   erase(),
   put(line_num, 0),
   put('--input-string--', InStr),
-  tokenize_lines(fun string_feed/0, [0], [], {}).
+  tokenize_lines(fun string_feed/0, [0], [], {false}).
 
 tokenize_file(FName) ->
   {ok, File} = file:open(FName, [read]),
