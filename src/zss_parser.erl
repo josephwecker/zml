@@ -1,15 +1,17 @@
--module(zss_parser).
+-module(zss_parser2).
 
 -export([parse/1]).
-
--define(F3(A,B,C),
-  [A | [B | [C | T]]]).
 
 parse([]) ->
   [];
 parse(Tokens) ->
   Clumps = clumper(Tokens),
-  parse(Clumps, []).
+  {[], {ChildRules, []}} = get_children([{}], Clumps),
+  lists:sort(lists:map(fun format_rules/1, ChildRules)).
+
+format_rules({Selectors, Attributes}) ->
+  {lists:sort(lists:map(fun tuple_to_list/1, Selectors)),
+    lists:sort(Attributes)}.
 
 clumper([]) ->
   [];
@@ -19,66 +21,78 @@ clumper([{Type,_,_} = FirstTok | T]) ->
 clumper([], _, [], Acc) ->
   lists:reverse(Acc);
 clumper([], _, [{Type,_,_} | _] = CAcc, Acc) ->
-  lists:reverse([{Type, CAcc} | Acc]);
+  lists:reverse([format_clump(Type, CAcc) | Acc]);
 % Same type
 clumper([{Type,_,_} = Tok | T], LastType, CAcc, Acc) when
     (Type == LastType) and (Type /= dedent) ->
   clumper(T, Type, [Tok | CAcc], Acc);
 % Different type
 clumper([{Type,_,_} = Tok | T], LastType, CAcc, Acc) ->
-  clumper(T, Type, [Tok], [{LastType, CAcc} | Acc]).
+  clumper(T, Type, [Tok], [format_clump(LastType, CAcc) | Acc]).
 
 
-parse([], Acc) ->
-  lists:flatten(lists:reverse(Acc));
-parse(Tokens, Acc) ->
-  {Rules, Toks} = get_rule([], Tokens, []),
-  case Rules of
-    [] ->
-      parse(Toks, Acc);
-    _ ->
-      parse(Toks, [Rules | Acc])
-  end.
+format_clump(indent, _) ->
+  {indent, none};
+format_clump(end_of_file, _) ->
+  {end_of_file, none};
+format_clump(dedent, _) ->
+  {dedent, none};
+format_clump(sel, Sels) ->
+  {sel, lists:map(fun({sel,_,A}) -> list_to_tuple(A) end, Sels)};
+format_clump(attr, Attrs) ->
+  {attr,lists:map(
+      fun({attr,_,A}) ->
+          case string:chr(A, $ ) of
+            0 -> {A, "0"};
+            P ->
+              {Key, Val} = lists:split(P, A),
+              {string:strip(Key), Val}
+          end
+      end, Attrs)}.
 
-get_rule(_Parents, [{dedent, _} | T], RAcc) ->
-  {lists:reverse(RAcc), T};
-get_rule(Parents, [{sel, Sels} | T], RAcc) ->
-  %io:format("~p | ~p | ~p | ~p ~n", [Parents, Sels, T, RAcc]),
-  {LineAttrs, T2} = get_line_attrs(T),
-  {Indented, ChildAttrs, T3} = get_child_attrs(T2),
-  ActualSels = list_mult(lists:map(fun({_,_,A})->list_to_tuple(A) end, Sels), Parents),
-  RAcc2 =
-    case LineAttrs ++ ChildAttrs of
-      [] ->
-        RAcc;
-      Atts ->
-        FSels = lists:map(fun tuple_to_list/1, lists:sort(ActualSels)),
-        [{FSels, lists:sort(att_list(Atts))} | RAcc]
-    end,
-  case {T3, Indented} of
-    {_,true} ->
-      get_rule(ActualSels, T3, RAcc2);
-    {[{indent,_}|T4], false} ->
-      get_rule(ActualSels, T4, RAcc2);
-    _ ->
-      {RAcc2, T3}
-  end;
-get_rule(_,L,RAcc) ->
-  {lists:reverse(RAcc), []}.
+% Returns {RemainingClumps, {ChildRules, ChildAttributes}}
+get_children(Parents, Clumps) ->
+  %io:format("{~p}",[?LINE]),
+  get_children(Parents, Clumps, {[],[]}).
 
-get_line_attrs([{attr, Atts} | T]) ->
-  {lists:map(fun({_,_,A})->A end, Atts), T};
-get_line_attrs(T) ->
-  {[],T}.
+get_children(_Parents, [{end_of_file,_} | T], {RuleAcc, AttAcc}) ->
+  %io:format("{~p}",[?LINE]),
+  {T, {lists:sort(lists:flatten(RuleAcc)),
+      lists:sort(lists:flatten(AttAcc))}};
 
-get_child_attrs([{indent,_} | [{attr, Atts} | T]]) ->
-  {true, lists:map(fun({_,_,A})->A end, Atts), T};
-get_child_attrs(T) ->
-  {false, [],T}.
+get_children(_Parents, [{dedent,_} | T], {RuleAcc, AttAcc}) ->
+  %io:format("{~p}",[?LINE]),
+  {T, {lists:sort(lists:flatten(RuleAcc)),
+      lists:sort(lists:flatten(AttAcc))}};
 
-list_mult(L1,[]) ->
-  L1;
-list_mult(L1,L2) ->
+get_children(Parents, [{attr,Atts} | T], {RuleAcc, AttAcc}) ->
+  %io:format("{~p}",[?LINE]),
+  {T2, NewAtts} = get_attributes(Atts, T),
+  get_children(Parents, T2, {RuleAcc, [NewAtts | AttAcc]});
+
+%get_children(Parents, [{sel,Sels} | [{att, Attr} | [{indent,_} | T]]],
+%    {RuleAcc, AttAcc}) ->
+  % Build combined selectors
+  % Get children rules & attributes
+  % Combine children attributes with Attr
+  % Combine Attributes with combined sels for current rules
+  % Update RuleAcc with children rules and current rules - no update to AttAcc
+
+get_children(Parents, [{sel,Sels} | [{indent,_} | T]], {RuleAcc, AttAcc}) ->
+  %io:format("{~p}",[?LINE]),
+  ActualSels = multiply_selectors(Parents, Sels),
+  {T2, {Rules, Atts}} = get_children(ActualSels, T),
+  get_children(Parents, T2,
+    {[Rules | [new_rules(ActualSels, Atts) | RuleAcc]], AttAcc}).
+
+%get_children(Parents, [{sel,Sels} | [{att, Attr} | T]], {RuleAcc, AttAcc}) ->
+  % Build combined selectors
+  % Combine Attributes with selectors for current rules
+  % Update RuleAcc, ignore AttAcc
+
+multiply_selectors([{}], Sel2) ->
+  Sel2;
+multiply_selectors(Sel1, Sel2) ->
   lists:flatten(lists:map(
     fun(A) ->
         lists:map(
@@ -89,16 +103,26 @@ list_mult(L1,L2) ->
                 LB ->
                   list_to_tuple(tuple_to_list(A) ++ " " ++ LB)
               end
-          end, L1)
-    end, L2)).
+          end, Sel2)
+    end, Sel1)).
 
-att_list(AttStrs) ->
-  lists:map(
-    fun(Str) ->
-        case string:chr(Str, $ ) of
-          0 -> {Str, "0"};
-          P ->
-            {Key, Val} = lists:split(P, Str),
-            {string:strip(Key), Val}
-        end
-    end, AttStrs).
+
+new_rules(_, []) ->
+  [];
+new_rules([], _) ->
+  [];
+new_rules(Sels, Atts) ->
+  {lists:sort(Sels), lists:sort(Atts)}.
+
+
+% Only one level of attribute nesting allowed (:font\n\n:family, for example)
+get_attributes(Atts, [{indent,_} | [{attr,ChildAtts} | [{dedent,_} | T]]]) ->
+  %io:format("{~p}",[?LINE]),
+  % TODO: combine atts and children of last Att
+  {T, ChildAtts};
+get_attributes(_Atts, [{indent,_} | _]) ->
+  %io:format("{~p}",[?LINE]),
+  erlang:error("Only attributes can be children of attributes");
+get_attributes(Atts, T) ->
+  %io:format("{~p}",[?LINE]),
+  {T, Atts}.
