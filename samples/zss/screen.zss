@@ -8,9 +8,7 @@
  #   - Easy replacements for input[type='...']  - input-password, etc.
  #   - Make colors and sizes relative to some foundation (at least colors)
  #|
-
 || MEYER RESET v1.0
-
 a, abbr, acronym, address, applet,
 b, big, blockquote, body,
 caption, center, cite, code,
@@ -54,12 +52,12 @@ table
 	:border-collapse collapse
 	:border-spacing 0
 
-
 || Basic Typography
 html
 	:font
 		:size 62.5%
-		:family "Liberation Sans", Helvetica, Arial, sans-serif;
+		:family "Liberation Sans", Helvetica, Arial, sans-serif
+
 
 h1, h2, h3, h4, h5, h6, strong, th, thead td
 	:font-weight bold
@@ -102,13 +100,11 @@ blockquote
 		:top 1px soid #ccc
 		:bottom 1px solid #ccc
 	:color #666
-
 blockquote
 	*:first-child:before :content "\201C"   || Quotes here??
 	*:first-child:after :content "\201D"
 
 || Forms
-
 fieldset
 	:padding 1.4em
 	:margin 0 0 1.5em 0
@@ -252,6 +248,7 @@ div
 		:float left
 	&.last
 		:margin-right 0
+|#
 
 [gs = 30px]
 [gi = 40px]
@@ -564,3 +561,4 @@ button, a.button
 		:color #fff
 .positive :color #529214
 .negative :color #d12f19
+#|

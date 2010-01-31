@@ -1,11 +1,7 @@
 *html(stylesheet: css/main.css || And what a stylesheet it is!
-      type: xhtml_frameset
-      ScrIpt: js/jquery-1.3.2.min.js||More random
-              js/main.js
-              js/main.js  || Should ignore
-              js/jquery-wow.js || Copy of first one. should ignore
-              ||:inside ;
-              http\://s7.addthis.com/js/250/addthis_widget.js
+      ||type: xhtml_frameset
+      script: js/jquery-1.3.2.min.js||More random
+              js/main.js  http\://s7.addthis.com/js/250/addthis_widget.js
       encoding: utf-8)
   :one#home.game.fast.fun
   #two#hey.there
@@ -15,6 +11,9 @@
   :body
     #home And|"Some text that will be here"| :br#how;
       #wrapper
+        :table
+          [for val1, val2, val3 in data]
+            :tr :td {val1}; :td {val2}; :td {val3};
         .title#betaTitle Do some great stuff!
         .subtitle You decide what we're doing today!
         .logo#betaLogo

@@ -31,6 +31,7 @@
 	  that case, not allow indented children either.
   [ ] Warning when tags are in unoptimal order (js then stylesheet, for
       example).
+  [ ] Tabs for textmate bundle
 
 -- Future --
 
@@ -44,19 +45,22 @@
 
 -- Immediate --
 
-  [ ] Samples built
-    [ ] Block that basically says do-not-remove in optimization phase (for
-        server generated stuff etc.).
-    [ ] Unit tests
-  [ ] Tokenizer (maybe specialized indent/dedent?)
-  [ ] Parser
-  [ ] Figure out ZML syntax for print vs screen etc.
+  [ ] Setting variables
+  [ ] Setting mixins
+  [ ] Evaluating expressions
 
 -- Functional --
 
+  [ ] Figure out ZML syntax for print vs screen etc.
   [ ] Beginning of some evolving ZSS coding conventions (loosely based on
       http://www.nodewave.com/download/document/css-coding-style-conventions--standards-guidelines-rules.pdf )
   [ ] Pull in external images, process, and put in the right place etc.
+  [ ] Post-processing (combinine like-selectors at least)
+  [ ] Final rendering
+  [ ] Syntax for no-delete
+  [ ] Vim syntax file
+  [ ] Textmate syntax file
+  [ ] Readme file for it
 
 -- Polish / Bugs --
 
@@ -74,6 +78,7 @@
       details etc.)
   [ ] Warn on unknown css attributes or tags
   [ ] Re-output input colorized with what rules are activated by the ZML
+  [ ] Tabs for textmate bundle
 
 ==== ZWAPP ====
 
