@@ -1,12 +1,12 @@
-h2. Zippy Markup Language (ZML)
+h2. Z Markup Language (ZML) & ZSS
 
 | Authors | Joseph Wecker <joseph.wecker@gmail.com> |
-| Version | 0 still, but getting there |
+| Version | 0.1 |
 
 h2. Summary
 
-Inspired by SLiP, haml, and sexp2xml. Concise markup language for general xml
-or as a python templating language using pytenjin.
+Inspired by SLiP, haml, and sexp2xml.  A templating engine and static html/css
+compiler for erlang.
 
 h3. Example 1
 
@@ -14,40 +14,107 @@ h3. Example 1
 # Ok, here's my html
 
 :html
-    :head(title='hey there')
+    :head(title: hey there)
     :body
-        :table(class="mytable redish another", blah='random')
-            :tr  # First row, for fun.
+        :table(class: mytable redish another blah: random)
+            :tr  || First row, for fun.
                 :td Here is some text 
-                :td 'and some more with craziness ;(*)(&lt;<>&lt;>'
+                :td and some more with craziness (*)(&lt\;<>&lt\;
 </code></pre>
 
 h4. Main points:
 
 * Uses indentation to designate tag nesting. Takes care of closing tags etc. all by itself, which reduces redundancy and visual clutter.
-* Attributes in parentheses, if you like. They actually don’t need commas between them, and can span extra lines as in:
+* Attributes in parenthasese.  Attribute key is any word with a ':' stuck on
+the end.  There's no need to keep them on the same line, and while you're
+within the parenthasese indentation doesn't matter.  The following example is
+valid and shows some alternatives (note that a space after the ':' is not
+necessary either):
 
 <pre><code>
 :html(
-    onload="openstuff()" 
-    id="thehtml" 
-    class = 'one two three')
-
-    :head  #....
+    onload: openstuff();
+    id:thehtml 
+        class: one two three   anotherattr: blue
+)
+    :head
 </code></pre>
 
-* Comments with #
-* Enclose any special characters in quotes. Normal quoting rules apply, escape with backslash.
-* This works great for the majority of html, but sometimes you need embedded
-html, like “blah &lt;emph&gt;blah&lt;/emph&gt; blah blah!” – in that case, just do it as a string like I just wrote.
+That shows the unimportance of indentation within the attributes, but best
+practices would prefer you make it prettier than that.  More like:
 
-h4. Features still to describe:
+<pre><code>
+|# A sample for exploring syntax some more...
+ # Should be awesome
+ #|
 
-* Embedded python and variables
-* Including other files
-* Specialized tags
-* Caching
-* How it works super, super, super fast…
-* Integrating with ngx-rome
+:html(onload: openstuff();
+      id: thehtml
+      class: one two three  || w00t three classes
+      anotherattr: blue)
+    :head |"A bunch of 'text' here in the "head" where it doesn't belong.
+              hah hah hah"|
+    :body
+        :h1 hey there how are you? \:-)
+</code></pre>
 
-For now look in sample.zml
+* Inline comments with ||
+* Multi-line comments with |# ... #|
+* Literal strings with |" ... "| (you have to use these surprisingly rarely-
+they aren't even necessary in the example above except for that indented
+second line... which html will ignore anyway...
+* Escape with a backslash
+
+Now a more realistic example and the output:
+
+<pre><code>
+*html(title: Sample generated with zml)
+  #main.red
+    #inner.blue.awesome :h1 Hello world;
+    .classy Here are some things I've always wanted to say but never have.
+      Voiponator, ingidlow, durabilitated.  I think that about covers it.
+  #footer.small.blue
+    New words are mine alone and copyrighted for my lifetime plus hundreds of
+    years :emph because; I'm a lazy bum.
+</code></pre>
+
+This will output the following:
+<pre><code>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html><head><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><meta http-equiv="content-language" content="en-us" /><meta name="MSSmartTagsPreventParsing" content="true" /><title>Sample generated with zml</title></head><body><div class="red" id="main"><div class="blue awesome" id="inner"><h1>Hello world</h1></div><div class="classy">Here are some things I've always wanted to say but never have. Voiponator, ingidlow, durabilitated. I think that about covers it.</div></div><div class="small blue" id="footer">New words are mine alone and copyrighted for my lifetime plus hundreds of years<emph>because</emph>I'm a lazy bum.</div></body></html>
+<pre><code>
+
+Or, "prettified":
+<pre><code>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta http-equiv="content-language" content="en-us">
+    <meta name="MSSmartTagsPreventParsing" content="true">
+    <title>Sample generated with zml</title>
+  </head>
+  <body>
+    <div class="red" id="main">
+      <div class="blue awesome" id="inner">
+        <h1>Hello world</h1>
+      </div>
+      <div class="classy">
+        Here are some things I've always wanted to say but never have. Voiponator, ingidlow, durabilitated. I think that about covers it.
+      </div>
+    </div>
+    <div class="small blue" id="footer">
+      New words are mine alone and copyrighted for my lifetime plus hundreds of years<emph>because</emph>I'm a lazy bum.
+    </div>
+  </body>
+</html>
+</code></pre>
+
+To explain still:
+
+* Inline tags
+* Class and id div tags
+* Special tags
+* HTML special tag
+* Embedded code
+* Usage, compiling templates, erlang interface, etc.
