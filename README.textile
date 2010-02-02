@@ -85,7 +85,7 @@ This will output the following:
 </code></pre>
 
 Or, "prettified":
-<pre><code>
+bc..
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
@@ -109,9 +109,8 @@ Or, "prettified":
 </body>
 </html>
 
-</code></pre>
 
-To explain still:
+p. To explain still:
 
 * Inline tags
 * Class and id div tags
