@@ -45,9 +45,10 @@
 
 -- Immediate --
 
-  [ ] Setting variables
-  [ ] Setting mixins
-  [ ] Evaluating expressions
+  [ ] Parser sets variables appropriately and removes token - including specialized typing
+  [ ] Parser assigns mixins properly and removes token group
+  [ ] Parser understands mixin instances and replaces w/ correct attribute group
+  [ ] Instant expression evaluation on reading attributes so vars can be reassigned etc.
 
 -- Functional --
 
