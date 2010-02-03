@@ -6,6 +6,7 @@ parse([]) ->
   [];
 parse(Tokens) ->
   Clumps = clumper(Tokens),
+  io:format("~p", [Clumps]),
   {[], {ChildRules, []}} = get_children([{}], Clumps),
   lists:sort(lists:map(fun format_rules/1, ChildRules)).
 
@@ -58,7 +59,6 @@ format_clump(attr, Attrs) ->
 
 % Returns {RemainingClumps, {ChildRules, ChildAttributes}}
 get_children(Parents, Clumps) ->
-  %io:format("{~p}",[?LINE]),
   get_children(Parents, Clumps, {[],[]}).
 
 get_children(_Parents, [{end_of_file,_} | T], {RuleAcc, AttAcc}) ->

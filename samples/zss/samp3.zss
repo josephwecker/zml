@@ -1,0 +1,12 @@
+[blah = 7px]
+
+[basic-fonts]
+  :color #333
+  :font-family serif
+
+a, pre
+  :border [blah - 4px] dashed red
+  [basic-fonts]
+
+
+

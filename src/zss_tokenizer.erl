@@ -23,7 +23,18 @@
         {true} ->
           [{attr, ?LN, string:strip(lists:reverse(CurrTAcc))} | AllTAcc];
         {false} ->
-          [{sel, ?LN, string:strip(lists:reverse(CurrTAcc))} | AllTAcc]
+          Str = string:strip(lists:reverse(CurrTAcc)),
+          case Str of
+            [$[ | _] ->
+              case string:chr(Str,$=) of
+                0 ->
+                  [{code, ?LN, Str} | AllTAcc];
+                _ ->
+                  [{assignment, ?LN, Str} | AllTAcc]
+              end;
+            _ ->
+              [{sel, ?LN, Str} | AllTAcc]
+          end
       end
   end).
 -define(LN, get(line_num)).
@@ -158,7 +169,7 @@ do_dedent(Dents, [H | T], TokenAcc) when Dents < H ->
   do_dedent(Dents, T, [{dedent, ?LN, none} | TokenAcc]).
 
 
-line_tokens(Line, State) ->
+line_tokens(Line, _State) ->
   line_tokens(Line, none, [], [], {false}).
 % Line is finished- move current-token to all, and return.
 % Reset in-attribute state
