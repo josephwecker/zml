@@ -3,6 +3,9 @@
 [basic-fonts]
   :color #333
   :font-family serif
+  &b
+    :font
+      :weight bold
 
 a, pre
   :border [blah - 4px] dashed red

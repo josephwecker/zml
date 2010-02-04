@@ -92,17 +92,19 @@ get_children(Parents, [{code,Codes} | [{indent,_} | T]], {RuleAcc, AttAcc}) ->
   get_children(Parents, T2, {RuleAcc, AttAcc});
 
 get_children(Parents, [{code, Codes} | T], {RuleAcc, AttAcc}) ->
-  % TODO!! Turn this into a lfold to accumulate Rules / Attributes, and finish the function
-  lists:foreach(fun(Code) ->
-    {T2, {Rules, Atts}} =
-      case get("M" ++ Code) of
-        undefined ->
-          erlang:error("[" ++ Code ++ "] not defined before being used!"),
-          {[], {[], []}};
-        Vals ->
-          get_children(Parents, Vals, {RuleAcc, AttAcc})
-      end
-    end, Codes)
+  {RuleAccFin, AttAccFin} = lists:foldl(
+      fun(Code, {RA, AA}) ->
+        {[], {RA2, AA2}} =
+          case get("M" ++ Code) of
+            undefined ->
+              erlang:error("[" ++ Code ++ "] not defined before being used!"),
+              {[], {[], []}};
+            Vals ->
+              get_children(Parents, Vals, {RA, AA})
+          end,
+        {RA2, AA2}
+      end, {RuleAcc, AttAcc}, Codes),
+  get_children(Parents, T, {RuleAccFin, AttAccFin});
 
 get_children(Parents, [{attr,Atts} | T], {RuleAcc, AttAcc}) ->
   {T2, NewAtts} = get_attributes(Atts, T),
@@ -141,6 +143,26 @@ multiply_selectors(Sel1, Sel2) ->
           end, Sel2)
     end, Sel1)).
 
+pull_raw_children(L) ->
+  pull_raw_children(L, [], 1).
+
+pull_raw_children([{dedent,Info} | T], Acc, ILvl) ->
+  ILvl2 = ILvl - 1,
+  case ILvl2 of
+    0 ->
+      {T, lists:reverse([{dedent, Info} | Acc])};
+    _ ->
+      pull_raw_children(T, [{dedent,Info} | Acc], ILvl2)
+  end;
+pull_raw_children([{indent,Info} | T], Acc, ILvl) ->
+  ILvl2 = ILvl + 1,
+  pull_raw_children(T, [{indent, Info} | Acc], ILvl2);
+pull_raw_children([{end_of_file,_} | T], Acc, _ILvl) ->
+  {T, lists:reverse(Acc)};
+pull_raw_children([], Acc, _ILvl) ->
+  {[], lists:reverse(Acc)};
+pull_raw_children([H | T], Acc, ILvl) ->
+  pull_raw_children(T, [H | Acc], ILvl).
 
 new_rules(_, []) ->
   [];
