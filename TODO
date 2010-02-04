@@ -2,11 +2,17 @@
 
 -- Immediate --
 
-  [ ] Special tag module for HTML
-  [ ] Unit tests
 
 -- Functional --
 
+  [ ] Special tag module for HTML
+    [ ] Call ZSS for zss files
+    [ ] ZSS cullinator (pass it the AST?  Visa versa?)
+    [ ] ZSS inline
+    [ ] ZSS images working as expected
+    [ ] ZML images loaded, preprocessed, output
+    [ ] Namespace & language in html tag
+    [ ] Copy TODO bugs etc. into this list
   [ ] Fix space issues for inline tags (honor spaces before, inside, and after)
   [ ] Special tag module for include
   [ ] Special tag module for include_layout
@@ -14,47 +20,44 @@
   [ ] In-document includes (mixins)
   [ ] Simple string expansion macros (pre and post parsing?)
   [ ] Templates compiled for very fast erlang execution
-  [ ] Updated readme
-  [ ] Make this the new master branch
-  [ ] Beginning of some evolving ZML coding conventions
-  [ ] Parse inline ZSS correctly?
+  [~] Updated readme
 
 -- Polish / Bugs --
 
-  [ ] Figure out some way to cache results of "closure" because it's sooo
-      slowww... (used by html special) (for example, alphabetized md5sums of
-	  input files corresponding to an output compressed).
   [ ] Say you have a big paragraph of text over multiple lines, and you have lots
 	  of :strong ...; stuff like that embedded all over, and your text editor
 	  puts one of those :strong ...; things at the beginning of the line- will
 	  the compiler choke on the ';'?  It needs to not choke, and needs to, in
 	  that case, not allow indented children either.
-  [ ] Warning when tags are in unoptimal order (js then stylesheet, for
-      example).
-  [ ] Tabs for textmate bundle
 
 -- Future --
 
+  [ ] Tabs for textmate bundle
+  [ ] Parse inline ZSS correctly?
+  [ ] Beginning of some evolving ZML coding conventions
+  [ ] Unit tests
   [ ] Analyze class attributes and decide to change them to ID's- change CSS
 	  accordingly.
   [ ] Alphabetize attributes on render
+  [ ] Figure out some way to cache results of "closure" because it's sooo
+      slowww... (used by html special) (for example, alphabetized md5sums of
+      input files corresponding to an output compressed).
   [ ] Replace closure with an erlang based transformation engine so that we
       have some real speed and can even compile on the fly.
+  [ ] Warning when tags are in unoptimal order (js then stylesheet, for
+      example).
 
 ==== ZSS ====
 
 -- Immediate --
 
-  [ ] Parser sets variables appropriately and removes token - including specialized typing
-  [ ] Parser assigns mixins properly and removes token group
-  [ ] Parser understands mixin instances and replaces w/ correct attribute group
+  [~] Parser sets variables appropriately and removes token - including specialized typing
   [ ] Instant expression evaluation on reading attributes so vars can be reassigned etc.
 
 -- Functional --
 
+  [ ] Includes - syntax, parsing and processing
   [ ] Figure out ZML syntax for print vs screen etc.
-  [ ] Beginning of some evolving ZSS coding conventions (loosely based on
-      http://www.nodewave.com/download/document/css-coding-style-conventions--standards-guidelines-rules.pdf )
   [ ] Pull in external images, process, and put in the right place etc.
   [ ] Post-processing (combinine like-selectors at least)
   [ ] Final rendering
@@ -67,6 +70,8 @@
 
 -- Future --
 
+  [ ] Beginning of some evolving ZSS coding conventions (loosely based on
+      http://www.nodewave.com/download/document/css-coding-style-conventions--standards-guidelines-rules.pdf )
   [ ] Alphabetize key-value pairs on render
   [ ] Remove redundant qualifiers (with notice?)
   [ ] More from here: http://code.google.com/speed/page-speed/docs/rendering.html
@@ -84,12 +89,12 @@
 ==== ZWAPP ====
 
 -- Immediate --
+
+-- Functional --
   [ ] Clump views to compile- helping w/ ZSS optimization etc.
   [ ] Develop dependency chart for watching files when clump-compiled
   [ ] Auto reload compilation for development
   [ ] Sample data compilation / autocompile
-
--- Functional --
   [ ] gen_server / batcher / zwapp-minimal
   [ ] Hot code swapping / upgrading mechanisms
 
