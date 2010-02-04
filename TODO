@@ -52,6 +52,7 @@
 -- Immediate --
 
   [~] Parser sets variables appropriately and removes token - including specialized typing
+  [ ] Correctly pull in assignments without regard to inner commas etc.
   [ ] Instant expression evaluation on reading attributes so vars can be reassigned etc.
 
 -- Functional --
