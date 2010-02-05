@@ -253,29 +253,29 @@ div
 [gs = 30px]
 [gi = 40px]
 .span-
-	&1  :width !gs
-	&2  :width !gs+!gi
-	&3  :width !gs+!gi*2
-	&4  :width !gs+!gi*3
-	&5  :width !gs+!gi*4
-	&6  :width !gs+!gi*5
-	&7  :width !gs+!gi*6
-	&8  :width !gs+!gi*7
-	&9  :width !gs+!gi*8
-	&10 :width !gs+!gi*9
-	&11 :width !gs+!gi*10
-	&12 :width !gs+!gi*11
-	&13 :width !gs+!gi*12
-	&14 :width !gs+!gi*13
-	&15 :width !gs+!gi*14
-	&16 :width !gs+!gi*15
-	&17 :width !gs+!gi*16
-	&18 :width !gs+!gi*17
-	&19 :width !gs+!gi*18
-	&20 :width !gs+!gi*19
-	&21 :width !gs+!gi*20
-	&22 :width !gs+!gi*21
-	&23 :width !gs+!gi*22
+	&1  :width [gs]
+	&2  :width [gs + gi]
+	&3  :width [gs+!gi*2
+	&4  :width [gs+!gi*3
+	&5  :width [gs+!gi*4
+	&6  :width [gs+!gi*5
+	&7  :width [gs+!gi*6
+	&8  :width [gs+!gi*7
+	&9  :width [gs+!gi*8
+	&10 :width [gs+!gi*9
+	&11 :width [gs+!gi*10
+	&12 :width [gs+!gi*11
+	&13 :width [gs+!gi*12
+	&14 :width [gs+!gi*13
+	&15 :width [gs+!gi*14
+	&16 :width [gs+!gi*15
+	&17 :width [gs+!gi*16
+	&18 :width [gs+!gi*17
+	&19 :width [gs+!gi*18
+	&20 :width [gs+!gi*19
+	&21 :width [gs+!gi*20
+	&22 :width [gs+!gi*21
+	&23 :width [gs+!gi*22
 	&24, div.span-24 :width !gs+!gi*23
 .suffix-
 	&1  :padding-right !gi
