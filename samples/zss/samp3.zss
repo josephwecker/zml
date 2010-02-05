@@ -38,7 +38,7 @@ a, pre
 [bool-f = false]
 
 [str1 = hey there howsit!]
-[str2 = |"some crazy [stuff] goes here!
+[str2 = some crazy [stuff] goes here!
 oh yeah
    oh yeah
-"|]
+]

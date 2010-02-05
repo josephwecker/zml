@@ -57,6 +57,9 @@
 -define(T_ATTR_ST, $:).
 -define(T_PAR_SEP, $,).
 
+-define(T_CODE_ST, $[).
+-define(T_CODE_EN, $]).
+
 tokenize_str(InStr) ->
   erase(),
   put(line_num, 0),
@@ -186,7 +189,7 @@ line_tokens([Any | T], ?T_ESC, [?T_ESC | CurrTAcc], AllTAcc, State) ->
 line_tokens([?T_STR_MLT_ST_2 | T], ?T_STR_MLT_ST_1,
     [_ | CurrTAcc], AllTAcc, State) ->
   {Str, Remaining} = pull_inner(T, fun line_pull_in_str/1),
-  line_tokens(Remaining, string, [], ?FLUSH(Str), State);
+  line_tokens(Remaining, string, Str ++ CurrTAcc, AllTAcc, State);
 
 % Inline comment - pretend we're at the end of the string
 line_tokens([?T_IGN_INL_2 |_], ?T_IGN_INL_1, [_ | CurrTAcc], AllTAcc, State) ->
@@ -203,6 +206,11 @@ line_tokens([?T_ATTR_ST | T], _, [], AllTAcc, _State) ->
   line_tokens(T, ?T_ATTR_ST, [], AllTAcc, {true});
 line_tokens([?T_ATTR_ST | T], $ , CurrTAcc, AllTAcc, State) ->
   line_tokens(T, ?T_ATTR_ST, [], ?SFLUSH, {true});
+
+% Assignment or code
+line_tokens([?T_CODE_ST | T], _, CurrTAcc, AllTAcc, {false} = State) ->
+  {Code, T2} = pull_inner(T, fun line_pull_in_code/1),
+  line_tokens(T2, code, Code ++ [?T_CODE_ST] ++ CurrTAcc, AllTAcc, {false});
 
 % Parent separator
 line_tokens([?T_PAR_SEP | T], _, CurrTAcc, AllTAcc, {false} = State) ->
@@ -229,7 +237,7 @@ pull_inner(Line, Acc, LN, InnerFun) ->
   case Finished of
     true ->
       put(line_num, LN),
-      {lists:flatten(lists:reverse([StrAcc | Acc])), Tail};
+      {lists:flatten([StrAcc | Acc]), Tail};
     false ->
       Next = get(next_fun),
       case Next() of
@@ -248,9 +256,9 @@ line_pull_in_str(Line) ->
 line_pull_in_str([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
   line_pull_in_str(T, nothing, [Any | Acc]);
 line_pull_in_str([?T_STR_MLT_EN_2 | T], ?T_STR_MLT_EN_1, [_ | Acc]) ->
-  {lists:reverse(Acc), true, T};
+  {Acc, true, T};
 line_pull_in_str([], _, Acc) ->
-  {lists:reverse(Acc), false, []};
+  {Acc, false, []};
 line_pull_in_str([H | T], _, Acc) ->
   line_pull_in_str(T, H, [H | Acc]).
 
@@ -259,9 +267,25 @@ line_pull_in_ign(Line) ->
 line_pull_in_ign([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
   line_pull_in_ign(T, nothing, [Any | Acc]);
 line_pull_in_ign([?T_IGN_MLT_EN_2 | T], ?T_IGN_MLT_EN_1, [_ | Acc]) ->
-  {lists:reverse(Acc), true, T};
+  {Acc, true, T};
 line_pull_in_ign([], _, Acc) ->
-  {lists:reverse(Acc), false, []};
+  {Acc, false, []};
 line_pull_in_ign([H | T], _, Acc) ->
   line_pull_in_ign(T, H, [H | Acc]).
 
+line_pull_in_code(Line) ->
+  line_pull_in_code(Line, 1, []).
+line_pull_in_code([],_,Acc) ->
+  {Acc, false, []};
+line_pull_in_code([?T_CODE_ST | T], Lvl, Acc) ->
+  line_pull_in_code(T, Lvl + 1, [?T_CODE_ST | Acc]);
+line_pull_in_code([?T_CODE_EN | T], Lvl, Acc) ->
+  Lvl2 = Lvl - 1,
+  case Lvl2 of
+    0 ->
+      {[?T_CODE_EN | Acc], true, T};
+    _ ->
+      line_pull_in_code(T, Lvl2, [?T_CODE_EN | Acc])
+  end;
+line_pull_in_code([H | T], Lvl, Acc) ->
+  line_pull_in_code(T, Lvl, [H | Acc]).
