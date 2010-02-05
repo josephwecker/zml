@@ -1,6 +1,6 @@
 -module(zss_parser).
 
--export([parse/1]).
+-export([parse/1, script_var/1]).
 
 parse([]) ->
   [];
@@ -44,7 +44,9 @@ format_clump(assignment, Asmts) ->
     fun({_,_,A}) ->
       Str = string:sub_string(string:strip(A), 2, length(A) - 1),  % Remove brackets
       {Left,Right} = lists:split(string:chr(Str,$=), Str),
-      {string:strip(string:sub_string(Left, 1, length(Left) - 1)), string:strip(Right)}
+      io:format("~p~n",[script_var(string:strip(Right))]),
+      {string:strip(string:sub_string(Left, 1, length(Left) - 1)),
+        script_var(string:strip(Right))}
     end, Asmts)};
 format_clump(code, Codes) ->
   {code, lists:map(
@@ -189,3 +191,109 @@ combine_atts(ParName, ChildAtts) ->
     fun({OldKey, Val}) ->
         {ParName ++ "-" ++ OldKey, Val}
     end, ChildAtts).
+
+
+script_var("true") ->    {bool, true};
+script_var("false") ->   {bool, false};
+script_var("black") ->   {col, {0  ,  0,  0,1}};
+script_var("silver") ->  {col, {192,192,192,1}};
+script_var("gray") ->    {col, {128,128,128,1}};
+script_var("white") ->   {col, {255,255,255,1}};
+script_var("maroon") ->  {col, {128,  0,  0,1}};
+script_var("red") ->     {col, {255,  0,  0,1}};
+script_var("fuchsia") -> {col, {255,  0,255,1}};
+script_var("green") ->   {col, {  0,128,  0,1}};
+script_var("lime") ->    {col, {  0,255,  0,1}};
+script_var("olive") ->   {col, {128,128,  0,1}};
+script_var("yellow") ->  {col, {255,255,  0,1}};
+script_var("navy") ->    {col, {  0,  0,128,1}};
+script_var("blue") ->    {col, {  0,  0,255,1}};
+script_var("teal") ->    {col, {  0,128,128,1}};
+script_var("aqua") ->    {col, {  0,255,255,1}};
+script_var([D | _] = Str) when (D >= $0) and (D =< $9) or (D =:= $.) ->
+  case float_or_int(Str) of
+    {N,[]} ->   {num, N};
+    {N,Str2} when is_list(Str2) ->
+      case {N, string:strip(string:to_lower(Str2))} of
+        {_,"px"} -> {px, N};
+        {_,"%"} ->  {per, N};
+        {_,"em"} -> {em, N};
+        {_,"pt"} -> {pt, N};
+        _ ->        {str1, Str}
+      end;
+    _ ->
+      {str, Str}
+  end;
+script_var("#" ++ Str) ->
+  case is_color(string:strip(string:to_lower(Str))) of
+    false ->
+      {str, "#" ++ Str};
+    {R,G,B} ->
+      {col, {R,G,B,1}}
+  end;
+script_var("rgb(" ++ _Rest) ->
+  {nyi, nyi};
+script_var("rgba(" ++ _Rest) ->
+  {nyi, nyi};
+script_var("hsl(" ++ _Rest) ->
+  {nyi, nyi};
+script_var("hsla(" ++ _Rest) ->
+  {nyi, nyi};
+
+script_var(Str) ->
+  {str, Str}.
+
+
+% Chunk of helpers for script_var
+
+float_or_int(Str) ->
+  case string:to_float(Str) of
+    {error, no_float} ->
+      case string:to_integer(Str) of
+        {error, _} ->
+          string:to_float("0" ++ Str);
+        Something ->
+          Something
+      end;
+    Other ->
+      Other
+  end.
+is_color(Str) ->
+  case length(Str) of
+    3 ->
+      case is_hex(Str) of
+        true ->
+          [R,G,B] = Str,
+          {hs2d([R]), hs2d([G]), hs2d([B])};
+        false ->
+          false
+      end;
+    6 ->
+      case is_hex(Str) of
+        true ->
+          [R1,R2,G1,G2,B1,B2] = Str,
+          {hs2d([R1,R2]), hs2d([G1,G2]), hs2d([B1,B2])};
+        false ->
+          false
+      end;
+    _ ->
+      false
+  end.
+is_hex(Str) ->
+  lists:all(
+    fun(A) ->
+        (((A >= $0) and (A =< $9)) or ((A >= $a) and (A =< $f)))
+    end, Str).
+hs2d([N1,N2]) ->
+  h2d(N1) * 16 + h2d(N2);
+hs2d([N]) ->
+  h2d(N) * 16 + h2d(N).
+h2d($a) -> 10;
+h2d($b) -> 11;
+h2d($c) -> 12;
+h2d($d) -> 13;
+h2d($e) -> 14;
+h2d($f) -> 15;
+h2d(N) ->
+  {I,[]} = string:to_integer([N]),
+  I.

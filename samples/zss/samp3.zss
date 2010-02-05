@@ -42,3 +42,10 @@ a, pre
 oh yeah
    oh yeah
 ]
+
+p
+	:1 [str1]
+
+[str1 = new string!]
+a
+	:1 [str1]
