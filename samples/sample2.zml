@@ -1,12 +1,4 @@
-#
-# Need a way to have include files insert their stuff at selected places.
-#
 
-:html
-  :body
-    $if blah$
-        .crazy """did it 1!"""
-        .crazy(class='first')
-    $end if$
-    %templist
-        :h1 hey there
+
+
+

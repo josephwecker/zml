@@ -1,10 +1,10 @@
 
-:main-color #ffff
+[main-color  = #fff]
 
 [blocky]
 	a, p
 		:border 1px solid red
-		:background-color [main-color - #003333]
+		:background-color [main-color - #003333] is totally awesome
 
 .error
 	[blocky]

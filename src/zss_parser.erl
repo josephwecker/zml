@@ -5,9 +5,9 @@
 parse([]) ->
   [];
 parse(Tokens) ->
-  Clumps = clumper(Tokens),
-  %io:format("~p", [Clumps]),
   erase(),   %% WARNING!!! Clobbers current process dictionary
+  EvaluatedT = evaluate_code(Tokens),
+  Clumps = clumper(EvaluatedT),
   {[], {ChildRules, []}} = get_children([{}], Clumps),
   lists:sort(lists:map(fun format_rules/1, ChildRules)).
 
@@ -38,16 +38,6 @@ clumper([{Type,_,_} = Tok | T], LastType, CAcc, Acc) when
 clumper([{Type,_,_} = Tok | T], LastType, CAcc, Acc) ->
   clumper(T, Type, [Tok], [format_clump(LastType, CAcc) | Acc]).
 
-
-format_clump(assignment, Asmts) ->
-  {assignment, lists:map(
-    fun({_,_,A}) ->
-      Str = string:sub_string(string:strip(A), 2, length(A) - 1),  % Remove brackets
-      {Left,Right} = lists:split(string:chr(Str,$=), Str),
-      io:format("~p~n",[script_var(string:strip(Right))]),
-      {string:strip(string:sub_string(Left, 1, length(Left) - 1)),
-        script_var(string:strip(Right))}
-    end, Asmts)};
 format_clump(code, Codes) ->
   {code, lists:map(
     fun({_,_,A}) ->
@@ -173,7 +163,6 @@ new_rules([], _) ->
 new_rules(Sels, Atts) ->
   {lists:sort(Sels), lists:sort(Atts)}.
 
-
 % Only one level of attribute nesting allowed (:font\n\n:family, for example)
 get_attributes(Atts, [{indent,_} | [{attr,ChildAtts} | [{dedent,_} | T]]]) ->
   [{Last, Val} | Rest] = Atts,
@@ -191,7 +180,6 @@ combine_atts(ParName, ChildAtts) ->
     fun({OldKey, Val}) ->
         {ParName ++ "-" ++ OldKey, Val}
     end, ChildAtts).
-
 
 script_var("true") ->    {bool, true};
 script_var("false") ->   {bool, false};
@@ -245,7 +233,6 @@ script_var(Str) ->
 
 
 % Chunk of helpers for script_var
-
 float_or_int(Str) ->
   case string:to_float(Str) of
     {error, no_float} ->
@@ -297,3 +284,52 @@ h2d($f) -> 15;
 h2d(N) ->
   {I,[]} = string:to_integer([N]),
   I.
+
+
+evaluate_code(Toks) ->
+  lists:reverse(evaluate_code(Toks, [])).
+
+% TODO: Here's where we need to do includes as well
+evaluate_code([], Acc) ->
+  Acc;
+evaluate_code([{assignment, LN, Text} | T], Acc) ->
+  Str = string:sub_string(string:strip(Text), 2, length(Text) - 1),
+  {Left, Right} = lists:split(string:chr(Str, $=), Str),
+  Key = string:strip(string:sub_string(Left, 1, length(Left) - 1)),
+  ValText = string:strip(Right),
+  put("V" ++ Key, evaluate_expression(ValText, LN)),
+  evaluate_code(T, Acc);
+evaluate_code([{attr, LN, Text} | T], Acc) ->
+  Text2 = pull_and_evaluate_exprs(Text, LN, []),
+  evaluate_code(T, [{attr, LN, Text2} | Acc]);
+evaluate_code([H | T], Acc) ->
+  evaluate_code(T, [H | Acc]).
+
+pull_and_evaluate_exprs([], _, Acc) ->
+  lists:reverse(Acc);
+pull_and_evaluate_exprs([$[ | T], LN, Acc) ->
+  {T2, Expression} = pull_full_expression(T, LN, 1, []),
+  pull_and_evaluate_exprs(T2, LN,
+    lists:reverse(evaluate_expression(Expression, LN)) ++ Acc);
+pull_and_evaluate_exprs([H | T], LN, Acc) ->
+  pull_and_evaluate_exprs(T, LN, [H | Acc]).
+
+pull_full_expression([], _, _, Acc) ->
+  {[], lists:reverse(Acc)};
+pull_full_expression([$[ | T], LN, Lvl, Acc) ->
+  pull_full_expression(T, LN, Lvl + 1, [$[ | Acc]);
+pull_full_expression([$] | T], LN, Lvl, Acc) ->
+  Lvl2 = Lvl - 1,
+  case Lvl2 of
+    0 ->
+      {T, lists:reverse(Acc)};
+    _ ->
+      pull_full_expression(T, LN, Lvl2, [$] | Acc])
+  end;
+pull_full_expression([H | T], LN, Lvl, Acc) ->
+  pull_full_expression(T, LN, Lvl, [H | Acc]).
+
+evaluate_expression(Expr, _LN) ->
+  "+" ++ Expr ++ "+".
+
+
