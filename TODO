@@ -1,12 +1,19 @@
-==== ZML ====
+===== Immediate / Next Action =====
+-- ZML --
 
--- Immediate --
+-- ZSS --
+  [ ] Instant expression evaluation on reading attributes so vars can be reassigned etc.
+  [ ] Super simple Lexer/Parser for inner evaluations
+  [ ] All expressions evaluating correctly
+
+-- ZWAPP --
 
 
--- Functional --
-
+===== Functional / To Implement =====
+-- ZML --
   [ ] Special tag module for HTML
     [ ] Call ZSS for zss files
+    [ ] Figure out syntax for print vs screen (etc.?) ZSS
     [ ] ZSS cullinator (pass it the AST?  Visa versa?)
     [ ] ZSS inline
     [ ] ZSS images working as expected
@@ -22,22 +29,37 @@
   [ ] Templates compiled for very fast erlang execution
   [~] Updated readme
 
--- Polish / Bugs --
+-- ZSS --
+  [ ] Includes - syntax, parsing and processing
+  [ ] Syntax for no-delete
+  [ ] Pull in external images, process, and put in the right place etc.
+  [ ] Post-processing (combinine like-selectors at least)
+  [ ] Final rendering
+  [ ] Textmate syntax file
+  [ ] Readme file for it
 
+-- ZWAPP --
+  [ ] Clump views to compile- helping w/ ZSS optimization etc.
+  [ ] Develop dependency chart for watching files when clump-compiled
+  [ ] Auto reload compilation for development
+  [ ] Sample data compilation / autocompile
+  [ ] gen_server / batcher / zwapp-minimal
+  [ ] Hot code swapping / upgrading mechanisms
+
+
+===== Polish / Bugs / Future =====
+-- ZML --
   [ ] Say you have a big paragraph of text over multiple lines, and you have lots
-	  of :strong ...; stuff like that embedded all over, and your text editor
-	  puts one of those :strong ...; things at the beginning of the line- will
-	  the compiler choke on the ';'?  It needs to not choke, and needs to, in
-	  that case, not allow indented children either.
-
--- Future --
-
+      of :strong ...; stuff like that embedded all over, and your text editor
+      puts one of those :strong ...; things at the beginning of the line- will
+      the compiler choke on the ';'?  It needs to not choke, and needs to, in
+      that case, not allow indented children either.
   [ ] Tabs for textmate bundle
   [ ] Parse inline ZSS correctly?
   [ ] Beginning of some evolving ZML coding conventions
   [ ] Unit tests
   [ ] Analyze class attributes and decide to change them to ID's- change CSS
-	  accordingly.
+      accordingly.
   [ ] Alphabetize attributes on render
   [ ] Figure out some way to cache results of "closure" because it's sooo
       slowww... (used by html special) (for example, alphabetized md5sums of
@@ -47,30 +69,7 @@
   [ ] Warning when tags are in unoptimal order (js then stylesheet, for
       example).
 
-==== ZSS ====
-
--- Immediate --
-
-  [~] Parser sets variables appropriately and removes token - including specialized typing
-  [ ] Correctly pull in assignments without regard to inner commas etc.
-  [ ] Instant expression evaluation on reading attributes so vars can be reassigned etc.
-
--- Functional --
-
-  [ ] Includes - syntax, parsing and processing
-  [ ] Figure out ZML syntax for print vs screen etc.
-  [ ] Pull in external images, process, and put in the right place etc.
-  [ ] Post-processing (combinine like-selectors at least)
-  [ ] Final rendering
-  [ ] Syntax for no-delete
-  [ ] Vim syntax file
-  [ ] Textmate syntax file
-  [ ] Readme file for it
-
--- Polish / Bugs --
-
--- Future --
-
+-- ZSS --
   [ ] Beginning of some evolving ZSS coding conventions (loosely based on
       http://www.nodewave.com/download/document/css-coding-style-conventions--standards-guidelines-rules.pdf )
   [ ] Alphabetize key-value pairs on render
@@ -87,20 +86,5 @@
   [ ] Re-output input colorized with what rules are activated by the ZML
   [ ] Tabs for textmate bundle
 
-==== ZWAPP ====
-
--- Immediate --
-
--- Functional --
-  [ ] Clump views to compile- helping w/ ZSS optimization etc.
-  [ ] Develop dependency chart for watching files when clump-compiled
-  [ ] Auto reload compilation for development
-  [ ] Sample data compilation / autocompile
-  [ ] gen_server / batcher / zwapp-minimal
-  [ ] Hot code swapping / upgrading mechanisms
-
--- Polish / Bugs --
-
--- Future --
-
+-- ZWAPP --
 
