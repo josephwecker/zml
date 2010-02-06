@@ -1,47 +1,45 @@
-[blah = 7px]
+|# Hey there #|
 
+[blah = 7px]  || Seems to be OK
+[kjfslkd j kjflskdjf] blakj
 [basic-fonts]
   :color #333
   :font-family serif
+  :blah 12
   &b
     :font
       :weight bold
 
-a, pre
+a, pre.kjsfdlk#kjfewo
   :border [blah - 4px] dashed red
   [basic-fonts]
 
-
-[size-px = 10px]
-[size-em = 10em]
-[size-% = 10%]
-[size-pt = 10pt]
-[num = 123]
-[num2 = 12.0]
-[num3 = .1]
-[num4 = 0.23]
-
-[color-name1 = black]
-[color-name2 = silver]
-[color-rgb = rgb(255,10,10)]
-[color-rgb-% = rgb(100%,10%,110%)]
-[color-rgba = rgb(255,10,10,5)]
+[size-px =      10px]
+[size-em =      10em]
+[size-% =       10%]
+[size-pt =      10pt]
+[num =          123]
+[num2 =         12.0]
+[num3 =         .1]
+[num4 =         0.23]
+[color-name1 =  black]
+[color-name2 =  silver]
+[color-rgb =    rgb(255,10,10)]
+[color-rgb-% =  rgb(100%,10%,110%)]
+[color-rgba =   rgb(255,10,10,5)]
 [color-rgba-% = rgb(100%,10%,110%,20%)]
-[color-hsl = hsl(255,10,10)]
-[color-hsl-% = hsl(100%,10%,110%)]
-[color-hsla = hsla(255,10,10,5)]
+[color-hsl =    hsl(255,10,10)]
+[color-hsl-% =  hsl(100%,10%,110%)]
+[color-hsla =   hsla(255,10,10,5)]
 [color-hsla-% = hsla(100%,10%,110%,20%)]
-[color-#3 = #fea]
-[color-#6 = #ffe3a2]
-
-[bool-t = true]
-[bool-f = false]
-
-[str1 = hey there howsit!]
-[str2 = some crazy [stuff] goes here!
-oh yeah
-   oh yeah
-]
+[color-#3 =     #fea]
+[color-#6 =     #ffe3a2]
+[bool-t =       true]
+[bool-f =       false]
+[str1 =         hey there howsit!]
+[str2 =         some crazy  = [stuff] goes here!
+                oh yeah
+                   oh yeah]
 
 p
 	:1 [str1]
