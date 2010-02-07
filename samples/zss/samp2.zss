@@ -1,6 +1,8 @@
 
-[blah = ((#fff - #303030 / 13) * 1.1)]
+||[blah = ((#fff -#303030/13)*1.1)]
+[blah = (#fefefe+#010101)]
 
+a :color [0.3 * blah]
 |#[main-color  = #fff]
 
 [blocky]

@@ -32,8 +32,8 @@
       tokenize_expression(T, LN, break, [], [{val, Val} | Acc])
   end).
 
-
-
+-define(CVAL(Col), lists:max([lists:min([Col,255]),0])).
+-define(AVAL(Alpha), lists:max([lists:min([Alpha,1]),0])).
 
 parse([]) ->
   [];
@@ -265,6 +265,26 @@ script_var("hsla(" ++ _Rest) ->
 script_var(Str) ->
   {str, Str}.
 
+script_var_name(nyi) ->
+  "(color - not yet implemented)";
+script_var_name(col) ->
+  "color";
+script_var_name(bool) ->
+  "true/false";
+script_var_name(nothing) ->
+  "nothing??";
+script_var_name(num) ->
+  "number";
+script_var_name(px) ->
+  "pixels";
+script_var_name(per) ->
+  "percent";
+script_var_name(em) ->
+  "ems";
+script_var_name(pt) ->
+  "points";
+script_var_name(str) ->
+  "string".
 
 % Chunk of helpers for script_var
 float_or_int(Str) ->
@@ -366,7 +386,8 @@ pull_full_expression([H | T], LN, Lvl, Acc) ->
 evaluate_expression(Expr, LN) ->
   Tokens = tokenize_expression(Expr, LN, inword, [], []),
   RPN = shunt_yard(LN, Tokens, [], []),
-  calculate_value(RPN).
+  Value = process_rpn(LN, RPN, []),
+  translate_value(Value).
 
 tokenize_expression([], _LN, _, [], Acc) ->
   lists:reverse(Acc);
@@ -416,6 +437,66 @@ shunt_yard(_LN, [], [], Output) ->
   lists:reverse(Output).
 
 
+process_rpn(_LN, [], [ResVal]) ->
+  ResVal;
+process_rpn(LN, [], _) ->
+  erlang:error("Cannot understand zss arithmetic expression- too many
+    arguments line " ++ integer_to_list(LN));
+process_rpn(LN, [{N,Op} | T], [V2 | [V1 | Res]]) when is_integer(N) ->
+  process_rpn(LN, T, [calculate(LN, Op, V1, V2) | Res]);
+process_rpn(LN, [V | T], Res) ->
+  process_rpn(LN, T, [V | Res]).
 
-calculate_value(RPN) ->
-  RPN.
+% Color and Color
+calculate(_LN, $+, {col,{R,G,B,A}}, {col, {R2,G2,B2,_A2}}) ->
+  {col,{?CVAL(R+R2), ?CVAL(G+G2), ?CVAL(B+B2), A}};
+calculate(_LN, $-, {col,{R,G,B,A}}, {col, {R2,G2,B2,_A2}}) ->
+  {col,{?CVAL(R-R2), ?CVAL(G-G2), ?CVAL(B-B2), A}};
+calculate(_LN, $*, {col,{R,G,B,A}}, {col, {R2,G2,B2,_A2}}) ->
+  {col,{?CVAL(R*R2), ?CVAL(G*G2), ?CVAL(B*B2), A}};
+calculate(_LN, $/, {col,{R,G,B,A}}, {col, {R2,G2,B2,_A2}}) ->
+  {col,{?CVAL(R/R2), ?CVAL(G/G2), ?CVAL(B/B2), A}};
+
+% Color and Number - Alpha is ignored
+calculate(LN, $*, {col, _} = Col, {num, _} = Num) ->
+  calculate(LN, $*, Num, Col);
+calculate(_LN, $*, {num, N}, {col, {R,G,B,A}}) ->
+  {col,{?CVAL(N*R),?CVAL(N*G),?CVAL(N*B),A}};
+calculate(_LN, $/, {col, {R,G,B,A}}, {num, N}) ->
+  {col,{?CVAL(R/N),?CVAL(G/N),?CVAL(B/N),A}};
+calculate(_LN, $/, {num, N}, {col, {R,G,B,A}}) ->
+  {col,{?CVAL(N/R),?CVAL(N/G),?CVAL(N/B),A}};
+calculate(LN, $+, {col, _} = Col, {num, _} = Num) ->
+  calculate(LN, $+, Num, Col);
+calculate(_LN, $+, {num, N}, {col, {R,G,B,A}}) ->
+  {col,{?CVAL(N+R),?CVAL(N+G),?CVAL(N+B),A}};
+calculate(_LN, $-, {col, {R,G,B,A}}, {num, N}) ->
+  {col,{?CVAL(R-N),?CVAL(G-N),?CVAL(B-N),A}};
+calculate(_LN, $-, {num, N}, {col, {R,G,B,A}}) ->
+  {col,{?CVAL(N-R),?CVAL(N-G),?CVAL(N-B),A}};
+
+calculate(LN, Op, {Type, _}, {col, _}) ->
+  erlang:error("Cannot '" + [Op] + "' a " ++ script_var_name(Type) ++
+    "and a color together- on line " ++ integer_to_list(LN));
+calculate(LN, Op, {col, _}, {Type, _}) ->
+  erlang:error("Cannot '" + [Op] + "' a " ++ script_var_name(Type) ++
+    "and a color together- on line " ++ integer_to_list(LN));
+
+calculate(_,_,A,_) ->
+  A.
+
+
+translate_value({col, {R, G, B, 1}}) ->
+  condense_color(lists:flatten(io_lib:format("#~2.16.0b~2.16.0b~2.16.0b",
+        [round(R),round(G),round(B)])));
+translate_value({col, {R, G, B, A}}) ->
+  lists:flatten(io_lib:format("rgba(~p,~p,~p,~p)",
+      [round(R), round(G), round(B), A]));
+translate_value(L) when is_list(L) ->
+  L.
+
+condense_color([$#,R1,R2,G1,G2,B1,B2]) when
+(R1 == R2) and (G1 == G2) and (B1 == B2) ->
+  [$#,R1,G1,B1];
+condense_color(V) ->
+  V.
