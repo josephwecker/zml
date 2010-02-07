@@ -1,15 +1,21 @@
-
-||[blah = ((#fff -#303030/13)*1.1)]
-[blah = (#fefefe+#010101)]
-
-a :color [0.3 * blah]
-|#[main-color  = #fff]
-
+[main-color  = #fff]
 [blocky]
 	a, p
 		:border 1px solid red
-		:background-color [main-color - #003333] is totally awesome
+		:background-color [main-color - #003333] is slightly less than [main-color]
+
+[blah1 = ((#fff -#303030/2)*1)]
+[blah = (#fff - #222)]
+
+a
+  :color [blah - #222]
+  :blah1 [blah1]
+  :blah [blah]
+
+[doink = blah1 - blah]
+
+b :color [doink / 0.33 + #123456]
 
 .error
 	[blocky]
-	:font-weight bold#|
+	:font-weight bold

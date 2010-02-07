@@ -1,6 +1,6 @@
 -module(zss_parser).
 
--export([parse/1, script_var/1]).
+-export([parse/1, evaluate_expression/2]).
 
 -define(E_FLUSH(Tok),
   case script_var(lists:reverse(TAcc)) of
@@ -363,8 +363,9 @@ pull_and_evaluate_exprs([], _, Acc) ->
   lists:reverse(Acc);
 pull_and_evaluate_exprs([$[ | T], LN, Acc) ->
   {T2, Expression} = pull_full_expression(T, LN, 1, []),
+  ExpVal = translate_value(evaluate_expression(Expression, LN)),
   pull_and_evaluate_exprs(T2, LN,
-    lists:reverse(evaluate_expression(Expression, LN)) ++ Acc);
+    lists:reverse(ExpVal) ++ Acc);
 pull_and_evaluate_exprs([H | T], LN, Acc) ->
   pull_and_evaluate_exprs(T, LN, [H | Acc]).
 
@@ -386,8 +387,7 @@ pull_full_expression([H | T], LN, Lvl, Acc) ->
 evaluate_expression(Expr, LN) ->
   Tokens = tokenize_expression(Expr, LN, inword, [], []),
   RPN = shunt_yard(LN, Tokens, [], []),
-  Value = process_rpn(LN, RPN, []),
-  translate_value(Value).
+  process_rpn(LN, RPN, []).
 
 tokenize_expression([], _LN, _, [], Acc) ->
   lists:reverse(Acc);
