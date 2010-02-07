@@ -365,8 +365,7 @@ pull_full_expression([H | T], LN, Lvl, Acc) ->
 
 evaluate_expression(Expr, LN) ->
   Tokens = tokenize_expression(Expr, LN, inword, [], []),
-  io:format("~n~n~p~n~n", [Tokens]),
-  RPN = shunt_yard(Tokens),
+  RPN = shunt_yard(LN, Tokens, [], []),
   calculate_value(RPN).
 
 tokenize_expression([], _LN, _, [], Acc) ->
@@ -374,19 +373,49 @@ tokenize_expression([], _LN, _, [], Acc) ->
 tokenize_expression([] = T, LN, _, TAcc, Acc) ->
   ?E_FLUSH2;
 tokenize_expression([$( | T], LN, _, TAcc, Acc) ->
-  ?E_FLUSH({dstart, none});
+  ?E_FLUSH(dstart);
 tokenize_expression([$) | T], LN, _, TAcc, Acc) ->
-  ?E_FLUSH({dend, none});
+  ?E_FLUSH(dend);
 tokenize_expression([$  | T], LN, _, TAcc, Acc) ->
   ?E_FLUSH2;
-tokenize_expression([H | T], LN, break, TAcc, Acc)
-when (H == $*) or (H == $+) or (H == $-) or (H == $/) ->
-  ?E_FLUSH({operator, H});
+tokenize_expression([$* | T], LN, _, TAcc, Acc) ->
+  ?E_FLUSH({operator, {2,$*}});
+tokenize_expression([$/ | T], LN, _, TAcc, Acc) ->
+  ?E_FLUSH({operator, {2,$/}});
+tokenize_expression([$- | T], LN, break, TAcc, Acc) ->
+  ?E_FLUSH({operator, {1,$-}});
+tokenize_expression([$+ | T], LN, _, TAcc, Acc) ->
+  ?E_FLUSH({operator, {1,$+}});
 tokenize_expression([H | T], LN, _, TAcc, Acc) ->
   tokenize_expression(T, LN, inword, [H | TAcc], Acc).
 
-shunt_yard(Toks) ->
-  Toks.
+shunt_yard(LN, [dstart|T], OpStack, Output) ->
+  shunt_yard(LN, T, [dstart|OpStack], Output);
+shunt_yard(LN, [{operator, {1,_}}|_] = L, [{2,Op2} | OpStack], Output) ->
+  shunt_yard(LN, L, OpStack, [{2,Op2} | Output]);
+shunt_yard(LN, [{operator, {2,_}}|_] = L, [{2,Op2} | OpStack], Output) ->
+  shunt_yard(LN, L, OpStack, [{2,Op2} | Output]);
+shunt_yard(LN, [{operator, Op} | T], OpStack, Output) ->
+  shunt_yard(LN, T, [Op | OpStack], Output);
+shunt_yard(LN, [{val, Val} | T], OpStack, Output) ->
+  shunt_yard(LN, T, OpStack, [Val | Output]);
+shunt_yard(LN, [dend | T], [Op | OpStackT], Output) when Op /= dstart ->
+  shunt_yard(LN, [dend | T], OpStackT, [Op | Output]);
+shunt_yard(LN, [dend | T], [dstart | OpStackT], Output) ->
+  shunt_yard(LN, T, OpStackT, Output);
+shunt_yard(LN, [dend | _], [], _) ->
+  erlang:error("Mismatched parenthases in zss file line " ++
+    integer_to_list(LN));
+shunt_yard(LN, [], [Op | _], _)
+when (Op == dend) or (Op == dstart) ->
+  erlang:error("Mismatched parenthases in zss file line " ++
+    integer_to_list(LN));
+shunt_yard(LN, [], [Op | OpStack], Output) ->
+  shunt_yard(LN, [], OpStack, [Op | Output]);
+shunt_yard(_LN, [], [], Output) ->
+  lists:reverse(Output).
+
+
 
 calculate_value(RPN) ->
   RPN.

@@ -1,5 +1,7 @@
 
-[main-color  = #fff]
+[blah = ((#fff - #303030 / 13) * 1.1)]
+
+|#[main-color  = #fff]
 
 [blocky]
 	a, p
@@ -8,4 +10,4 @@
 
 .error
 	[blocky]
-	:font-weight bold
+	:font-weight bold#|
