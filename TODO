@@ -1,10 +1,17 @@
 ===== Immediate / Next Action =====
 -- ZML --
+  [ ] Special tag module for HTML
+    [ ] Call ZSS for zss files
+    [ ] Figure out syntax for print vs screen (etc.?) ZSS
 
 -- ZSS --
-  [ ] Instant expression evaluation on reading attributes so vars can be reassigned etc.
-  [ ] Super simple Lexer/Parser for inner evaluations
   [ ] All expressions evaluating correctly
+	[ ] size x number
+    [ ] size x size
+	[ ] string/bool x number
+	[ ] string/bool x string
+  [ ] Includes - syntax, parsing and processing
+  [ ] Syntax for no-delete
 
 -- ZWAPP --
 
@@ -12,8 +19,6 @@
 ===== Functional / To Implement =====
 -- ZML --
   [ ] Special tag module for HTML
-    [ ] Call ZSS for zss files
-    [ ] Figure out syntax for print vs screen (etc.?) ZSS
     [ ] ZSS cullinator (pass it the AST?  Visa versa?)
     [ ] ZSS inline
     [ ] ZSS images working as expected
@@ -30,8 +35,6 @@
   [~] Updated readme
 
 -- ZSS --
-  [ ] Includes - syntax, parsing and processing
-  [ ] Syntax for no-delete
   [ ] Pull in external images, process, and put in the right place etc.
   [ ] Post-processing (combinine like-selectors at least)
   [ ] Final rendering
@@ -70,6 +73,13 @@
       example).
 
 -- ZSS --
+  [ ] Boolean expressions / blocks / or ternary expression
+  [ ] Right now it cuts color values every time it does an operation- maybe it
+      makes more sense to cut them only when they're being rendered finally.
+  [ ] Get rgb(), hsl(), rgba()... stuff working
+  [ ] VIM syntax - inline comments after attribute text
+  [ ] VIM syntax - more realistic highlight links
+  [ ] Lazy mixin variable evaluation
   [ ] Beginning of some evolving ZSS coding conventions (loosely based on
       http://www.nodewave.com/download/document/css-coding-style-conventions--standards-guidelines-rules.pdf )
   [ ] Alphabetize key-value pairs on render
