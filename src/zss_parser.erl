@@ -2,6 +2,39 @@
 
 -export([parse/1, script_var/1]).
 
+-define(E_FLUSH(Tok),
+  case script_var(lists:reverse(TAcc)) of
+    nothing ->
+      tokenize_expression(T, LN, break, [], [Tok | Acc]);
+    {str, S} ->
+      case get("V" ++ S) of
+        undefined ->
+          erlang:error(S ++ " undefined on line " ++ integer_to_list(LN));
+        SavedVal ->
+          tokenize_expression(T, LN, break, [], [Tok | [{val, SavedVal} | Acc]])
+      end;
+    Val ->
+      tokenize_expression(T, LN, break, [], [Tok | [{val, Val} | Acc]])
+  end).
+
+-define(E_FLUSH2,
+  case script_var(lists:reverse(TAcc)) of
+    nothing ->
+      tokenize_expression(T, LN, break, [], Acc);
+    {str, S} ->
+      case get("V" ++ S) of
+        undefined ->
+          erlang:error(S ++ " undefined on line " ++ integer_to_list(LN));
+        SavedVal ->
+          tokenize_expression(T, LN, break, [], [{val, SavedVal} | Acc])
+      end;
+    Val ->
+      tokenize_expression(T, LN, break, [], [{val, Val} | Acc])
+  end).
+
+
+
+
 parse([]) ->
   [];
 parse(Tokens) ->
@@ -181,6 +214,7 @@ combine_atts(ParName, ChildAtts) ->
         {ParName ++ "-" ++ OldKey, Val}
     end, ChildAtts).
 
+script_var([]) ->        nothing;
 script_var("true") ->    {bool, true};
 script_var("false") ->   {bool, false};
 script_var("black") ->   {col, {0  ,  0,  0,1}};
@@ -329,7 +363,30 @@ pull_full_expression([$] | T], LN, Lvl, Acc) ->
 pull_full_expression([H | T], LN, Lvl, Acc) ->
   pull_full_expression(T, LN, Lvl, [H | Acc]).
 
-evaluate_expression(Expr, _LN) ->
-  "+" ++ Expr ++ "+".
+evaluate_expression(Expr, LN) ->
+  Tokens = tokenize_expression(Expr, LN, inword, [], []),
+  io:format("~n~n~p~n~n", [Tokens]),
+  RPN = shunt_yard(Tokens),
+  calculate_value(RPN).
 
+tokenize_expression([], _LN, _, [], Acc) ->
+  lists:reverse(Acc);
+tokenize_expression([] = T, LN, _, TAcc, Acc) ->
+  ?E_FLUSH2;
+tokenize_expression([$( | T], LN, _, TAcc, Acc) ->
+  ?E_FLUSH({dstart, none});
+tokenize_expression([$) | T], LN, _, TAcc, Acc) ->
+  ?E_FLUSH({dend, none});
+tokenize_expression([$  | T], LN, _, TAcc, Acc) ->
+  ?E_FLUSH2;
+tokenize_expression([H | T], LN, break, TAcc, Acc)
+when (H == $*) or (H == $+) or (H == $-) or (H == $/) ->
+  ?E_FLUSH({operator, H});
+tokenize_expression([H | T], LN, _, TAcc, Acc) ->
+  tokenize_expression(T, LN, inword, [H | TAcc], Acc).
 
+shunt_yard(Toks) ->
+  Toks.
+
+calculate_value(RPN) ->
+  RPN.
