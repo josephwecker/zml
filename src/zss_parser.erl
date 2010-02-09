@@ -2,17 +2,16 @@
 
 -export([parse/1, evaluate_expression/2]).
 
+-define(CSS_LEN_TYPES,
+  ["%","em","ex","px","in","cm","mm","pt","pc"]).
+
 -define(E_FLUSH(Tok),
   case script_var(lists:reverse(TAcc)) of
     nothing ->
       tokenize_expression(T, LN, break, [], [Tok | Acc]);
     {str, S} ->
-      case get("V" ++ S) of
-        undefined ->
-          erlang:error(S ++ " undefined on line " ++ integer_to_list(LN));
-        SavedVal ->
-          tokenize_expression(T, LN, break, [], [Tok | [{val, SavedVal} | Acc]])
-      end;
+      S2 = inject_variables(S),
+      tokenize_expression(T, LN, break, [], [Tok | [{val, S2} | Acc]]);
     Val ->
       tokenize_expression(T, LN, break, [], [Tok | [{val, Val} | Acc]])
   end).
@@ -22,12 +21,8 @@
     nothing ->
       tokenize_expression(T, LN, break, [], Acc);
     {str, S} ->
-      case get("V" ++ S) of
-        undefined ->
-          erlang:error(S ++ " undefined on line " ++ integer_to_list(LN));
-        SavedVal ->
-          tokenize_expression(T, LN, break, [], [{val, SavedVal} | Acc])
-      end;
+      S2 = inject_variables(S),
+      tokenize_expression(T, LN, break, [], [{val, S2} | Acc]);
     Val ->
       tokenize_expression(T, LN, break, [], [{val, Val} | Acc])
   end).
@@ -84,6 +79,11 @@ format_clump(code, Codes) ->
     fun({_,_,A}) ->
       string:sub_string(string:strip(A),2,length(A) - 1)
     end, Codes)};
+format_clump(include, Includes) ->
+  {include, lists:map(
+    fun({_,_,A}) ->
+      string:sub_string(string:strip(A),1,length(A) - 1)
+    end, Includes)};
 format_clump(indent, _) ->
   {indent, none};
 format_clump(end_of_file, _) ->
@@ -118,6 +118,11 @@ get_children(_Parents, [{dedent,_} | T], {RuleAcc, AttAcc}) ->
 get_children(Parents, [{assignment, Asts} | T], {RuleAcc, AttAcc}) ->
   lists:foreach(fun({Key,Val}) -> put("V" ++ Key, Val) end, Asts),
   get_children(Parents, T, {RuleAcc, AttAcc});
+
+% TODO: Include files here
+
+%get_children(Parents, [{include, Incs} | T], {RuleAcc, AttAcc}) ->
+%  IncCode = lists:map(fun(IncludeFile) -> zss:compile(IncludeFile)),
 
 get_children(Parents, [{code,Codes} | [{indent,_} | T]], {RuleAcc, AttAcc}) ->
   {T2, RawChildren} = pull_raw_children(T),
@@ -245,11 +250,13 @@ script_var([D | _] = Str) when (D >= $0) and (D =< $9) or (D =:= $.) ->
     {N,[]} ->   {num, N};
     {N,Str2} when is_list(Str2) ->
       case {N, string:strip(string:to_lower(Str2))} of
-        {_,"px"} -> {px, N};
-        {_,"%"} ->  {per, N};
-        {_,"em"} -> {em, N};
-        {_,"pt"} -> {pt, N};
-        _ ->        {str1, Str}
+        {_, Rem} when is_list(Rem) ->
+          case lists:member(Rem, ?CSS_LEN_TYPES) of
+            true -> {list_to_atom(Rem), N};
+            false -> {str, Str}
+          end;
+        _ ->
+          {str, Str}
       end;
     _ ->
       {str, Str}
@@ -272,27 +279,6 @@ script_var("hsla(" ++ _Rest) ->
 
 script_var(Str) ->
   {str, Str}.
-
-script_var_name(nyi) ->
-  "(color - not yet implemented)";
-script_var_name(col) ->
-  "color";
-script_var_name(bool) ->
-  "true/false";
-script_var_name(nothing) ->
-  "nothing??";
-script_var_name(num) ->
-  "number";
-script_var_name(px) ->
-  "pixels";
-script_var_name(per) ->
-  "percent";
-script_var_name(em) ->
-  "ems";
-script_var_name(pt) ->
-  "points";
-script_var_name(str) ->
-  "string".
 
 % Chunk of helpers for script_var
 float_or_int(Str) ->
@@ -448,8 +434,7 @@ shunt_yard(_LN, [], [], Output) ->
 process_rpn(_LN, [], [ResVal]) ->
   ResVal;
 process_rpn(LN, [], _) ->
-  erlang:error("Cannot understand zss arithmetic expression- too many
-    arguments line " ++ integer_to_list(LN));
+  erlang:error("Cannot understand zss arithmetic expression- too many arguments line " ++ integer_to_list(LN));
 process_rpn(LN, [{N,Op} | T], [V2 | [V1 | Res]]) when is_integer(N) ->
   process_rpn(LN, T, [calculate(LN, Op, V1, V2) | Res]);
 process_rpn(LN, [V | T], Res) ->
@@ -466,18 +451,32 @@ calculate(_LN, O, {col, {R,G,B,A}}, {num, N}) ->
   {col,{?OP(O,R,N),?OP(O,G,N),?OP(O,B,N),A}};
 
 calculate(LN, Op, {Type, _}, {col, _}) ->
-  erlang:error("Cannot '" + [Op] + "' a " ++ script_var_name(Type) ++
-    "and a color together- on line " ++ integer_to_list(LN));
+  erlang:error("Cannot '" + [Op] + "' a '" ++ Type ++
+    "' and a color together- on line " ++ integer_to_list(LN));
 calculate(LN, Op, {col, _}, {Type, _}) ->
-  erlang:error("Cannot '" + [Op] + "' a " ++ script_var_name(Type) ++
-    "and a color together- on line " ++ integer_to_list(LN));
+  erlang:error("Cannot '" + [Op] + "' a '" ++ Type ++
+    "' and a color together- on line " ++ integer_to_list(LN));
 
+% Number to number
 calculate(_LN, O, {num, N1}, {num, N2}) ->
   {num, ?OP(O,N1,N2)};
 
+% Number to size
+calculate(_LN, O, {num, N1}, {Type, N2}) when is_integer(N2) or is_float(N2) ->
+  {Type, ?OP(O,N1,N2)};
+calculate(_LN, O, {Type, N1}, {num, N2}) when is_integer(N1) or is_float(N1) ->
+  {Type, ?OP(O,N1,N2)};
 
-calculate(_,_,A,_) ->
-  A.
+% Size to size - simple case where they match first
+calculate(_LN, O, {Type, N1}, {Type, N2}) when is_integer(N1) or is_float(N1) ->
+  {Type, ?OP(O,N1,N2)}.
+
+%calculate(_LN, O, {T1, N1}, {T2, N2}) when
+%    (is_integer(N1) or is_float(N1)) and
+%    (is_integer(N2) or is_float(N2)) ->
+
+
+
 
 
 translate_value({col, {R, G, B, 1}}) ->
@@ -498,3 +497,13 @@ condense_color([$#,R1,R2,G1,G2,B1,B2]) when
   [$#,R1,G1,B1];
 condense_color(V) ->
   V.
+
+% TODO:
+%  Differentiate here between strings and variables based on something else.
+inject_variables(S) ->
+  case get("V" ++ S) of
+    undefined ->
+      {str, S};
+    SavedVal ->
+      SavedVal
+  end.
