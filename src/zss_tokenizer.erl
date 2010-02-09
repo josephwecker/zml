@@ -28,9 +28,14 @@
             [$[ | _] ->
               case string:chr(Str,$=) of
                 0 ->
-                  [{code, ?LN, Str} | AllTAcc];
+                  case Str of
+                    "[include " ++ R ->
+                      [{include, ?LN, string:strip(R)} | AllTAcc];
+                    _ ->
+                      [{code, ?LN, Str} | AllTAcc]
+                  end;
                 _ ->
-                  [{assignment, ?LN, Str} | AllTAcc]
+                [{assignment, ?LN, Str} | AllTAcc]
               end;
             _ ->
               [{sel, ?LN, Str} | AllTAcc]
