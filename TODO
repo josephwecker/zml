@@ -5,13 +5,12 @@
     [ ] Figure out syntax for print vs screen (etc.?) ZSS
 
 -- ZSS --
-  [ ] All expressions evaluating correctly
-	[ ] size x number
-    [ ] size x size
-	[ ] string/bool x number
-	[ ] string/bool x string
-  [ ] Includes - syntax, parsing and processing
-  [ ] Syntax for no-delete
+  [ ] Touch up screen.zss file and make sure it compiles to AST correctly
+  [ ] Pull in external images, process, and put in the right place etc.
+  [ ] Post-processing (combinine like-selectors at least)
+  [ ] Final rendering
+  [ ] Textmate syntax file
+  [ ] Readme file for it
 
 -- ZWAPP --
 
@@ -35,11 +34,6 @@
   [~] Updated readme
 
 -- ZSS --
-  [ ] Pull in external images, process, and put in the right place etc.
-  [ ] Post-processing (combinine like-selectors at least)
-  [ ] Final rendering
-  [ ] Textmate syntax file
-  [ ] Readme file for it
 
 -- ZWAPP --
   [ ] Clump views to compile- helping w/ ZSS optimization etc.
@@ -73,6 +67,7 @@
       example).
 
 -- ZSS --
+  [ ] Syntax for no-delete
   [ ] Boolean expressions / blocks / or ternary expression
   [ ] Right now it cuts color values every time it does an operation- maybe it
       makes more sense to cut them only when they're being rendered finally.
@@ -95,6 +90,18 @@
   [ ] Warn on unknown css attributes or tags
   [ ] Re-output input colorized with what rules are activated by the ZML
   [ ] Tabs for textmate bundle
+  [ ] Real variable vs. string interpolation
+  [ ] All expressions evaluating correctly
+    [ ] Fix variable vs string
+    [ ] string/bool x number
+    [ ] string/bool x string
+  [ ] A way to preserve order somehow when needed?
+  [ ] Include files
+    [ ] Search correct paths (project, like zml, script, etc.)
+    [ ] Append extension if necessary
+    [ ] Syntax highlighting for includes
+    [ ] Includes (and therefore normals) need to have a flag that allows attribute children
+    [ ] Error messages need to emit the script name as well as the line number
 
 -- ZWAPP --
 
