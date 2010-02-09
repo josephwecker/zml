@@ -35,6 +35,14 @@
 -define(CVAL(Col), lists:max([lists:min([Col,255]),0])).
 -define(AVAL(Alpha), lists:max([lists:min([Alpha,1]),0])).
 
+-define(OP(Op,A,B),
+  case Op of
+    $+ -> A + B;
+    $- -> A - B;
+    $/ -> A / B;
+    $* -> A * B
+  end).
+
 parse([]) ->
   [];
 parse(Tokens) ->
@@ -448,32 +456,14 @@ process_rpn(LN, [V | T], Res) ->
   process_rpn(LN, T, [V | Res]).
 
 % Color and Color
-calculate(_LN, $+, {col,{R,G,B,A}}, {col, {R2,G2,B2,_A2}}) ->
-  {col,{?CVAL(R+R2), ?CVAL(G+G2), ?CVAL(B+B2), A}};
-calculate(_LN, $-, {col,{R,G,B,A}}, {col, {R2,G2,B2,_A2}}) ->
-  {col,{?CVAL(R-R2), ?CVAL(G-G2), ?CVAL(B-B2), A}};
-calculate(_LN, $*, {col,{R,G,B,A}}, {col, {R2,G2,B2,_A2}}) ->
-  {col,{?CVAL(R*R2), ?CVAL(G*G2), ?CVAL(B*B2), A}};
-calculate(_LN, $/, {col,{R,G,B,A}}, {col, {R2,G2,B2,_A2}}) ->
-  {col,{?CVAL(R/R2), ?CVAL(G/G2), ?CVAL(B/B2), A}};
+calculate(_LN, O, {col,{R,G,B,A}}, {col, {R2,G2,B2,_A2}}) ->
+  {col,{?OP(O,R,R2), ?OP(O,G,G2), ?OP(O,B,B2), A}};
 
 % Color and Number - Alpha is ignored
-calculate(LN, $*, {col, _} = Col, {num, _} = Num) ->
-  calculate(LN, $*, Num, Col);
-calculate(_LN, $*, {num, N}, {col, {R,G,B,A}}) ->
-  {col,{?CVAL(N*R),?CVAL(N*G),?CVAL(N*B),A}};
-calculate(_LN, $/, {col, {R,G,B,A}}, {num, N}) ->
-  {col,{?CVAL(R/N),?CVAL(G/N),?CVAL(B/N),A}};
-calculate(_LN, $/, {num, N}, {col, {R,G,B,A}}) ->
-  {col,{?CVAL(N/R),?CVAL(N/G),?CVAL(N/B),A}};
-calculate(LN, $+, {col, _} = Col, {num, _} = Num) ->
-  calculate(LN, $+, Num, Col);
-calculate(_LN, $+, {num, N}, {col, {R,G,B,A}}) ->
-  {col,{?CVAL(N+R),?CVAL(N+G),?CVAL(N+B),A}};
-calculate(_LN, $-, {col, {R,G,B,A}}, {num, N}) ->
-  {col,{?CVAL(R-N),?CVAL(G-N),?CVAL(B-N),A}};
-calculate(_LN, $-, {num, N}, {col, {R,G,B,A}}) ->
-  {col,{?CVAL(N-R),?CVAL(N-G),?CVAL(N-B),A}};
+calculate(_LN, O, {num, N}, {col, {R,G,B,A}}) ->
+  {col,{?OP(O,N,R),?OP(O,N,G),?OP(O,N,B),A}};
+calculate(_LN, O, {col, {R,G,B,A}}, {num, N}) ->
+  {col,{?OP(O,R,N),?OP(O,G,N),?OP(O,B,N),A}};
 
 calculate(LN, Op, {Type, _}, {col, _}) ->
   erlang:error("Cannot '" + [Op] + "' a " ++ script_var_name(Type) ++
@@ -482,18 +472,26 @@ calculate(LN, Op, {col, _}, {Type, _}) ->
   erlang:error("Cannot '" + [Op] + "' a " ++ script_var_name(Type) ++
     "and a color together- on line " ++ integer_to_list(LN));
 
+calculate(_LN, O, {num, N1}, {num, N2}) ->
+  {num, ?OP(O,N1,N2)};
+
+
 calculate(_,_,A,_) ->
   A.
 
 
 translate_value({col, {R, G, B, 1}}) ->
   condense_color(lists:flatten(io_lib:format("#~2.16.0b~2.16.0b~2.16.0b",
-        [round(R),round(G),round(B)])));
+        [?CVAL(round(R)),?CVAL(round(G)),?CVAL(round(B))])));
 translate_value({col, {R, G, B, A}}) ->
   lists:flatten(io_lib:format("rgba(~p,~p,~p,~p)",
-      [round(R), round(G), round(B), A]));
+      [?CVAL(round(R)), ?CVAL(round(G)), ?CVAL(round(B)), ?AVAL(A)]));
 translate_value(L) when is_list(L) ->
-  L.
+  L;
+translate_value({num, N}) when is_integer(N) ->
+  io_lib:format("~i",[N]);
+translate_value({num, N}) when is_float(N) ->
+  io_lib:format("~f",[N]).
 
 condense_color([$#,R1,R2,G1,G2,B1,B2]) when
 (R1 == R2) and (G1 == G2) and (B1 == B2) ->
