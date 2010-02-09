@@ -72,7 +72,7 @@
   [ ] Right now it cuts color values every time it does an operation- maybe it
       makes more sense to cut them only when they're being rendered finally.
   [ ] Get rgb(), hsl(), rgba()... stuff working
-  [ ] VIM syntax - inline comments after attribute text
+  [ ] VIM syntax - inline comments after attribute text (currently as string highlight)
   [ ] VIM syntax - more realistic highlight links
   [ ] Lazy mixin variable evaluation
   [ ] Beginning of some evolving ZSS coding conventions (loosely based on

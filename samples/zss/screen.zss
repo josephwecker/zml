@@ -9,21 +9,11 @@
  #   - Make colors and sizes relative to some foundation (at least colors)
  #|
 || MEYER RESET v1.0
-a, abbr, acronym, address, applet,
-b, big, blockquote, body,
-caption, center, cite, code,
-dd, del, dfn, div, dl, dt,
-em,
-fieldset, font, form,
-h1, h2, h3, h4, h5, h6, html,
-i, iframe, img, ins, kbd, label, legend, li,
-object, ol,
-p, pre,
-q,
-s, samp, small, span, strike, strong, sub, sup,
-table, tbody, td, tfoot, th, thead, tr, tt,
-u, ul,
-var
+a, abbr, acronym, address, applet, b, big, blockquote, body, caption, center,
+cite, code, dd, del, dfn, div, dl, dt, em, fieldset, font, form, h1, h2, h3,
+h4, h5, h6, html, i, iframe, img, ins, kbd, label, legend, li, object, ol, p,
+pre, q, s, samp, small, span, strike, strong, sub, sup, table, tbody, td,
+tfoot, th, thead, tr, tt, u, ul, var
 	:margin 0
 	:padding 0
 	:border 0
@@ -64,8 +54,8 @@ h1, h2, h3, h4, h5, h6, strong, th, thead td
 
 cite, dfn, em
 	:font-style italic
-code, input[type='password'], input[type='text'],
-kbd, pre, samp, textarea, tt, var
+code, input[type='password'], input[type='text'], kbd, pre, samp, textarea, tt,
+var
 	:font-size 92%
 	:font-family monaco, "Lucida Console", courier, monospace
 del
@@ -94,14 +84,13 @@ sub
 	:vertical-align sub
 
 || Quotes
-
 blockquote
 	:border
 		:top 1px soid #ccc
 		:bottom 1px solid #ccc
 	:color #666
 blockquote
-	*:first-child:before :content "\201C"   || Quotes here??
+	*:first-child:before :content "\201C"
 	*:first-child:after :content "\201D"
 
 || Forms
@@ -249,83 +238,82 @@ div
 	&.last
 		:margin-right 0
 
-|#
-
 [gs = 30px]
 [gi = 40px]
 .span-
 	&1  :width [gs]
-	&2  :width [gs + gi]
-	&3  :width [gs+!gi*2
-	&4  :width [gs+!gi*3
-	&5  :width [gs+!gi*4
-	&6  :width [gs+!gi*5
-	&7  :width [gs+!gi*6
-	&8  :width [gs+!gi*7
-	&9  :width [gs+!gi*8
-	&10 :width [gs+!gi*9
-	&11 :width [gs+!gi*10
-	&12 :width [gs+!gi*11
-	&13 :width [gs+!gi*12
-	&14 :width [gs+!gi*13
-	&15 :width [gs+!gi*14
-	&16 :width [gs+!gi*15
-	&17 :width [gs+!gi*16
-	&18 :width [gs+!gi*17
-	&19 :width [gs+!gi*18
-	&20 :width [gs+!gi*19
-	&21 :width [gs+!gi*20
-	&22 :width [gs+!gi*21
-	&23 :width [gs+!gi*22
-	&24, div.span-24 :width !gs+!gi*23
+	&2  :width [gs+gi]
+	&3  :width [gs+gi*2]
+	&4  :width [gs+gi*3]
+	&5  :width [gs+gi*4]
+	&6  :width [gs+gi*5]
+	&7  :width [gs+gi*6]
+	&8  :width [gs+gi*7]
+	&9  :width [gs+gi*8]
+	&10 :width [gs+gi*9]
+	&11 :width [gs+gi*10]
+	&12 :width [gs+gi*11]
+	&13 :width [gs+gi*12]
+	&14 :width [gs+gi*13]
+	&15 :width [gs+gi*14]
+	&16 :width [gs+gi*15]
+	&17 :width [gs+gi*16]
+	&18 :width [gs+gi*17]
+	&19 :width [gs+gi*18]
+	&20 :width [gs+gi*19]
+	&21 :width [gs+gi*20]
+	&22 :width [gs+gi*21]
+	&23 :width [gs+gi*22]
+	&24, div.span-24 :width [gs+gi*23]  || TODO: Something weird here- compare original
+
 .suffix-
-	&1  :padding-right !gi
-	&2  :padding-right !gi*2
-	&3  :padding-right !gi*3
-	&4  :padding-right !gi*4
-	&5  :padding-right !gi*5
-	&6  :padding-right !gi*6
-	&7  :padding-right !gi*7
-	&8  :padding-right !gi*8
-	&9  :padding-right !gi*9
-	&10 :padding-right !gi*10
-	&11 :padding-right !gi*11
-	&12 :padding-right !gi*12
-	&13 :padding-right !gi*13
-	&14 :padding-right !gi*14
-	&15 :padding-right !gi*15
-	&16 :padding-right !gi*16
-	&17 :padding-right !gi*17
-	&18 :padding-right !gi*18
-	&19 :padding-right !gi*19
-	&20 :padding-right !gi*20
-	&21 :padding-right !gi*21
-	&22 :padding-right !gi*22
-	&23 :padding-right !gi*23
+	&1  :padding-right [gi]
+	&2  :padding-right [gi*2]
+	&3  :padding-right [gi*3]
+	&4  :padding-right [gi*4]
+	&5  :padding-right [gi*5]
+	&6  :padding-right [gi*6]
+	&7  :padding-right [gi*7]
+	&8  :padding-right [gi*8]
+	&9  :padding-right [gi*9]
+	&10 :padding-right [gi*10]
+	&11 :padding-right [gi*11]
+	&12 :padding-right [gi*12]
+	&13 :padding-right [gi*13]
+	&14 :padding-right [gi*14]
+	&15 :padding-right [gi*15]
+	&16 :padding-right [gi*16]
+	&17 :padding-right [gi*17]
+	&18 :padding-right [gi*18]
+	&19 :padding-right [gi*19]
+	&20 :padding-right [gi*20]
+	&21 :padding-right [gi*21]
+	&22 :padding-right [gi*22]
+	&23 :padding-right [gi*23]
 .prefix-
-	&1  :padding-left !gi
-	&2  :padding-left !gi*2
-	&3  :padding-left !gi*3
-	&4  :padding-left !gi*4
-	&5  :padding-left !gi*5
-	&6  :padding-left !gi*6
-	&7  :padding-left !gi*7
-	&8  :padding-left !gi*8
-	&9  :padding-left !gi*9
-	&10 :padding-left !gi*10
-	&11 :padding-left !gi*11
-	&12 :padding-left !gi*12
-	&13 :padding-left !gi*13
-	&14 :padding-left !gi*14
-	&15 :padding-left !gi*15
-	&16 :padding-left !gi*16
-	&17 :padding-left !gi*17
-	&18 :padding-left !gi*18
-	&19 :padding-left !gi*19
-	&20 :padding-left !gi*20
-	&21 :padding-left !gi*21
-	&22 :padding-left !gi*22
-	&23 :padding-left !gi*23
+	&1  :padding-left [gi]
+	&2  :padding-left [gi*2]
+	&3  :padding-left [gi*3]
+	&4  :padding-left [gi*4]
+	&5  :padding-left [gi*5]
+	&6  :padding-left [gi*6]
+	&7  :padding-left [gi*7]
+	&8  :padding-left [gi*8]
+	&9  :padding-left [gi*9]
+	&10 :padding-left [gi*10]
+	&11 :padding-left [gi*11]
+	&12 :padding-left [gi*12]
+	&13 :padding-left [gi*13]
+	&14 :padding-left [gi*14]
+	&15 :padding-left [gi*15]
+	&16 :padding-left [gi*16]
+	&17 :padding-left [gi*17]
+	&18 :padding-left [gi*18]
+	&19 :padding-left [gi*19]
+	&20 :padding-left [gi*20]
+	&21 :padding-left [gi*21]
+	&22 :padding-left [gi*22]
+	&23 :padding-left [gi*23]
 div
 	&.border, &colborder
 		:padding-right 4px
@@ -334,65 +322,67 @@ div
 	&.colborder
 		:margin-right 25px  || Should replace :margin-right above
 .pull-
-	&1  :margin-left -!gi
-	&2  :margin-left -!gi*2
-	&3  :margin-left -!gi*3
-	&4  :margin-left -!gi*4
-	&5  :margin-left -!gi*5
-	&6  :margin-left -!gi*6
-	&7  :margin-left -!gi*7
-	&8  :margin-left -!gi*8
-	&9  :margin-left -!gi*9
-	&10 :margin-left -!gi*10
-	&11 :margin-left -!gi*11
-	&12 :margin-left -!gi*12
-	&13 :margin-left -!gi*13
-	&14 :margin-left -!gi*14
-	&15 :margin-left -!gi*15
-	&16 :margin-left -!gi*16
-	&17 :margin-left -!gi*17
-	&18 :margin-left -!gi*18
-	&19 :margin-left -!gi*19
-	&20 :margin-left -!gi*20
-	&21 :margin-left -!gi*21
-	&22 :margin-left -!gi*22
-	&23 :margin-left -!gi*23
-	&24 :margin-left -!gi*24
+	&1  :margin-left [0px - gi]
+	&2  :margin-left [0px - gi*2]
+	&3  :margin-left [0px - gi*3]
+	&4  :margin-left [0px - gi*4]
+	&5  :margin-left [0px - gi*5]
+	&6  :margin-left [0px - gi*6]
+	&7  :margin-left [0px - gi*7]
+	&8  :margin-left [0px - gi*8]
+	&9  :margin-left [0px - gi*9]
+	&10 :margin-left [0px - gi*10]
+	&11 :margin-left [0px - gi*11]
+	&12 :margin-left [0px - gi*12]
+	&13 :margin-left [0px - gi*13]
+	&14 :margin-left [0px - gi*14]
+	&15 :margin-left [0px - gi*15]
+	&16 :margin-left [0px - gi*16]
+	&17 :margin-left [0px - gi*17]
+	&18 :margin-left [0px - gi*18]
+	&19 :margin-left [0px - gi*19]
+	&20 :margin-left [0px - gi*20]
+	&21 :margin-left [0px - gi*21]
+	&22 :margin-left [0px - gi*22]
+	&23 :margin-left [0px - gi*23]
+	&24 :margin-left [0px - gi*24]
 .pull-
 	&1,&2,&3,&4,&5,&6,&7,&8,&9,&10,&11,&12,&13,
 	&14,&15,&16,&17,&18,&19,&20,&21,&22,&23,&24
 		:float left
 		:position relative
+
 .push-
-	&1  :margin 0 (-!gi) 1.5em (!gi)
-	&2  :margin 0 (-!gi*2) 1.5em (!gi*2)
-	&3  :margin 0 (-!gi*3) 1.5em (!gi*3)
-	&4  :margin 0 (-!gi*4) 1.5em (!gi*4)
-	&5  :margin 0 (-!gi*5) 1.5em (!gi*5)
-	&6  :margin 0 (-!gi*6) 1.5em (!gi*6)
-	&7  :margin 0 (-!gi*7) 1.5em (!gi*7)
-	&8  :margin 0 (-!gi*8) 1.5em (!gi*8)
-	&9  :margin 0 (-!gi*9) 1.5em (!gi*9)
-	&10 :margin 0 (-!gi*10) 1.5em (!gi*10)
-	&11 :margin 0 (-!gi*11) 1.5em (!gi*11)
-	&12 :margin 0 (-!gi*12) 1.5em (!gi*12)
-	&13 :margin 0 (-!gi*13) 1.5em (!gi*13)
-	&14 :margin 0 (-!gi*14) 1.5em (!gi*14)
-	&15 :margin 0 (-!gi*15) 1.5em (!gi*15)
-	&16 :margin 0 (-!gi*16) 1.5em (!gi*16)
-	&17 :margin 0 (-!gi*17) 1.5em (!gi*17)
-	&18 :margin 0 (-!gi*18) 1.5em (!gi*18)
-	&19 :margin 0 (-!gi*19) 1.5em (!gi*19)
-	&20 :margin 0 (-!gi*20) 1.5em (!gi*20)
-	&21 :margin 0 (-!gi*21) 1.5em (!gi*21)
-	&22 :margin 0 (-!gi*22) 1.5em (!gi*22)
-	&23 :margin 0 (-!gi*23) 1.5em (!gi*23)
-	&24 :margin 0 (-!gi*24) 1.5em (!gi*24)
+	&1  :margin 0 [0px - gi] 1.5em [gi]
+	&2  :margin 0 [0px - gi*2] 1.5em [gi*2]
+	&3  :margin 0 [0px - gi*3] 1.5em [gi*3]
+	&4  :margin 0 [0px - gi*4] 1.5em [gi*4]
+	&5  :margin 0 [0px - gi*5] 1.5em [gi*5]
+	&6  :margin 0 [0px - gi*6] 1.5em [gi*6]
+	&7  :margin 0 [0px - gi*7] 1.5em [gi*7]
+	&8  :margin 0 [0px - gi*8] 1.5em [gi*8]
+	&9  :margin 0 [0px - gi*9] 1.5em [gi*9]
+	&10 :margin 0 [0px - gi*10] 1.5em [gi*10]
+	&11 :margin 0 [0px - gi*11] 1.5em [gi*11]
+	&12 :margin 0 [0px - gi*12] 1.5em [gi*12]
+	&13 :margin 0 [0px - gi*13] 1.5em [gi*13]
+	&14 :margin 0 [0px - gi*14] 1.5em [gi*14]
+	&15 :margin 0 [0px - gi*15] 1.5em [gi*15]
+	&16 :margin 0 [0px - gi*16] 1.5em [gi*16]
+	&17 :margin 0 [0px - gi*17] 1.5em [gi*17]
+	&18 :margin 0 [0px - gi*18] 1.5em [gi*18]
+	&19 :margin 0 [0px - gi*19] 1.5em [gi*19]
+	&20 :margin 0 [0px - gi*20] 1.5em [gi*20]
+	&21 :margin 0 [0px - gi*21] 1.5em [gi*21]
+	&22 :margin 0 [0px - gi*22] 1.5em [gi*22]
+	&23 :margin 0 [0px - gi*23] 1.5em [gi*23]
+	&24 :margin 0 [0px - gi*24] 1.5em [gi*24]
 .push-
 	&1,&2,&3,&4,&5,&6,&7,&8,&9,&10,&11,&12,&13,
 	&14,&15,&16,&17,&18,&19,&20,&21,&22,&23,&24
 		:float right
 		:position relative
+|#
 hr
 	:background #ddd
 	:color #ddd
@@ -512,7 +502,6 @@ a.button, button
 	:font-weight bold
 	:color #565656
 	:cursor pointer
-
 button
 	:width auto
 	:overflow visible
