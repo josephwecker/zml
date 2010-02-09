@@ -488,9 +488,14 @@ translate_value({col, {R, G, B, A}}) ->
 translate_value(L) when is_list(L) ->
   L;
 translate_value({num, N}) when is_integer(N) ->
-  io_lib:format("~i",[N]);
+  io_lib:format("~p",[N]);
 translate_value({num, N}) when is_float(N) ->
-  io_lib:format("~f",[N]).
+  io_lib:format("~f",[N]);
+
+translate_value({Type,N}) when is_integer(N) ->
+  lists:flatten(io_lib:format("~p~s",[N,atom_to_list(Type)]));
+translate_value({Type,N}) when is_float(N) ->
+  lists:flatten(io_lib:format("~f~s",[N,atom_to_list(Type)])).
 
 condense_color([$#,R1,R2,G1,G2,B1,B2]) when
 (R1 == R2) and (G1 == G2) and (B1 == B2) ->
