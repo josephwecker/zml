@@ -2,35 +2,6 @@
 %%
 %% Author: Joseph Wecker <joseph.wecker@gmail.com>
 %%
-%% TODO Functionality:
-%%  - preprocess css files, combine, filter, and inline into AST
-%%  - pull in and preprocess all images
-%%    - Add height / width if none specified, jiving w/ actual
-%%    - Pre shrink/expand image if h/w is specified and different from actual.
-%%    - Size optimization filter on actual image files & move to staging
-%%    - Name with hash like JS for url-fingerprinted caching
-%%  - For xhtml docs, put namespace in html tag
-%%  - For xhtml, language in html tag
-%%
-%% TODO (Bugs and Polish):
-%%  - Put emptiness inside open/close tags for tags who need it (like <script>)
-%%    instead of allowing xml closing, when type is html.
-%%  - Fix whitespace in front of doctype (on zml.erl side)
-%%  - Simplified case for loader if inline JS is empty
-%%  - Check environment variable for closure jar before trying the command in
-%%    order to make the error less cryptic.
-%%  - Shorten the library js filename - look in that dir. and see what's
-%%    already there, etc.?
-%%  - Make sure that there is a head and body- insert empty ones if not.
-%%  - Some way to transfer html attribs to body?
-%%  - auto-fix double quotes in attribute values
-%%  - At some point actually validate against type (maybe in zml module
-%%    instead).
-%%  - Special "input" handling for html -
-%%    - Normal HTML:  <input selected="true">...
-%%    - XHTML:        <input selected="selected">...
-%%    - No selected:  <input>...
-%%
 
 -module(zml_special_html).
 

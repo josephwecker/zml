@@ -8,8 +8,6 @@
       [ ] Final rendering
 
 -- ZSS --
-  [ ] Textmate syntax file
-  [ ] Readme file for it
 
 -- ZWAPP --
 
@@ -22,7 +20,12 @@
     [ ] ZSS images working as expected
     [ ] ZML images loaded, preprocessed, output
     [ ] Namespace & language in html tag
+      [ ] Add height / width if none specified, jiving w/ actual
+      [ ] Pre-shrink/expand image if h/w is specified & differenct
+      [ ] Filesize optimization filter and move to static
+      [ ] Name with hash like JS for url-fingerprinted caching
     [ ] Copy TODO bugs etc. into this list
+    [ ] xhtml: namespace and language in html tag
   [ ] Fix space issues for inline tags (honor spaces before, inside, and after)
   [ ] Special tag module for include
   [ ] Special tag module for include_layout
@@ -64,8 +67,22 @@
       have some real speed and can even compile on the fly.
   [ ] Warning when tags are in unoptimal order (js then stylesheet, for
       example).
+  [ ] HTML special handler
+    [ ] Emptiness inside open/close tags for tags that need it, like <script>, when type is html
+    [ ] Fix whitespace in front of doctype (on zml.erl side) (done?)
+    [ ] Simplified case for loader if inline JS is empty
+    [ ] Check environment variable for closure jar before trying the command so that the error is less cryptic.
+    [ ] Shorten the library js filename - look in that dir, see what's already there, etc.
+    [ ] Auto-fix double-quotes in attribute values
+    [ ] At some point validate against type DTD (maybe from zml?)
+    [ ] Special "input" handling for html -
+      [ ] Normal HTML: <input selected="true">...
+      [ ] XHTML:       <input selected="selected">...
+      [ ] No selected: <input>...
 
 -- ZSS --
+  [ ] Textmate syntax file
+  [ ] Readme file for it
   [ ] Syntax for no-delete
   [ ] Boolean expressions / blocks / or ternary expression
   [ ] Right now it cuts color values every time it does an operation- maybe it
