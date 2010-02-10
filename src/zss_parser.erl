@@ -45,7 +45,17 @@ parse(Tokens) ->
   EvaluatedT = evaluate_code(Tokens),
   Clumps = clumper(EvaluatedT),
   {[], {ChildRules, []}} = get_children([{}], Clumps),
-  lists:sort(lists:map(fun format_rules/1, ChildRules)).
+  Rules = lists:sort(lists:map(fun format_rules/1, ChildRules)),
+  combine_dups(Rules).
+
+combine_dups([First | Rest]) ->
+  combine_dups(Rest, First, []).
+combine_dups([],Last,Acc) ->
+  lists:reverse([Last | Acc]);
+combine_dups([{LastKey,V} | T],{LastKey, VAcc},Acc) ->
+  combine_dups(T, {LastKey, [V | VAcc]}, Acc);
+combine_dups([New | T], Last, Acc) ->
+  combine_dups(T, New, [Last | Acc]).
 
 format_rules({Selectors, Attributes}) ->
   {lists:sort(lists:map(fun tuple_to_list/1, Selectors)),

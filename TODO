@@ -5,9 +5,8 @@
     [ ] Figure out syntax for print vs screen (etc.?) ZSS
 
 -- ZSS --
-  [ ] Touch up screen.zss file and make sure it compiles to AST correctly
   [ ] Pull in external images, process, and put in the right place etc.
-  [ ] Post-processing (combinine like-selectors at least)
+  [~] Post-processing (combinine like-selectors at least)
   [ ] Final rendering
   [ ] Textmate syntax file
   [ ] Readme file for it
