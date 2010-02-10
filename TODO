@@ -2,12 +2,12 @@
 -- ZML --
   [ ] Special tag module for HTML
     [ ] Call ZSS for zss files
-    [ ] Figure out syntax for print vs screen (etc.?) ZSS
+      [ ] Pull in external images, process, and put in the right place etc.
+      [ ] Remove unused selectors
+      [ ] Figure out syntax for print vs screen (etc.?) ZSS
+      [ ] Final rendering
 
 -- ZSS --
-  [ ] Pull in external images, process, and put in the right place etc.
-  [~] Post-processing (combinine like-selectors at least)
-  [ ] Final rendering
   [ ] Textmate syntax file
   [ ] Readme file for it
 
