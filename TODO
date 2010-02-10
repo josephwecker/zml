@@ -1,7 +1,7 @@
 ===== Immediate / Next Action =====
 -- ZML --
   [ ] Special tag module for HTML
-    [ ] Call ZSS for zss files
+    [~] Call ZSS for zss files
       [ ] Pull in external images, process, and put in the right place etc.
       [ ] Remove unused selectors
       [ ] Figure out syntax for print vs screen (etc.?) ZSS
