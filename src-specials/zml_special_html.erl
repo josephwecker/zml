@@ -86,7 +86,9 @@ run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
   FAST3 = ensure_head_and_body(ID, Attr, Children, FAST2),
   FAST4 = handle_javascript(ID, Attr, Children, FAST3, SourceFN, StagingDir),
   FAST5 = handle_xhtml(ID, Attr, Children, FAST4),
-  _FAST6 = handle_metas(ID, Attr, FAST5).
+  FAST6 = handle_zss(ID, Attr, Children, FAST5, SourceFN, StagingDir),
+  FAST7 = handle_metas(ID, Attr, FAST6),
+  remove_special_attributes(ID, Attr, Children, FAST7).
 
 get_html_attr(Find, Attr, Default) when is_atom(Find) ->
   get_html_attr(atom_to_list(Find), Attr, Default);
@@ -158,9 +160,12 @@ add_or_replace_doctype(AST, Attr) ->
     end,
   [DoctypeString | AST].
 
+handle_zss(ID, Attr, Children, AST, SourceFN, {_, DTmp, _, DCSS, _, _}) ->
+  AST.
+
 handle_metas(ID, Attr, AST) ->
   {_,_,_,Children} = zml:get_tag(AST, [{"html",ID}]),
-  [[Tp | _]] = get_html_attr(type, Attr, ?DEFAULT_TYPE),
+  [[Tp | _]] = get_html_attr(type, Attr, ?DEFAULT_TYPE), % ignore all but first specified
 
   {NewAttr, Metas} = lists:foldr(fun new_metas/2, {Attr, []}, [
       {encoding,    Tp, ?ENCODING_DEFAULT},
@@ -181,6 +186,14 @@ new_metas({Name, Type, Def}, {Attr, Acc}) ->
     {NewAttr, ["none"]} -> {NewAttr, Acc};
     {NewAttr, Val} -> {NewAttr, [metatag(Name, Type, Val) | Acc]}
   end.
+
+remove_special_attributes(ID, Attr, Children, AST) ->
+  CleanAttrs = lists:foldl(fun dict:erase/2, Attr,
+    ["script", "scripts", "stylesheet", "stylesheets", "type", "encoding", "title"]),
+  NewFull = zml:new_tag({"html",ID}, special, CleanAttrs, Children),
+  zml:replace_tag(AST, [{"html",ID}], NewFull).
+      
+
 
 handle_xhtml(ID, Attr, Children, AST) ->
   % TODO: html namespace and language attribute
