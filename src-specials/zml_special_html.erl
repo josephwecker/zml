@@ -161,6 +161,7 @@ add_or_replace_doctype(AST, Attr) ->
   [DoctypeString | AST].
 
 handle_zss(ID, Attr, Children, AST, SourceFN, {_, DTmp, _, DCSS, _, _}) ->
+  NormAttr = attribute_alias(Attr, "stylesheet", "stylesheets"),
   AST.
 
 handle_metas(ID, Attr, AST) ->
@@ -212,14 +213,16 @@ handle_xhtml(ID, Attr, Children, AST) ->
       end
   end.
 
+attribute_alias(Attr, From, To) ->
+  case dict:find(From, Attr) of
+    {ok, Val} ->
+      D2 = dict:erase(From, Attr),
+      dict:store(To, Val, D2);
+    _ -> Attr
+  end.
+
 handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
-  NormAttr =
-    case dict:find("script", Attr) of
-      {ok, Val} ->
-        D2 = dict:erase("script", Attr),
-        dict:store("scripts", Val, D2);
-      _ -> Attr
-    end,
+  NormAttr = attribute_alias(Attr, "script", "scripts"),
 
   case get_js_list(NormAttr, SourceFN) of
     {[],[]} ->
