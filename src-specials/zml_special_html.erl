@@ -221,38 +221,38 @@ handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
       _ -> Attr
     end,
 
-    case get_js_list(NormAttr, SourceFN) of
-      {[],[]} ->
-        AST;
-      {LibFiles, IndFiles} ->
-        % Optimize "lib" js files
-        LoadedFiles = load_js_files(LibFiles, DTmp),
-        OptLibFName = filename:join([DTmp, zml:tmp_filename()]),
-        optimize_js(LoadedFiles, OptLibFName),
-        file:write_file(OptLibFName, "_zmlll=1;", [append]),
-        [MD5Sum | _] = string:tokens(os:cmd("md5sum '"++OptLibFName++"'")," "),
-        FinLibFName = filename:join([DJS, MD5Sum ++ ".js"]),
-        file:rename(OptLibFName, FinLibFName),
+  case get_js_list(NormAttr, SourceFN) of
+    {[],[]} ->
+      AST;
+    {LibFiles, IndFiles} ->
+      % Optimize "lib" js files
+      LoadedFiles = load_js_files(LibFiles, DTmp),
+      OptLibFName = filename:join([DTmp, zml:tmp_filename()]),
+      optimize_js(LoadedFiles, OptLibFName),
+      file:write_file(OptLibFName, "_zmlll=1;", [append]),
+      [MD5Sum | _] = string:tokens(os:cmd("md5sum '"++OptLibFName++"'")," "),
+      FinLibFName = filename:join([DJS, MD5Sum ++ ".js"]),
+      file:rename(OptLibFName, FinLibFName),
 
-        % Optimize inline js
-        LF2 = load_js_files(IndFiles, DTmp),
-        OptIndFName = filename:join([DTmp, zml:tmp_filename()]),
-        optimize_js(LF2, OptIndFName, false),
-        {ok, Inner} = file:read_file(OptIndFName),
-        Inline = lists:flatten(?JS_LOADER("js/" ++ MD5Sum ++ ".js",
-            binary_to_list(Inner))),
+      % Optimize inline js
+      LF2 = load_js_files(IndFiles, DTmp),
+      OptIndFName = filename:join([DTmp, zml:tmp_filename()]),
+      optimize_js(LF2, OptIndFName, false),
+      {ok, Inner} = file:read_file(OptIndFName),
+      Inline = lists:flatten(?JS_LOADER("js/" ++ MD5Sum ++ ".js",
+          binary_to_list(Inner))),
 
-        % Put inline script in body
-        ScriptTag = zml:new_tag(script, [{"type", ["text/javascript"]}], [Inline]),
-        {"body", normal, BAttr, BChildren} = zml:get_tag(Children, ["body"]),
-        Children2 = zml:replace_tag(Children, ["body"],
-          zml:new_tag(body, normal, BAttr, BChildren ++ [ScriptTag])),
+      % Put inline script in body
+      ScriptTag = zml:new_tag(script, [{"type", ["text/javascript"]}], [Inline]),
+      {"body", normal, BAttr, BChildren} = zml:get_tag(Children, ["body"]),
+      Children2 = zml:replace_tag(Children, ["body"],
+        zml:new_tag(body, normal, BAttr, BChildren ++ [ScriptTag])),
 
-        % Remove scripts from html parameters
-        NewAttr = dict:erase("scripts", NormAttr),
-        zml:replace_tag(AST, [{"html", ID}],
-          zml:new_tag({"html", ID}, special, NewAttr, Children2))
-    end.
+      % Remove scripts from html parameters
+      NewAttr = dict:erase("scripts", NormAttr),
+      zml:replace_tag(AST, [{"html", ID}],
+        zml:new_tag({"html", ID}, special, NewAttr, Children2))
+  end.
 
 % Look in the attributes and in the source directory to see which javascript
 % files should be associated with this html block.  Resolves paths relative to
