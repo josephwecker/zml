@@ -19,6 +19,7 @@ compile(InFile) ->
 
 compile(InFile, SpecialDir) ->
   AST = zml_hand_parser:parse(zml_tokenizer:tokenize_file(InFile)),
+  io:format("~n~p~n", [AST]),
   SourceFName = filename:absname(InFile),
   StagingDir = set_up_staging(),
   AST2 = run_specialized_handlers(AST, SourceFName, StagingDir, SpecialDir),

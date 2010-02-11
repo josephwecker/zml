@@ -7,6 +7,8 @@
 
 -export([run_handler/6]).
 
+-export([scan_ast/2]).
+
 -import(string, [to_lower/1, to_upper/1, join/2]).
 
 -define(TYPES,[
@@ -160,9 +162,151 @@ add_or_replace_doctype(AST, Attr) ->
     end,
   [DoctypeString | AST].
 
-handle_zss(ID, Attr, Children, AST, SourceFN, {_, DTmp, _, DCSS, _, _}) ->
+handle_zss(ID, Attr, Children, AST, SourceFN, {_, DTmp, _, _DCSS, _, _}) ->
   NormAttr = attribute_alias(Attr, "stylesheet", "stylesheets"),
+  Scripts = get_aux_files(SourceFN, ".zml", ".zss", NormAttr, "stylesheets"),
+  CSS = lists:foldl(fun(A,Acc) -> process_zss(AST,A,Acc,DTmp) end, [], Scripts),
+  io:format("~p", [CSS]),
   AST.
+
+process_zss(AST, FName, Acc, DTmp) ->
+  TmpFN = filename:join([DTmp, zml:tmp_filename()]),
+  case zml:pull_in_file(FName, TmpFN) of
+    ok ->
+      ZSS_AST = zss:compile(TmpFN),
+      Culled = remove_unused_css(ZSS_AST, AST, []),
+      io:format("~n--->Culled<----~n~p~n", [Culled]),
+      %CSS = zss:output_css(Culled),
+      %Acc ++ "~n" ++ CSS;
+      Acc;
+    {error, Reason} ->
+      erlang:error(["Couldn't get ZSS file ", FName, Reason])
+  end.
+
+remove_unused_css([], _AST, Acc) ->
+  lists:reverse(Acc);
+remove_unused_css([{Selectors, Atts} | T], AST, Acc) ->
+  ActiveSelectors = lists:reverse(lists:foldl(
+    fun(A,InAcc) -> 
+        case ast_has_selector(AST,A) of
+          true -> [A | InAcc];
+          false -> InAcc
+        end
+    end, [], Selectors)),
+  case ActiveSelectors of
+    [] ->
+      remove_unused_css(T, AST, Acc);
+    _ ->
+      remove_unused_css(T, AST, [{ActiveSelectors, Atts} | Acc])
+  end.
+
+%% OK if it has some false positives, so we can keep it simple.
+%% Get rid of/ignore ":...", "[...]", and turn ">" into " ", and finally, "+"
+%% is pretty much ignored- returns true for now.
+%% *
+%% E
+%% E F
+%% Of course all with optional # and .
+ast_has_selector(AST, Sel) ->
+  % All that work not using regex earlier and now resorting to it here.  *sigh*
+  % TODO: replace regex w/ some simple transforms
+  S2 = re:replace(Sel, ":[^\\s]*", "", [{return, list}, global]),
+  S3 = re:replace(S2,  "\\[.*?\\]","", [{return, list}, global]),
+  SFin = re:replace(S3,  ">"," ", [{return, list}, global]),
+  case string:chr(SFin, $+) of
+    0 -> 
+      Elements = string:tokens(string:strip(SFin), " "),
+      scan_ast(Elements, AST);
+    _ ->
+      true
+  end.
+
+scan_ast(_, []) ->
+  false;
+scan_ast(Elems, [Txt | T]) when is_list(Txt) ->
+  scan_ast(Elems, T);
+scan_ast([E | T] = Elems, [{NEl, _, NAtt, NChildren}  | TAST]) ->
+  case elements_match(E, NEl, NAtt) of
+    true ->
+      case T of
+        [] ->
+          true;
+        _ ->
+          scan_ast(T, NChildren)
+      end;
+    false ->
+      case scan_ast(Elems, NChildren) of
+        true ->
+          true;
+        false ->
+          scan_ast(Elems, TAST)
+      end
+  end.
+
+elements_match(ElStr, {Name, _ID}, Attrs) ->
+  elements_match(ElStr, Name, Attrs);
+elements_match(ElStr, Name, Attrs) ->
+  {Element, Classes, ID} = pull_selector_atts(ElStr),
+  ElementMatch =
+    case Element of
+      "*" ->
+        true;
+      _ ->
+        Element == Name
+    end,
+  case ElementMatch of
+    false -> false;
+    true ->
+      att_includes(Attrs, "class", Classes) and
+        att_includes(Attrs, "id", ID)
+  end.
+
+att_includes(_Attr, _Key, []) ->
+  true;
+att_includes(Attr, Key, ReqVals) ->
+  case dict:find(Key, Attr) of
+    error ->
+      false;
+    {ok, HasVals} ->
+      lists:all(fun(Req) -> lists:member(Req, HasVals) end, ReqVals)
+  end.
+
+% Given a string with optional element and strung classes, id markers, it
+% returns the element name (* if none specified), the list of classes, and the
+% list of IDs (even though everyone knows you can't have that...)
+pull_selector_atts(E) ->
+  pull_selector_atts(E, elem, [], [], [], []).
+
+pull_selector_atts([], elem, [], [], [], []) ->
+  {"*", [], []};
+pull_selector_atts([], elem, TAcc, [], [], []) ->
+  {lists:reverse(TAcc), [], []};
+pull_selector_atts([], class, TAcc, El, ClAcc, IDAcc) ->
+  {El, [lists:reverse(TAcc) | ClAcc], IDAcc};
+pull_selector_atts([], id, TAcc, El, ClAcc, IDAcc) ->
+  {El, ClAcc, [lists:reverse(TAcc) | IDAcc]};
+
+pull_selector_atts([$.|T], elem, [], [], [], []) ->
+  pull_selector_atts(T, class, [], "*", [], []);
+pull_selector_atts([$.|T], elem, TmpAcc, [], [], []) ->
+  pull_selector_atts(T, class, [], lists:reverse(TmpAcc), [], []);
+pull_selector_atts([$.|T], class, TmpAcc, El, ClAcc, IDAcc) ->
+  pull_selector_atts(T, class, [], El, [lists:reverse(TmpAcc) | ClAcc], IDAcc);
+pull_selector_atts([$.|T], id, TmpAcc, El, ClAcc, IDAcc) ->
+  pull_selector_atts(T, class, [], El, ClAcc, [lists:reverse(TmpAcc) | IDAcc]);
+
+pull_selector_atts([$#|T], elem, [], [], [], []) ->
+  pull_selector_atts(T, id, [], "*", [], []);
+pull_selector_atts([$#|T], elem, TmpAcc, [], [], []) ->
+  pull_selector_atts(T, id, [], lists:reverse(TmpAcc), [], []);
+pull_selector_atts([$#|T], class, TmpAcc, El, ClAcc, IDAcc) ->
+  pull_selector_atts(T, id, [], El, [lists:reverse(TmpAcc) | ClAcc], IDAcc);
+pull_selector_atts([$#|T], id, TmpAcc, El, ClAcc, IDAcc) ->
+  pull_selector_atts(T, id, [], El, ClAcc, [lists:reverse(TmpAcc) | IDAcc]);
+
+pull_selector_atts([H|T], Type, TmpAcc, El, ClAcc, IDAcc) ->
+  pull_selector_atts(T, Type, [H | TmpAcc], El, ClAcc, IDAcc).
+
 
 handle_metas(ID, Attr, AST) ->
   {_,_,_,Children} = zml:get_tag(AST, [{"html",ID}]),
@@ -194,9 +338,7 @@ remove_special_attributes(ID, Attr, Children, AST) ->
   NewFull = zml:new_tag({"html",ID}, special, CleanAttrs, Children),
   zml:replace_tag(AST, [{"html",ID}], NewFull).
       
-
-
-handle_xhtml(ID, Attr, Children, AST) ->
+handle_xhtml(_ID, Attr, _Children, AST) ->
   % TODO: html namespace and language attribute
   [TypeFC | _] = get_html_attr(type, Attr, ?DEFAULT_TYPE),
 
@@ -261,28 +403,31 @@ handle_javascript(ID, Attr, Children, AST, SourceFN, {_, DTmp, DJS, _, _, _}) ->
 % files should be associated with this html block.  Resolves paths relative to
 % the source file.
 get_js_list(Attr, Source) ->
-  Dir = filename:dirname(Source),
+  AllFilesAbs = get_aux_files(Source, ".zml", ".js", Attr, "scripts"),
   BaseName = filename:basename(Source, ".zml"),
-  TwinJSFiles = zml:search_for_file(BaseName ++ ".js", Dir),
-  AllFiles =
-    case dict:find("scripts", Attr) of
-      error -> TwinJSFiles;
-      {ok, Scripts} -> Scripts ++ TwinJSFiles
-    end,
-  AllFilesAbs =
-    lists:map(
-      fun([First | _T] = FName) ->
-        case First of
-          $/ -> FName;
-          _ ->
-            case string:str(FName, "://") of
-              0 -> filename:join([Dir, FName]);
-              _ -> FName
-            end
-        end
-      end, AllFiles),
   lists:partition(fun(FN) -> filename:basename(FN, ".js") /= BaseName end,
     AllFilesAbs).
+
+get_aux_files(Src, SrcExt, FindExt, Attr, Key) ->
+  Dir = filename:dirname(Src),
+  BaseName = filename:basename(Src, SrcExt),
+  TwinFile = zml:search_for_file(BaseName ++ FindExt, Dir),
+  AllFiles =
+    case dict:find(Key, Attr) of
+      error -> TwinFile;
+      {ok, Files} -> Files ++ TwinFile
+    end,
+  lists:map(
+    fun([First | _T] = FName) ->
+      case First of
+        $/ -> FName;
+        _ ->
+          case string:str(FName, "://") of
+            0 -> filename:join([Dir, FName]);
+            _ -> FName
+          end
+      end
+    end, AllFiles).
 
 % Take the potential list of javascript files and load them into a temporary
 % staging directory.  Ignore duplicate files.  Pull any remote files.
