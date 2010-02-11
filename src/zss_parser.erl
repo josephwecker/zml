@@ -1,6 +1,6 @@
 -module(zss_parser).
 
--export([parse/1, evaluate_expression/2]).
+-export([parse/1, combine_dups/1]).
 
 -define(CSS_LEN_TYPES,
   ["%","em","ex","px","in","cm","mm","pt","pc"]).
@@ -45,27 +45,28 @@ parse(Tokens) ->
   EvaluatedT = evaluate_code(Tokens),
   Clumps = clumper(EvaluatedT),
   {[], {ChildRules, []}} = get_children([{}], Clumps),
-  Rules = lists:sort(lists:map(fun format_rules/1, ChildRules)),
+  Rules = lists:map(fun format_rules/1, ChildRules),
   combine_dups(Rules).
 
-combine_dups([First | Rest]) ->
+combine_dups(Rules) ->
+  [First | Rest] = lists:sort(Rules),
   combine_dups(Rest, First, []).
 combine_dups([],Last,Acc) ->
   lists:reverse([Last | Acc]);
 combine_dups([{LastKey,V} | T],{LastKey, VAcc},Acc) ->
-  combine_dups(T, {LastKey, [V | VAcc]}, Acc);
+  combine_dups(T, {LastKey, lists:sort(V ++ VAcc)}, Acc);
 combine_dups([New | T], Last, Acc) ->
   combine_dups(T, New, [Last | Acc]).
 
 format_rules({Selectors, Attributes}) ->
   {lists:sort(lists:map(fun tuple_to_list/1, Selectors)),
-    lists:sort(lists:map(
+    lists:map(
         fun({Key,Val}) ->
             case Val of
               "" -> {Key, "0"};
               _ -> {Key, Val}
             end
-        end, Attributes))}.
+        end, Attributes)}.
 
 clumper([]) ->
   [];
