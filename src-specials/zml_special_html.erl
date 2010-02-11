@@ -7,8 +7,6 @@
 
 -export([run_handler/6]).
 
--export([scan_ast/2]).
-
 -import(string, [to_lower/1, to_upper/1, join/2]).
 
 -define(TYPES,[
@@ -175,7 +173,8 @@ process_zss(AST, FName, Acc, DTmp) ->
     ok ->
       ZSS_AST = zss:compile(TmpFN),
       Culled = remove_unused_css(ZSS_AST, AST, []),
-      io:format("~n--->Culled<----~n~p~n", [Culled]),
+      Normalized = zss_parser:combine_dups(Culled),
+      io:format("~n--->Culled<----~n~p~n", [Normalized]),
       %CSS = zss:output_css(Culled),
       %Acc ++ "~n" ++ CSS;
       Acc;
@@ -212,7 +211,9 @@ ast_has_selector(AST, Sel) ->
   % TODO: replace regex w/ some simple transforms
   S2 = re:replace(Sel, ":[^\\s]*", "", [{return, list}, global]),
   S3 = re:replace(S2,  "\\[.*?\\]","", [{return, list}, global]),
-  SFin = re:replace(S3,  ">"," ", [{return, list}, global]),
+  S4 = re:replace(S3,  "\\+.*","", [{return, list}, global]),
+  SFin = re:replace(S4,  ">"," ", [{return, list}, global]),
+
   case string:chr(SFin, $+) of
     0 -> 
       Elements = string:tokens(string:strip(SFin), " "),
@@ -221,6 +222,8 @@ ast_has_selector(AST, Sel) ->
       true
   end.
 
+scan_ast([], _) ->
+  true;
 scan_ast(_, []) ->
   false;
 scan_ast(Elems, [Txt | T]) when is_list(Txt) ->
