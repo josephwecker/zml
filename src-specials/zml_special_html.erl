@@ -163,8 +163,11 @@ add_or_replace_doctype(AST, Attr) ->
 handle_zss(ID, Attr, Children, AST, SourceFN, {_, DTmp, _, _DCSS, _, _}) ->
   NormAttr = attribute_alias(Attr, "stylesheet", "stylesheets"),
   Scripts = get_aux_files(SourceFN, ".zml", ".zss", NormAttr, "stylesheets"),
-  CSS = lists:foldl(fun(A,Acc) -> process_zss(AST,A,Acc,DTmp) end, [], Scripts),
-  io:format("~p", [CSS]),
+  Rules = lists:foldl(fun(A,Acc) -> process_zss(AST,A,Acc,DTmp) end, [], Scripts),
+  Normalized = zss_parser:combine_dups(Rules),
+  %CSS = zss:output_css(Normalized),
+  %io:format("~p", [CSS]),
+  io:format("~p", [Normalized]),
   AST.
 
 process_zss(AST, FName, Acc, DTmp) ->
@@ -172,12 +175,7 @@ process_zss(AST, FName, Acc, DTmp) ->
   case zml:pull_in_file(FName, TmpFN) of
     ok ->
       ZSS_AST = zss:compile(TmpFN),
-      Culled = remove_unused_css(ZSS_AST, AST, []),
-      Normalized = zss_parser:combine_dups(Culled),
-      io:format("~n--->Culled<----~n~p~n", [Normalized]),
-      %CSS = zss:output_css(Culled),
-      %Acc ++ "~n" ++ CSS;
-      Acc;
+      Acc ++ remove_unused_css(ZSS_AST, AST, []);
     {error, Reason} ->
       erlang:error(["Couldn't get ZSS file ", FName, Reason])
   end.
