@@ -35,6 +35,8 @@
 
 -define(DEFAULT_TYPE, xhtml_strict).
 
+-define(XMLNS, "http://www.w3.org/1999/xhtml").
+
 -define(JS_LOADER(LibSrc, Inner), [
     "//<![CDATA[\n",
     "var _zmlll=0,_zmljs=document.createElement('script');_zmljs.src='",
@@ -49,6 +51,7 @@
 
 -define(ENCODING_DEFAULT, "utf-8").
 -define(LANGUAGE_DEFAULT, "en-us").
+-define(LANGUAGE_XML_DEFAULT, "en").
 
 -define(STYLESHEET_TYPES,
   ["style", "screen-style", "print-style", "ie-style", "ie-screen-style",
@@ -123,11 +126,11 @@ get_html_attr(Find, Attr, Default) when is_atom(Find) ->
   get_html_attr(atom_to_list(Find), Attr, Default);
 get_html_attr(Find, Attr, Default) ->
   case dict:find(Find, Attr) of
-    {ok, Val} -> Val;
+    {ok, [Val]} -> Val;
     error when is_atom(Default) ->
-      [atom_to_list(Default)];
+      atom_to_list(Default);
     error ->
-      [Default]
+      Default
   end.
 
 pop_html_attr(Find, Attr, Default) when is_atom(Find) ->
@@ -176,7 +179,7 @@ add_or_replace_doctype(AST, Attr) ->
       end;
     _ -> ok
   end,
-  [Type] = get_html_attr(type, Attr, ?DEFAULT_TYPE),
+  Type = get_html_attr(type, Attr, ?DEFAULT_TYPE),
   DoctypeString =
     case proplists:get_value(list_to_atom(Type), ?TYPES) of
       undefined ->
@@ -354,9 +357,9 @@ pull_selector_atts([$#|T], id, TmpAcc, El, ClAcc, IDAcc) ->
 pull_selector_atts([H|T], Type, TmpAcc, El, ClAcc, IDAcc) ->
   pull_selector_atts(T, Type, [H | TmpAcc], El, ClAcc, IDAcc).
 
-handle_metas(ID, Attr, AST) ->
-  {_,_,_,Children} = zml:get_tag(AST, [{"html",ID}]),
-  [[Tp | _]] = get_html_attr(type, Attr, ?DEFAULT_TYPE), % ignore all but first specified
+handle_metas(ID, OldAttr, AST) ->
+  {_,_,Attr,Children} = zml:get_tag(AST, [{"html",ID}]),
+  [Tp | _] = get_html_attr(type, OldAttr, ?DEFAULT_TYPE), % ignore all but first specified
 
   {NewAttr, Metas} = lists:foldr(fun new_metas/2, {Attr, []}, [
       {encoding,    Tp, ?ENCODING_DEFAULT},
@@ -384,21 +387,24 @@ remove_special_attributes(ID, AST) ->
   NewFull = zml:new_tag({"html",ID}, special, CleanAttrs, Children),
   zml:replace_tag(AST, [{"html",ID}], NewFull).
       
-handle_xhtml(_ID, Attr, _Children, AST) ->
-  % TODO: html namespace and language attribute
+handle_xhtml(ID, Attr, _Children, AST) ->
   [TypeFC | _] = get_html_attr(type, Attr, ?DEFAULT_TYPE),
 
-  case true of
-    true -> % Skipping xml prolog for now
-      AST;
+  case TypeFC == $x of
     false ->
-      Encoding = get_html_attr(encoding, Attr, ?ENCODING_DEFAULT),
-      case TypeFC == $x of
-        true ->
-          [?ENC_TOP_X(Encoding) | AST];
-        false ->
-          AST
-      end
+      AST;
+    true ->
+      {_,_,HAttr,HChild} = zml:get_tag(AST, [{"html",ID}]),
+      Namespace = get_html_attr(xmlns, HAttr, ?XMLNS),
+      Language = get_html_attr("xml:lang",HAttr, ?LANGUAGE_XML_DEFAULT),
+      HAtt2 = dict:store("xmlns",[Namespace], HAttr),
+      HAtt3 = dict:store("xml:lang",[Language], HAtt2),
+      NewHTML = zml:new_tag({"html",ID},special, HAtt3, HChild),
+      zml:replace_tag(AST, [{"html",ID}], NewHTML)
+
+      %% Skipping for now - xml declaration
+      %Encoding = get_html_attr(encoding, Attr, ?ENCODING_DEFAULT),
+      %[?ENC_TOP_X(Encoding) | AST]
   end.
 
 attribute_alias(Attr, From, To) ->
