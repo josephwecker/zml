@@ -50,6 +50,34 @@
 -define(ENCODING_DEFAULT, "utf-8").
 -define(LANGUAGE_DEFAULT, "en-us").
 
+-define(STYLESHEET_TYPES,
+  ["style", "screen-style", "print-style", "ie-style", "ie-screen-style",
+    "ie-print-style"]).
+
+-define(SPECIAL_ATTRIBUTES,
+  ["script", "scripts", "type", "encoding", "title"] ++ ?STYLESHEET_TYPES
+  ++ [SPATTA++"s" || SPATTA <- ?STYLESHEET_TYPES]).
+
+-define(STYLESHEET_TAGS,
+  [{"style",
+      {"<script type=\"text/css\">",
+        "</script>"}},
+    {"screen-style",
+      {"<script type=\"text/css\" media=\"screen, projection\">",
+        "</script>"}},
+    {"print-style",
+      {"<script type=\"text/css\" media=\"print\">",
+        "</script>"}},
+    {"ie-style",
+      {"<!--[if IE]><script type=\"text/css\">",
+        "</script><![endif]-->"}},
+    {"ie-screen-style",
+      {"<!--[if IE]><script type=\"text/css\" media=\"screen, projection\">",
+        "</script><![endif]-->"}},
+    {"ie-print-style",
+      {"<!--[if IE]><script type=\"text/css\" media=\"print\">",
+        "</script><![endif]-->"}}]).
+
 metatag(encoding, $x, [Val]) ->
   % Skipping application/xhtml+xml for now
   %"<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; " ++
@@ -89,7 +117,6 @@ run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
   FAST6 = handle_zss(ID, Attr, FAST5, SourceFN, StagingDir),
   FAST7 = handle_metas(ID, Attr, FAST6),
   ASTFin = remove_special_attributes(ID, FAST7),
-  io:format("~p", [ASTFin]),
   ASTFin.
 
 get_html_attr(Find, Attr, Default) when is_atom(Find) ->
@@ -163,15 +190,31 @@ add_or_replace_doctype(AST, Attr) ->
   [DoctypeString | AST].
 
 handle_zss(ID, Attr, AST, SourceFN, {_, DTmp, _, _DCSS, _, _}) ->
-  NormAttr = attribute_alias(Attr, "stylesheet", "stylesheets"),
-  Scripts = get_aux_files(SourceFN, ".zml", ".zss", NormAttr, "stylesheets"),
-  Rules = lists:foldl(fun(A,Acc) -> process_zss(AST,A,Acc,DTmp) end, [], Scripts),
-  Normalized = zss_parser:combine_dups(Rules),
-  CSS = zss:output_css(Normalized),
-  Style = [lists:flatten(["<style type=\"text/css\">",CSS,"</style>"])],
-  {_,_,HeadAttr,HeadChildren} = zml:get_tag(AST, [{"html",ID},"head"]),
-  NewHead = zml:new_tag("head", normal, HeadAttr, [Style | HeadChildren]),
-  zml:replace_tag(AST, [{"html", ID}, "head"], NewHead).
+  lists:foldl(
+    fun(Type, CurrAST) ->
+        do_handle_zss(Type, ID, Attr, CurrAST, SourceFN, DTmp)
+    end, AST, ?STYLESHEET_TYPES).
+
+do_handle_zss(Type, ID, Attr, AST, SourceFN, DTmp) ->
+  NormAttr = attribute_alias(Attr, Type, Type ++ "s"),
+  Scripts =
+    get_aux_files(SourceFN, ".zml", ".zss", NormAttr, Type ++ "s",
+      Type == "style"),
+  case Scripts of
+    [] ->
+      AST;
+    _ ->
+      Rules = lists:foldl(fun(A,Acc) -> process_zss(AST,A,Acc,DTmp) end, [], Scripts),
+      Normalized = zss_parser:combine_dups(Rules),
+      CSS = zss:output_css(Normalized),
+
+      {PrePend, Append} = proplists:get_value(Type, ?STYLESHEET_TAGS),
+      Style = [lists:flatten([PrePend,CSS,Append])],
+
+      {_,_,HeadAttr,HeadChildren} = zml:get_tag(AST, [{"html",ID},"head"]),
+      NewHead = zml:new_tag("head", normal, HeadAttr, [Style | HeadChildren]),
+      zml:replace_tag(AST, [{"html", ID}, "head"], NewHead)
+  end.
 
 process_zss(AST, FName, Acc, DTmp) ->
   TmpFN = filename:join([DTmp, zml:tmp_filename()]),
@@ -337,8 +380,7 @@ new_metas({Name, Type, Def}, {Attr, Acc}) ->
 
 remove_special_attributes(ID, AST) ->
   {_, _, Attr, Children} = zml:get_tag(AST, [{"html",ID}]),
-  CleanAttrs = lists:foldl(fun dict:erase/2, Attr,
-    ["script", "scripts", "stylesheet", "stylesheets", "type", "encoding", "title"]),
+  CleanAttrs = lists:foldl(fun dict:erase/2, Attr, ?SPECIAL_ATTRIBUTES),
   NewFull = zml:new_tag({"html",ID}, special, CleanAttrs, Children),
   zml:replace_tag(AST, [{"html",ID}], NewFull).
       
@@ -413,25 +455,37 @@ get_js_list(Attr, Source) ->
     AllFilesAbs).
 
 get_aux_files(Src, SrcExt, FindExt, Attr, Key) ->
+  get_aux_files(Src, SrcExt, FindExt, Attr, Key, true).
+get_aux_files(Src, SrcExt, FindExt, Attr, Key, FindTwin) ->
   Dir = filename:dirname(Src),
-  BaseName = filename:basename(Src, SrcExt),
-  TwinFile = zml:search_for_file(BaseName ++ FindExt, Dir),
-  AllFiles =
-    case dict:find(Key, Attr) of
-      error -> TwinFile;
-      {ok, Files} -> Files ++ TwinFile
-    end,
+  case FindTwin of
+    true ->
+      BaseName = filename:basename(Src, SrcExt),
+      TwinFile = zml:search_for_file(BaseName ++ FindExt, Dir),
+      case dict:find(Key, Attr) of
+        error -> make_files_absolute(Dir, TwinFile);
+        {ok, Files} -> make_files_absolute(Dir, Files ++ TwinFile)
+      end;
+    false ->
+      case dict:find(Key, Attr) of
+        error -> [];
+        {ok, Files} -> make_files_absolute(Dir, Files)
+      end
+  end.
+
+make_files_absolute(CurrDir, Files) ->
   lists:map(
     fun([First | _T] = FName) ->
       case First of
         $/ -> FName;
         _ ->
           case string:str(FName, "://") of
-            0 -> filename:join([Dir, FName]);
+            0 -> filename:join([CurrDir, FName]);
             _ -> FName
           end
       end
-    end, AllFiles).
+    end, Files).
+
 
 % Take the potential list of javascript files and load them into a temporary
 % staging directory.  Ignore duplicate files.  Pull any remote files.

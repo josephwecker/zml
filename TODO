@@ -1,12 +1,12 @@
 ===== Immediate / Next Action =====
 -- ZML --
   [ ] Special tag module for HTML
-    [~] Call ZSS for zss files
-      [ ] Pull in external images, process, and put in the right place etc.
-      [ ] Remove unused selectors
-      [ ] Figure out syntax for print vs screen (etc.?) ZSS
-      [ ] Final rendering
-      [ ] Minifying and put inline
+    [ ] Namespace & language in html tag
+	[ ] ZML and ZSS image processing
+      [ ] Add height / width if none specified, jiving w/ actual (zml only)
+      [ ] Pre-shrink/expand image if h/w is specified & differenct
+      [ ] Name with hash like JS for url-fingerprinted caching
+      [ ] Filesize optimization filter and move to static
 
 -- ZSS --
 
@@ -15,18 +15,6 @@
 
 ===== Functional / To Implement =====
 -- ZML --
-  [ ] Special tag module for HTML
-    [ ] ZSS cullinator (pass it the AST?  Visa versa?)
-    [ ] ZSS inline
-    [ ] ZSS images working as expected
-    [ ] ZML images loaded, preprocessed, output
-    [ ] Namespace & language in html tag
-      [ ] Add height / width if none specified, jiving w/ actual
-      [ ] Pre-shrink/expand image if h/w is specified & differenct
-      [ ] Filesize optimization filter and move to static
-      [ ] Name with hash like JS for url-fingerprinted caching
-    [ ] Copy TODO bugs etc. into this list
-    [ ] xhtml: namespace and language in html tag
   [ ] Fix space issues for inline tags (honor spaces before, inside, and after)
   [ ] Special tag module for include
   [ ] Special tag module for include_layout
@@ -69,6 +57,7 @@
   [ ] Warning when tags are in unoptimal order (js then stylesheet, for
       example).
   [ ] HTML special handler
+    [ ] Replace regex's with own loop (see TODO tag)
     [ ] Emptiness inside open/close tags for tags that need it, like <script>, when type is html
     [ ] Fix whitespace in front of doctype (on zml.erl side) (done?)
     [ ] Simplified case for loader if inline JS is empty
