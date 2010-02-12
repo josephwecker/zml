@@ -86,9 +86,11 @@ run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
   FAST3 = ensure_head_and_body(ID, Attr, Children, FAST2),
   FAST4 = handle_javascript(ID, Attr, Children, FAST3, SourceFN, StagingDir),
   FAST5 = handle_xhtml(ID, Attr, Children, FAST4),
-  FAST6 = handle_zss(ID, Attr, Children, FAST5, SourceFN, StagingDir),
+  FAST6 = handle_zss(ID, Attr, FAST5, SourceFN, StagingDir),
   FAST7 = handle_metas(ID, Attr, FAST6),
-  remove_special_attributes(ID, Attr, Children, FAST7).
+  ASTFin = remove_special_attributes(ID, FAST7),
+  io:format("~p", [ASTFin]),
+  ASTFin.
 
 get_html_attr(Find, Attr, Default) when is_atom(Find) ->
   get_html_attr(atom_to_list(Find), Attr, Default);
@@ -160,15 +162,16 @@ add_or_replace_doctype(AST, Attr) ->
     end,
   [DoctypeString | AST].
 
-handle_zss(ID, Attr, Children, AST, SourceFN, {_, DTmp, _, _DCSS, _, _}) ->
+handle_zss(ID, Attr, AST, SourceFN, {_, DTmp, _, _DCSS, _, _}) ->
   NormAttr = attribute_alias(Attr, "stylesheet", "stylesheets"),
   Scripts = get_aux_files(SourceFN, ".zml", ".zss", NormAttr, "stylesheets"),
   Rules = lists:foldl(fun(A,Acc) -> process_zss(AST,A,Acc,DTmp) end, [], Scripts),
   Normalized = zss_parser:combine_dups(Rules),
-  %CSS = zss:output_css(Normalized),
-  %io:format("~p", [CSS]),
-  io:format("~p", [Normalized]),
-  AST.
+  CSS = zss:output_css(Normalized),
+  Style = [lists:flatten(["<style type=\"text/css\">",CSS,"</style>"])],
+  {_,_,HeadAttr,HeadChildren} = zml:get_tag(AST, [{"html",ID},"head"]),
+  NewHead = zml:new_tag("head", normal, HeadAttr, [Style | HeadChildren]),
+  zml:replace_tag(AST, [{"html", ID}, "head"], NewHead).
 
 process_zss(AST, FName, Acc, DTmp) ->
   TmpFN = filename:join([DTmp, zml:tmp_filename()]),
@@ -308,7 +311,6 @@ pull_selector_atts([$#|T], id, TmpAcc, El, ClAcc, IDAcc) ->
 pull_selector_atts([H|T], Type, TmpAcc, El, ClAcc, IDAcc) ->
   pull_selector_atts(T, Type, [H | TmpAcc], El, ClAcc, IDAcc).
 
-
 handle_metas(ID, Attr, AST) ->
   {_,_,_,Children} = zml:get_tag(AST, [{"html",ID}]),
   [[Tp | _]] = get_html_attr(type, Attr, ?DEFAULT_TYPE), % ignore all but first specified
@@ -333,7 +335,8 @@ new_metas({Name, Type, Def}, {Attr, Acc}) ->
     {NewAttr, Val} -> {NewAttr, [metatag(Name, Type, Val) | Acc]}
   end.
 
-remove_special_attributes(ID, Attr, Children, AST) ->
+remove_special_attributes(ID, AST) ->
+  {_, _, Attr, Children} = zml:get_tag(AST, [{"html",ID}]),
   CleanAttrs = lists:foldl(fun dict:erase/2, Attr,
     ["script", "scripts", "stylesheet", "stylesheets", "type", "encoding", "title"]),
   NewFull = zml:new_tag({"html",ID}, special, CleanAttrs, Children),

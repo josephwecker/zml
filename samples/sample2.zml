@@ -1,4 +1,4 @@
-*html(stylesheet: zss/screen.zss)
+*html(stylesheet: zss/screen.zss title: hi there!)
   .classy
     #awesome
       :h1 Hi there :pre heya;
