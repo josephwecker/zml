@@ -1,7 +1,7 @@
 ===== Immediate / Next Action =====
 -- ZML --
   [ ] Special tag module for HTML
-    [ ] Namespace & language in html tag
+      [ ] favicon
 	[ ] ZML and ZSS image processing
       [ ] Add height / width if none specified, jiving w/ actual (zml only)
       [ ] Pre-shrink/expand image if h/w is specified & differenct
@@ -37,6 +37,7 @@
 
 ===== Polish / Bugs / Future =====
 -- ZML --
+  [ ] Following doesn't highlight correcly in vim:  ":blah.blah.blah(hey: there)"
   [ ] Say you have a big paragraph of text over multiple lines, and you have lots
       of :strong ...; stuff like that embedded all over, and your text editor
       puts one of those :strong ...; things at the beginning of the line- will
