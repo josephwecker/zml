@@ -1,8 +1,8 @@
 ===== Immediate / Next Action =====
 -- ZML --
   [ ] Special tag module for HTML
-      [ ] favicon
-	[ ] ZML and ZSS image processing
+    [ ] favicon
+    [ ] ZML and ZSS image processing
       [ ] Add height / width if none specified, jiving w/ actual (zml only)
       [ ] Pre-shrink/expand image if h/w is specified & differenct
       [ ] Name with hash like JS for url-fingerprinted caching
