@@ -1,7 +1,8 @@
 ===== Immediate / Next Action =====
 -- ZML --
   [ ] Special tag module for HTML
-	[ ] ZML and ZSS image processing
+    [ ] favicon
+    [ ] ZML and ZSS image processing
       [ ] Add height / width if none specified, jiving w/ actual (zml only)
       [ ] Pre-shrink/expand image if h/w is specified & differenct
 	  [ ] Spritify
@@ -39,8 +40,7 @@
 
 ===== Polish / Bugs / Future =====
 -- ZML --
-  [ ] In-document includes (mixins)
-  [ ] Simple string expansion macros (pre and post parsing?)
+  [ ] Following doesn't highlight correcly in vim:  ":blah.blah.blah(hey: there)"
   [ ] Say you have a big paragraph of text over multiple lines, and you have lots
       of :strong ...; stuff like that embedded all over, and your text editor
       puts one of those :strong ...; things at the beginning of the line- will
@@ -111,6 +111,9 @@
     [ ] Error messages need to emit the script name as well as the line number
 	[ ] Look at web-optimizator, css-tidy, etc. for lots of additional
 	compression ideas.
+  [ ] input-password --> input[type='password'] and other simple macro expansions
+  [ ] Syntax highlighting error in vim when, for example,  button[type] as a selector ([type] shouldn't be a mixin)
+  [ ] HSV -> normal rgb triplet conversion  - possibly even an alternat HSV syntax / token.  (e.g., "$HHSSVV")
 
 -- ZWAPP --
 
