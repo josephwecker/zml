@@ -22,10 +22,14 @@
 [c-soft-text = #666] || del, fancy, quiet
 [c-hard-text = #000] || loud, active/hover a
 
+
+
 [c-soft-border = c-soft-text * 2] || various borders
 [c-soft-border2 = c-soft-border + #111]
 [c-soft-border3 = c-soft-border2 + #111]
-eee, aaa, 888
+
+[c-hard-border = c-soft-border - #222]
+[c-hard-border2 = c-hard-border - #222]
 
 || MEYER RESET v1.0
 html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p,
@@ -133,9 +137,9 @@ textarea, input[type='text'], input[type='password'], select
   :border 1px solid [c-soft-border]
   :background #fff
   &:hover
-    :border-color #aaa
+    :border-color [c-hard-border]
   &:focus
-    :border-color #888
+    :border-color [c-hard-border2]
     :outline 2px solid #ffffaa
 
 input, select
@@ -536,9 +540,9 @@ a.button, button
   :float left
   :margin 0 0.583em 0.667em 0
   :padding 5px 10px 5px 7px
-  :border 1px solid #dedede
-    :top 1px solid #eee
-    :left 1px solid #eee
+  :border 1px solid [c-soft-border2]
+    :top 1px solid [c-soft-border3]
+    :left 1px solid [c-soft-border3]
   :background-color #f5f5f5
   :font-family "Lucida Grande", Tahoma, Arial, Verdana, sans-serif
   :font-size 100%
