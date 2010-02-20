@@ -75,6 +75,7 @@
       [ ] No selected: <input>...
 
 -- ZSS --
+  [ ] Keywords in variable names (like "color") throw off syntax highlighting
   [ ] Boolean expressions / blocks / or ternary expression
   [ ] Right now it cuts color values every time it does an operation- maybe it
       makes more sense to cut them only when they're being rendered finally.
