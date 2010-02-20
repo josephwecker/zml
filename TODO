@@ -1,12 +1,13 @@
 ===== Immediate / Next Action =====
 -- ZML --
   [ ] Special tag module for HTML
-    [ ] Namespace & language in html tag
 	[ ] ZML and ZSS image processing
       [ ] Add height / width if none specified, jiving w/ actual (zml only)
       [ ] Pre-shrink/expand image if h/w is specified & differenct
+	  [ ] Spritify
       [ ] Name with hash like JS for url-fingerprinted caching
-      [ ] Filesize optimization filter and move to static
+      [ ] Filesize optimization filter and move to static | OptiPNG or
+	  AdvanceCOMP
 
 -- ZSS --
 
@@ -108,6 +109,8 @@
     [ ] Syntax highlighting for includes
     [ ] Includes (and therefore normals) need to have a flag that allows attribute children
     [ ] Error messages need to emit the script name as well as the line number
+	[ ] Look at web-optimizator, css-tidy, etc. for lots of additional
+	compression ideas.
 
 -- ZWAPP --
 
