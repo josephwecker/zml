@@ -109,6 +109,9 @@
     [ ] Syntax highlighting for includes
     [ ] Includes (and therefore normals) need to have a flag that allows attribute children
     [ ] Error messages need to emit the script name as well as the line number
+  [ ] input-password --> input[type='password'] and other simple macro expansions
+  [ ] Syntax highlighting error in vim when, for example,  button[type] as a selector ([type] shouldn't be a mixin)
+  [ ] HSV -> normal rgb triplet conversion  - possibly even an alternat HSV syntax / token.  (e.g., "$HHSSVV")
 
 -- ZWAPP --
 
