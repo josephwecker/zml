@@ -13,123 +13,123 @@ blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em,
 font, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b,
 u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table,
 caption, tbody, tfoot, thead, tr, th, td
-	:margin 0
-	:padding 0
-	:border 0
-	:outline 0
-	:font-size 100%
-	:vertical-align baseline
-	:background transparent
+  :margin 0
+  :padding 0
+  :border 0
+  :outline 0
+  :font-size 100%
+  :vertical-align baseline
+  :background transparent
 body
-	:line-height 1
+  :line-height 1
 blockquote, q
-	:quotes none
+  :quotes none
 blockquote, q
-	&:before, &:after
-		:content ''
-		:content none
+  &:before, &:after
+    :content ''
+    :content none
 \:focus
-	:outline 0
+  :outline 0
 ins
-	:text-decoration none
+  :text-decoration none
 del
-	:text-decoration line-through
+  :text-decoration line-through
 table
-	:border-collapse collapse
-	:border-spacing 0
+  :border-collapse collapse
+  :border-spacing 0
 
 
 || Basic Typography
 html
-	:font-size 62.5%
-	:font-family "Liberation Sans", Helvetica, Arial, sans-serif
+  :font-size 62.5%
+  :font-family "Liberation Sans", Helvetica, Arial, sans-serif
 
 strong, th, thead td, h1, h2, h3, h4, h5, h6
-	:font-weight bold
+  :font-weight bold
 
 cite, em, dfn
-	:font-style italic
+  :font-style italic
 
 code, kbd, samp, pre, tt, var, input[type='text'], input[type='password'],
 textarea
-	:font-size 92%
-	:font-family monaco, "Lucida Console", courier, monospace
+  :font-size 92%
+  :font-family monaco, "Lucida Console", courier, monospace
 
 del
-	:text-decoration line-through
-	:color #666
+  :text-decoration line-through
+  :color #666
 
 ins, dfn
-	:border-bottom 1px solid #ccc
+  :border-bottom 1px solid #ccc
 
 small, sup, sub
-	:font-size 85%
+  :font-size 85%
 
 abbr, acronym
-	:text-transform uppercase
-	:font-size 85%
-	:letter-spacing .1em
+  :text-transform uppercase
+  :font-size 85%
+  :letter-spacing .1em
 
 a abbr, a acronym
-	:border none
+  :border none
 
 abbr[title], acronym[title], dfn[title]
-	:cursor help
-	:border-bottom 1px solid #ccc
+  :cursor help
+  :border-bottom 1px solid #ccc
 
 sup
-	:vertical-align super
+  :vertical-align super
 
 sub
-	:vertical-align sub
+  :vertical-align sub
 
 
 || Quotes
 
 blockquote
-	:border
-		:top 1px soid #ccc
-		:bottom 1px solid #ccc
-	:color #666
+  :border
+    :top 1px soid #ccc
+    :bottom 1px solid #ccc
+  :color #666
 
 blockquote
-	*:first-child:before :content "\201C"
-	*:first-child:after :content "\201D"
+  *:first-child:before :content "\201C"
+  *:first-child:after :content "\201D"
 
 
 || Forms
 
 fieldset
-	:padding 1.4em
-	:margin 0 0 1.5em 0
-	:border 1px solid #ccc
+  :padding 1.4em
+  :margin 0 0 1.5em 0
+  :border 1px solid #ccc
 legend
-	:font-weight bold
-	:font-size 1.2em
+  :font-weight bold
+  :font-size 1.2em
 
 label :font-weight bold
 
 textarea, input[type='text'], input[type='password'], select
-	:border 1px solid #ccc
-	:background #fff
-	&:hover
-		:border-color #aaa
-	&:focus
-		:border-color #888
-		:outline 2px solid #ffffaa
+  :border 1px solid #ccc
+  :background #fff
+  &:hover
+    :border-color #aaa
+  &:focus
+    :border-color #888
+    :outline 2px solid #ffffaa
 
 input, select
-	:cursor pointer
+  :cursor pointer
 
 input[type='text'], input[type='password']
-	:cursor text
+  :cursor text
 
 
 || Base Sizes
 
 .container
-	:font-size 1.2em
-	:line-height 1.6em
+  :font-size 1.2em
+  :line-height 1.6em
 
 h1 :font-size 1.9em
 h2 :font-size 1.7em
@@ -146,18 +146,18 @@ ul :list-style-type disc
 ul ul :list-style-type square
 ul ul ul :list-style-type circle
 ol
-	:list-style-position outside
-	:list-style-type decimal
+  :list-style-position outside
+  :list-style-type decimal
 dt :font-weight bold
 
 || Tables
 
 table
-	:border-top 1px solid #ccc
-	:border-left 1px solid #ccc
+  :border-top 1px solid #ccc
+  :border-left 1px solid #ccc
 th, td
-	:border-bottom 1px solid #ddd
-	:border-right 1px solid #ccc
+  :border-bottom 1px solid #ddd
+  :border-right 1px solid #ccc
 
 || Margins & Paddings
 
@@ -178,16 +178,16 @@ th, td :padding .8em
 caption :padding-bottom .8em || Padding instead of margin for IE
 
 blockquote
-	:padding 0 1em
-	:margin 1.6em 0
+  :padding 0 1em
+  :margin 1.6em 0
 
 fieldset
-	:padding 0 1em 1em 1em
-	:margin 1.6em 0
+  :padding 0 1em 1em 1em
+  :margin 1.6em 0
 
 legend
-	:padding-left .8em
-	:padding-right .8em
+  :padding-left .8em
+  :padding-right .8em
 
 legend+* :margin-top 1em
 
@@ -195,18 +195,18 @@ textarea, input :padding .3em .4em .15em .4em
 select :padding .1em .2em 0 .2em
 option :padding 0 .4em
 a
-	:position relative
-	:padding 0.3em 0 .1em 0
+  :position relative
+  :padding 0.3em 0 .1em 0
 dt
-	:margin-top .8em
-	:margin-bottom .4em
+  :margin-top .8em
+  :margin-bottom .4em
 
 ul :margin-left 1.5em
 
 ol :margin-left 2.35em
 
 ol, ul
-	ol :margin-left 2.5em
+  ol :margin-left 2.5em
 
 form div :margin-bottom .8em
 
@@ -214,21 +214,21 @@ form div :margin-bottom .8em
 || Colors
 
 a:link
-	:text-decoration underline
-	:color #36c
+  :text-decoration underline
+  :color #36c
 
 a:visited
-	:text-decoration underline
-	:color #99c
+  :text-decoration underline
+  :color #99c
 
 a:hover
-	:text-decoration underline
-	:color #c33
+  :text-decoration underline
+  :color #c33
 
 a
-	&:active, &:focus
-		:text-decoration underline
-		:color #000
+  &:active, &:focus
+    :text-decoration underline
+    :color #000
 
 code, pre :color #c33
 
@@ -236,221 +236,221 @@ code, pre :color #c33
 || 24 Column Grid
 
 .container
-	:width 950px
-	:margin 0 auto
+  :width 950px
+  :margin 0 auto
 
 body :margin 1.5em 0
 
 div
-	&.span-
-		&1,&2,&3,&4,&5,&6,&7,&8,&9,&10,&11,&12,&13,
+  &.span-
+    &1,&2,&3,&4,&5,&6,&7,&8,&9,&10,&11,&12,&13,
     &14,&15,&16,&17,&18,&19,&20,&21,&22,&23
       :float left
       :margin-right 10px
-	&.span-24
-		:float left
-	&.last
-		:margin-right 0
+  &.span-24
+    :float left
+  &.last
+    :margin-right 0
 
 [gs = 30px]
 [gi = 40px]
 .span-
-	&1  :width [gs]
-	&2  :width [gs+gi]
-	&3  :width [gs+gi*2]
-	&4  :width [gs+gi*3]
-	&5  :width [gs+gi*4]
-	&6  :width [gs+gi*5]
-	&7  :width [gs+gi*6]
-	&8  :width [gs+gi*7]
-	&9  :width [gs+gi*8]
-	&10 :width [gs+gi*9]
-	&11 :width [gs+gi*10]
-	&12 :width [gs+gi*11]
-	&13 :width [gs+gi*12]
-	&14 :width [gs+gi*13]
-	&15 :width [gs+gi*14]
-	&16 :width [gs+gi*15]
-	&17 :width [gs+gi*16]
-	&18 :width [gs+gi*17]
-	&19 :width [gs+gi*18]
-	&20 :width [gs+gi*19]
-	&21 :width [gs+gi*20]
-	&22 :width [gs+gi*21]
-	&23 :width [gs+gi*22]
-	&24 :width [gs+gi*23]
+  &1  :width [gs]
+  &2  :width [gs+gi]
+  &3  :width [gs+gi*2]
+  &4  :width [gs+gi*3]
+  &5  :width [gs+gi*4]
+  &6  :width [gs+gi*5]
+  &7  :width [gs+gi*6]
+  &8  :width [gs+gi*7]
+  &9  :width [gs+gi*8]
+  &10 :width [gs+gi*9]
+  &11 :width [gs+gi*10]
+  &12 :width [gs+gi*11]
+  &13 :width [gs+gi*12]
+  &14 :width [gs+gi*13]
+  &15 :width [gs+gi*14]
+  &16 :width [gs+gi*15]
+  &17 :width [gs+gi*16]
+  &18 :width [gs+gi*17]
+  &19 :width [gs+gi*18]
+  &20 :width [gs+gi*19]
+  &21 :width [gs+gi*20]
+  &22 :width [gs+gi*21]
+  &23 :width [gs+gi*22]
+  &24 :width [gs+gi*23]
 div.span-24 :width [gs+gi*23]
 
 .suffix-
-	&1  :padding-right [gi]
-	&2  :padding-right [gi*2]
-	&3  :padding-right [gi*3]
-	&4  :padding-right [gi*4]
-	&5  :padding-right [gi*5]
-	&6  :padding-right [gi*6]
-	&7  :padding-right [gi*7]
-	&8  :padding-right [gi*8]
-	&9  :padding-right [gi*9]
-	&10 :padding-right [gi*10]
-	&11 :padding-right [gi*11]
-	&12 :padding-right [gi*12]
-	&13 :padding-right [gi*13]
-	&14 :padding-right [gi*14]
-	&15 :padding-right [gi*15]
-	&16 :padding-right [gi*16]
-	&17 :padding-right [gi*17]
-	&18 :padding-right [gi*18]
-	&19 :padding-right [gi*19]
-	&20 :padding-right [gi*20]
-	&21 :padding-right [gi*21]
-	&22 :padding-right [gi*22]
-	&23 :padding-right [gi*23]
+  &1  :padding-right [gi]
+  &2  :padding-right [gi*2]
+  &3  :padding-right [gi*3]
+  &4  :padding-right [gi*4]
+  &5  :padding-right [gi*5]
+  &6  :padding-right [gi*6]
+  &7  :padding-right [gi*7]
+  &8  :padding-right [gi*8]
+  &9  :padding-right [gi*9]
+  &10 :padding-right [gi*10]
+  &11 :padding-right [gi*11]
+  &12 :padding-right [gi*12]
+  &13 :padding-right [gi*13]
+  &14 :padding-right [gi*14]
+  &15 :padding-right [gi*15]
+  &16 :padding-right [gi*16]
+  &17 :padding-right [gi*17]
+  &18 :padding-right [gi*18]
+  &19 :padding-right [gi*19]
+  &20 :padding-right [gi*20]
+  &21 :padding-right [gi*21]
+  &22 :padding-right [gi*22]
+  &23 :padding-right [gi*23]
 
 .prefix-
-	&1  :padding-left [gi]
-	&2  :padding-left [gi*2]
-	&3  :padding-left [gi*3]
-	&4  :padding-left [gi*4]
-	&5  :padding-left [gi*5]
-	&6  :padding-left [gi*6]
-	&7  :padding-left [gi*7]
-	&8  :padding-left [gi*8]
-	&9  :padding-left [gi*9]
-	&10 :padding-left [gi*10]
-	&11 :padding-left [gi*11]
-	&12 :padding-left [gi*12]
-	&13 :padding-left [gi*13]
-	&14 :padding-left [gi*14]
-	&15 :padding-left [gi*15]
-	&16 :padding-left [gi*16]
-	&17 :padding-left [gi*17]
-	&18 :padding-left [gi*18]
-	&19 :padding-left [gi*19]
-	&20 :padding-left [gi*20]
-	&21 :padding-left [gi*21]
-	&22 :padding-left [gi*22]
-	&23 :padding-left [gi*23]
+  &1  :padding-left [gi]
+  &2  :padding-left [gi*2]
+  &3  :padding-left [gi*3]
+  &4  :padding-left [gi*4]
+  &5  :padding-left [gi*5]
+  &6  :padding-left [gi*6]
+  &7  :padding-left [gi*7]
+  &8  :padding-left [gi*8]
+  &9  :padding-left [gi*9]
+  &10 :padding-left [gi*10]
+  &11 :padding-left [gi*11]
+  &12 :padding-left [gi*12]
+  &13 :padding-left [gi*13]
+  &14 :padding-left [gi*14]
+  &15 :padding-left [gi*15]
+  &16 :padding-left [gi*16]
+  &17 :padding-left [gi*17]
+  &18 :padding-left [gi*18]
+  &19 :padding-left [gi*19]
+  &20 :padding-left [gi*20]
+  &21 :padding-left [gi*21]
+  &22 :padding-left [gi*22]
+  &23 :padding-left [gi*23]
 
 div
-	&.border
-		:padding-right 4px
-		:margin-right 5px
-		:border-right 1px solid #eee
-	&.colborder
+  &.border
+    :padding-right 4px
+    :margin-right 5px
+    :border-right 1px solid #eee
+  &.colborder
     :padding-right 24px
     :margin-right 25px
     :border-right 1px solid #eee
 
 .pull-
-	&1  :margin-left [0px - gi]
-	&2  :margin-left [0px - gi*2]
-	&3  :margin-left [0px - gi*3]
-	&4  :margin-left [0px - gi*4]
-	&5  :margin-left [0px - gi*5]
-	&6  :margin-left [0px - gi*6]
-	&7  :margin-left [0px - gi*7]
-	&8  :margin-left [0px - gi*8]
-	&9  :margin-left [0px - gi*9]
-	&10 :margin-left [0px - gi*10]
-	&11 :margin-left [0px - gi*11]
-	&12 :margin-left [0px - gi*12]
-	&13 :margin-left [0px - gi*13]
-	&14 :margin-left [0px - gi*14]
-	&15 :margin-left [0px - gi*15]
-	&16 :margin-left [0px - gi*16]
-	&17 :margin-left [0px - gi*17]
-	&18 :margin-left [0px - gi*18]
-	&19 :margin-left [0px - gi*19]
-	&20 :margin-left [0px - gi*20]
-	&21 :margin-left [0px - gi*21]
-	&22 :margin-left [0px - gi*22]
-	&23 :margin-left [0px - gi*23]
-	&24 :margin-left [0px - gi*24]
+  &1  :margin-left [0px - gi]
+  &2  :margin-left [0px - gi*2]
+  &3  :margin-left [0px - gi*3]
+  &4  :margin-left [0px - gi*4]
+  &5  :margin-left [0px - gi*5]
+  &6  :margin-left [0px - gi*6]
+  &7  :margin-left [0px - gi*7]
+  &8  :margin-left [0px - gi*8]
+  &9  :margin-left [0px - gi*9]
+  &10 :margin-left [0px - gi*10]
+  &11 :margin-left [0px - gi*11]
+  &12 :margin-left [0px - gi*12]
+  &13 :margin-left [0px - gi*13]
+  &14 :margin-left [0px - gi*14]
+  &15 :margin-left [0px - gi*15]
+  &16 :margin-left [0px - gi*16]
+  &17 :margin-left [0px - gi*17]
+  &18 :margin-left [0px - gi*18]
+  &19 :margin-left [0px - gi*19]
+  &20 :margin-left [0px - gi*20]
+  &21 :margin-left [0px - gi*21]
+  &22 :margin-left [0px - gi*22]
+  &23 :margin-left [0px - gi*23]
+  &24 :margin-left [0px - gi*24]
 .pull-
-	&1,&2,&3,&4,&5,&6,&7,&8,&9,&10,&11,&12,&13,
-	&14,&15,&16,&17,&18,&19,&20,&21,&22,&23,&24
-		:float left
-		:position relative
+  &1,&2,&3,&4,&5,&6,&7,&8,&9,&10,&11,&12,&13,
+  &14,&15,&16,&17,&18,&19,&20,&21,&22,&23,&24
+    :float left
+    :position relative
 
 .push-
-	&1  :margin 0 [0px - gi] 1.5em [gi]
-	&2  :margin 0 [0px - gi*2] 1.5em [gi*2]
-	&3  :margin 0 [0px - gi*3] 1.5em [gi*3]
-	&4  :margin 0 [0px - gi*4] 1.5em [gi*4]
-	&5  :margin 0 [0px - gi*5] 1.5em [gi*5]
-	&6  :margin 0 [0px - gi*6] 1.5em [gi*6]
-	&7  :margin 0 [0px - gi*7] 1.5em [gi*7]
-	&8  :margin 0 [0px - gi*8] 1.5em [gi*8]
-	&9  :margin 0 [0px - gi*9] 1.5em [gi*9]
-	&10 :margin 0 [0px - gi*10] 1.5em [gi*10]
-	&11 :margin 0 [0px - gi*11] 1.5em [gi*11]
-	&12 :margin 0 [0px - gi*12] 1.5em [gi*12]
-	&13 :margin 0 [0px - gi*13] 1.5em [gi*13]
-	&14 :margin 0 [0px - gi*14] 1.5em [gi*14]
-	&15 :margin 0 [0px - gi*15] 1.5em [gi*15]
-	&16 :margin 0 [0px - gi*16] 1.5em [gi*16]
-	&17 :margin 0 [0px - gi*17] 1.5em [gi*17]
-	&18 :margin 0 [0px - gi*18] 1.5em [gi*18]
-	&19 :margin 0 [0px - gi*19] 1.5em [gi*19]
-	&20 :margin 0 [0px - gi*20] 1.5em [gi*20]
-	&21 :margin 0 [0px - gi*21] 1.5em [gi*21]
-	&22 :margin 0 [0px - gi*22] 1.5em [gi*22]
-	&23 :margin 0 [0px - gi*23] 1.5em [gi*23]
-	&24 :margin 0 [0px - gi*24] 1.5em [gi*24]
+  &1  :margin 0 [0px - gi] 1.5em [gi]
+  &2  :margin 0 [0px - gi*2] 1.5em [gi*2]
+  &3  :margin 0 [0px - gi*3] 1.5em [gi*3]
+  &4  :margin 0 [0px - gi*4] 1.5em [gi*4]
+  &5  :margin 0 [0px - gi*5] 1.5em [gi*5]
+  &6  :margin 0 [0px - gi*6] 1.5em [gi*6]
+  &7  :margin 0 [0px - gi*7] 1.5em [gi*7]
+  &8  :margin 0 [0px - gi*8] 1.5em [gi*8]
+  &9  :margin 0 [0px - gi*9] 1.5em [gi*9]
+  &10 :margin 0 [0px - gi*10] 1.5em [gi*10]
+  &11 :margin 0 [0px - gi*11] 1.5em [gi*11]
+  &12 :margin 0 [0px - gi*12] 1.5em [gi*12]
+  &13 :margin 0 [0px - gi*13] 1.5em [gi*13]
+  &14 :margin 0 [0px - gi*14] 1.5em [gi*14]
+  &15 :margin 0 [0px - gi*15] 1.5em [gi*15]
+  &16 :margin 0 [0px - gi*16] 1.5em [gi*16]
+  &17 :margin 0 [0px - gi*17] 1.5em [gi*17]
+  &18 :margin 0 [0px - gi*18] 1.5em [gi*18]
+  &19 :margin 0 [0px - gi*19] 1.5em [gi*19]
+  &20 :margin 0 [0px - gi*20] 1.5em [gi*20]
+  &21 :margin 0 [0px - gi*21] 1.5em [gi*21]
+  &22 :margin 0 [0px - gi*22] 1.5em [gi*22]
+  &23 :margin 0 [0px - gi*23] 1.5em [gi*23]
+  &24 :margin 0 [0px - gi*24] 1.5em [gi*24]
 .push-
-	&1,&2,&3,&4,&5,&6,&7,&8,&9,&10,&11,&12,&13,
-	&14,&15,&16,&17,&18,&19,&20,&21,&22,&23,&24
-		:float right
-		:position relative
+  &1,&2,&3,&4,&5,&6,&7,&8,&9,&10,&11,&12,&13,
+  &14,&15,&16,&17,&18,&19,&20,&21,&22,&23,&24
+    :float right
+    :position relative
 
 hr
-	:background #ddd
-	:color #ddd
-	:clear both
-	:float none
-	:width 100%
-	:height .1em
-	:margin 0 0 1.45em
-	:border none
-	.space
-		:background #fff
-		:color #fff
+  :background #ddd
+  :color #ddd
+  :clear both
+  :float none
+  :width 100%
+  :height .1em
+  :margin 0 0 1.45em
+  :border none
+  .space
+    :background #fff
+    :color #fff
 
 .clearfix, .container
-	&:after
-		:content "."
-		:display block
-		:height 0
-		:clear both
-		:visibility hidden
-		:max-height 0
-	:display inline-block
+  &:after
+    :content "."
+    :display block
+    :height 0
+    :clear both
+    :visibility hidden
+    :max-height 0
+  :display inline-block
 
 * html
-	.clearfix .container
-		:height 1%
+  .clearfix .container
+    :height 1%
 ||.clearfix, .container
-||	:display block  || Doesn't this just override the earlier?
+||  :display block  || Doesn't this just override the earlier?
 
 .clear :clear both
 
 
 || Fancy serif style
 .fancy
-	:color #666
-	:font
-		:family "Warnock Pro", "Goudy Old Style", "Palatino", "Book Antiqua", Georgia, serif
-		:style italic
-		:weight normal
+  :color #666
+  :font
+    :family "Warnock Pro", "Goudy Old Style", "Palatino", "Book Antiqua", Georgia, serif
+    :style italic
+    :weight normal
 
 || Small caps style
 .caps
-	:font-variant small-caps
-	:letter-spacing 1px
-	:text-transform lowercase
-	:font-size 1.2em
-	:font-weight bold
-	:padding 0 2px
+  :font-variant small-caps
+  :letter-spacing 1px
+  :text-transform lowercase
+  :font-size 1.2em
+  :font-weight bold
+  :padding 0 2px
 
 || TODO (?)  A bunch of anchor stuff in the original that I don't _think_ I
 || want in here because of the icons etc.  But I might be missing some
@@ -460,125 +460,125 @@ hr
 || Text Classes
 
 .small
-	:font-size .8em
-	:margin-bottom 1.875em
-	:line-height 1.875em
+  :font-size .8em
+  :margin-bottom 1.875em
+  :line-height 1.875em
 .large
-	:font-size 1.2em
-	:line-height 2.5em
-	:margin-bottom 1.25em
+  :font-size 1.2em
+  :line-height 2.5em
+  :margin-bottom 1.25em
 .hide :display none
 .quiet :color #666
 .loud :color #000
 .highlight :background #ff0
 .top :margin-top 0
-	:padding-top 0
+  :padding-top 0
 .bottom :margin-bottom 0
-	:padding-bottom 0
+  :padding-bottom 0
 .thin :font-weight lighter
 .error, .notice, .success
-	:padding .8em
-	:margin-bottom 1.6em
-	:border 2px solid #ddd
+  :padding .8em
+  :margin-bottom 1.6em
+  :border 2px solid #ddd
 .error
-	:background #fbe3e4
-	:color #8a1f11
-	:border-color #fbc2c4
+  :background #fbe3e4
+  :color #8a1f11
+  :border-color #fbc2c4
 .notice
-	:background #fff6bf
-	:color #514721
-	:border-color #ffd324
+  :background #fff6bf
+  :color #514721
+  :border-color #ffd324
 .success
-	:background #e6efc2
-	:color #264409
-	:border-color #c6d880
+  :background #e6efc2
+  :color #264409
+  :border-color #c6d880
 .error a
-	:color #8a1f11
-	:background none
-	:padding 0
+  :color #8a1f11
+  :background none
+  :padding 0
   :margin 0
 .notice a
-	:color #514721
-	:background none
-	:padding 0
+  :color #514721
+  :background none
+  :padding 0
   :margin 0
 .success a
-	:color #264409
-	:background none
-	:padding 0
+  :color #264409
+  :background none
+  :padding 0
   :margin 0
 .center
-	:text-align center
+  :text-align center
 
 
 || Buttons
 
 a.button, button
-	:display inline-block
-	:float left
-	:margin 0 0.583em 0.667em 0
-	:padding 5px 10px 5px 7px
-	:border 1px solid #dedede
-		:top 1px solid #eee
-		:left 1px solid #eee
-	:background-color #f5f5f5
-	:font-family "Lucida Grande", Tahoma, Arial, Verdana, sans-serif
-	:font-size 100%
-	:line-height 130%
-	:text-decoration none
-	:font-weight bold
-	:color #565656
-	:cursor pointer
+  :display inline-block
+  :float left
+  :margin 0 0.583em 0.667em 0
+  :padding 5px 10px 5px 7px
+  :border 1px solid #dedede
+    :top 1px solid #eee
+    :left 1px solid #eee
+  :background-color #f5f5f5
+  :font-family "Lucida Grande", Tahoma, Arial, Verdana, sans-serif
+  :font-size 100%
+  :line-height 130%
+  :text-decoration none
+  :font-weight bold
+  :color #565656
+  :cursor pointer
 
 button
-	:width auto
-	:overflow visible
-	:padding 4px 10px 3px 7px
+  :width auto
+  :overflow visible
+  :padding 4px 10px 3px 7px
 
 button[type]
-	:padding 4px 10px 4px 7px
-	:line-height 17px
+  :padding 4px 10px 4px 7px
+  :line-height 17px
 
 *:first-child+html .container button[type]
-	:padding 4px 10px 3px 7px
+  :padding 4px 10px 3px 7px
 
 button, a.button
-	img
-		:margin 0 3px -3px 0 !important
-		:padding 0
-		:border none
-		:width 16px
-		:height 16px
-		:float none
+  img
+    :margin 0 3px -3px 0 !important
+    :padding 0
+    :border none
+    :width 16px
+    :height 16px
+    :float none
 
 
 || Standard buttons
 
 button, a.button
-	&:hover
-		:background-color #dff4ff
-		:border 1px solid #c2e1ef
-		:color #336699
-	&:active
-		:background-color #6299c5
-		:border 1px solid #6299c5
-		:color #fff
-	&.positive:hover
-		:background-color #e6efc2
-		:border 1px solid #c6d880
-		:color #529214
-	&.positive:active
-		:background-color #529214
-		:border 1px solid #529214
-		:color #fff
-	&.negative:hover
-		:background-color #fbe3e4
-		:border 1px solid #fbc2c4
-		:color #d12f19
-	*.negative:active
-		:background-color #d12f19
-		:border 1px solid #d12f19
-		:color #fff
+  &:hover
+    :background-color #dff4ff
+    :border 1px solid #c2e1ef
+    :color #336699
+  &:active
+    :background-color #6299c5
+    :border 1px solid #6299c5
+    :color #fff
+  &.positive:hover
+    :background-color #e6efc2
+    :border 1px solid #c6d880
+    :color #529214
+  &.positive:active
+    :background-color #529214
+    :border 1px solid #529214
+    :color #fff
+  &.negative:hover
+    :background-color #fbe3e4
+    :border 1px solid #fbc2c4
+    :color #d12f19
+  *.negative:active
+    :background-color #d12f19
+    :border 1px solid #d12f19
+    :color #fff
 
 body
   .positive :color #529214
