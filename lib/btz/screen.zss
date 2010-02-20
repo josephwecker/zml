@@ -19,17 +19,17 @@
     :style italic
 
 || Colors
-[c-soft-text = #666] || del, fancy, quiet
-[c-hard-text = #000] || loud, active/hover a
+[#soft-text = #666] || del, fancy, quiet
+[#hard-text = #000] || loud, active/hover a
 
 
 
-[c-soft-border = c-soft-text * 2] || various borders
-[c-soft-border2 = c-soft-border + #111]
-[c-soft-border3 = c-soft-border2 + #111]
+[#soft-border = #soft-text * 2] || various borders
+[#soft-border2 = #soft-border + #111]
+[#soft-border3 = #soft-border2 + #111]
 
-[c-hard-border = c-soft-border - #222]
-[c-hard-border2 = c-hard-border - #222]
+[#hard-border = #soft-border - #222]
+[#hard-border2 = #hard-border - #222]
 
 || MEYER RESET v1.0
 html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p,
@@ -81,10 +81,10 @@ textarea
 
 del
   :text-decoration line-through
-  :color [c-soft-text]
+  :color [#soft-text]
 
 ins, dfn
-  :border-bottom 1px solid [c-soft-border]
+  :border-bottom 1px solid [#soft-border]
 
 small, sup, sub
   :font-size 85%
@@ -99,7 +99,7 @@ a abbr, a acronym
 
 abbr[title], acronym[title], dfn[title]
   :cursor help
-  :border-bottom 1px solid [c-soft-border]
+  :border-bottom 1px solid [#soft-border]
 
 sup
   :vertical-align super
@@ -112,9 +112,9 @@ sub
 
 blockquote
   :border
-    :top 1px solid [c-soft-border]
-    :bottom 1px solid [c-soft-border]
-  :color [c-soft-text]
+    :top 1px solid [#soft-border]
+    :bottom 1px solid [#soft-border]
+  :color [#soft-text]
 
 blockquote
   *:first-child:before :content "\201C"
@@ -126,7 +126,7 @@ blockquote
 fieldset
   :padding 1.4em
   :margin 0 0 1.5em 0
-  :border 1px solid [c-soft-border]
+  :border 1px solid [#soft-border]
 legend
   :font-weight bold
   :font-size 1.2em
@@ -134,12 +134,12 @@ legend
 label :font-weight bold
 
 textarea, input[type='text'], input[type='password'], select
-  :border 1px solid [c-soft-border]
+  :border 1px solid [#soft-border]
   :background #fff
   &:hover
-    :border-color [c-hard-border]
+    :border-color [#hard-border]
   &:focus
-    :border-color [c-hard-border2]
+    :border-color [#hard-border2]
     :outline 2px solid #ffffaa
 
 input, select
@@ -177,11 +177,11 @@ dt :font-weight bold
 || Tables
 
 table
-  :border-top 1px solid [c-soft-border]
-  :border-left 1px solid [c-soft-border]
+  :border-top 1px solid [#soft-border]
+  :border-left 1px solid [#soft-border]
 th, td
-  :border-bottom 1px solid [c-soft-border2]
-  :border-right 1px solid [c-soft-border]
+  :border-bottom 1px solid [#soft-border2]
+  :border-right 1px solid [#soft-border]
 
 || Margins & Paddings
 
@@ -252,7 +252,7 @@ a:hover
 a
   &:active, &:focus
     :text-decoration underline
-    :color [c-hard-text]
+    :color [#hard-text]
 
 code, pre :color #c33
 
@@ -359,11 +359,11 @@ div
   &.border
     :padding-right 4px
     :margin-right 5px
-    :border-right 1px solid [c-soft-border3]
+    :border-right 1px solid [#soft-border3]
   &.colborder
     :padding-right 24px
     :margin-right 25px
-    :border-right 1px solid [c-soft-border3]
+    :border-right 1px solid [#soft-border3]
 
 .pull-
   &1  :margin-left [0px - gi]
@@ -428,8 +428,8 @@ div
     :position relative
 
 hr
-  :background [c-soft-border2]
-  :color [c-soft-border2]
+  :background [#soft-border2]
+  :color [#soft-border2]
   :clear both
   :float none
   :width 100%
@@ -461,7 +461,7 @@ hr
 
 || Fancy serif style
 .fancy
-  :color [c-soft-text]
+  :color [#soft-text]
   [type-fancy]
   :font-weight normal
 
@@ -490,8 +490,8 @@ hr
   :line-height 2.5em
   :margin-bottom 1.25em
 .hide :display none
-.quiet :color [c-soft-text]
-.loud :color [c-hard-text]
+.quiet :color [#soft-text]
+.loud :color [#hard-text]
 .highlight :background #ff0
 .top :margin-top 0
   :padding-top 0
@@ -501,7 +501,7 @@ hr
 .error, .notice, .success
   :padding .8em
   :margin-bottom 1.6em
-  :border 2px solid [c-soft-border2]
+  :border 2px solid [#soft-border2]
 .error
   :background #fbe3e4
   :color #8a1f11
@@ -540,9 +540,9 @@ a.button, button
   :float left
   :margin 0 0.583em 0.667em 0
   :padding 5px 10px 5px 7px
-  :border 1px solid [c-soft-border2]
-    :top 1px solid [c-soft-border3]
-    :left 1px solid [c-soft-border3]
+  :border 1px solid [#soft-border2]
+    :top 1px solid [#soft-border3]
+    :left 1px solid [#soft-border3]
   :background-color #f5f5f5
   :font-family "Lucida Grande", Tahoma, Arial, Verdana, sans-serif
   :font-size 100%
