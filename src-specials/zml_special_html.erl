@@ -81,43 +81,12 @@
       {"<!--[if IE]><script type=\"text/css\" media=\"print\">",
         "</script><![endif]-->"}}]).
 
-metatag(encoding, $x, [Val]) ->
-  % Skipping application/xhtml+xml for now
-  %"<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; " ++
-  "<meta http-equiv=\"content-type\" content=\"text/html; " ++
-  "charset="++to_upper(Val)++"\" />";
-metatag(encoding, _, [Val]) ->
-  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" ++
-  to_lower(Val)++"\">";
-metatag(language, $x, [Val]) ->
-  "<meta http-equiv=\"content-language\" content=\""++to_lower(Val)++"\" />";
-metatag(language, _, [Val]) ->
-  "<meta http-equiv=\"Content-Language\" content=\""++to_lower(Val)++"\">";
-metatag(description, $x, Vals) ->
-  "<meta name=\"description\" content=\""++join(Vals," ")++"\" />";
-metatag(description, _, Vals) ->
-  "<meta name=\"description\" content=\""++join(Vals," ")++"\">";
-metatag(keywords, $x, Vals) ->
-  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\" />";
-metatag(keywords, _, Vals) ->
-  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\">";
-metatag(copyright, $x, Vals) ->
-  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\" />";
-metatag(copyright, _, Vals) ->
-  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\">";
-metatag(nosmarttag, $x, _) ->
-  "<meta name=\"MSSmartTagsPreventParsing\" content=\"true\" />";
-metatag(nosmarttag, _, _) ->
-  "<meta name=\"MSSmartTagsPreventParsing\" content=\"TRUE\">";
-metatag(title, _, Vals) ->
-  zml:new_tag(title, [], Vals).
-
 run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
   FAST2 = add_or_replace_doctype(FAST, Attr),
   FAST3 = ensure_head_and_body(ID, Attr, Children, FAST2),
   FAST4 = handle_javascript(ID, Attr, Children, FAST3, SourceFN, StagingDir),
   FAST5 = handle_xhtml(ID, Attr, Children, FAST4),
-  FAST6 = handle_zss(ID, Attr, FAST5, SourceFN, StagingDir),
+  FAST6 = handle_zss_and_images(ID, Attr, FAST5, SourceFN, StagingDir),
   FAST7 = handle_metas(ID, Attr, FAST6),
   ASTFin = remove_special_attributes(ID, FAST7),
   ASTFin.
@@ -192,32 +161,66 @@ add_or_replace_doctype(AST, Attr) ->
     end,
   [DoctypeString | AST].
 
-handle_zss(ID, Attr, AST, SourceFN, {_, DTmp, _, _DCSS, _, _}) ->
-  lists:foldl(
-    fun(Type, CurrAST) ->
-        do_handle_zss(Type, ID, Attr, CurrAST, SourceFN, DTmp)
-    end, AST, ?STYLESHEET_TYPES).
+%% TODO:
+%%  - Get list of URL images (only if:)
+%%    * No offset already set
+%%    * gif or png
+%%  - Load them into tmp
+%%  - Figure out size of each
+%%  - Sort by height
+%%  - Combine with montage
+%%  - Place in static
+%%  - Replace all url id's with correct new one and offset
+%%  - 
+handle_zss_and_images(ID, Attr, AST, SourceFN, {_, DTmp, _, _DCSS, _, _}) ->
+  Rules = get_all_zss_rules(Attr, AST, SourceFN, DTmp),
+  Rules2 = process_zss_images(Rules),
+  %lists:foldl(
+  %  fun(Type, CurrAST) ->
+  %      do_handle_zss(Type, ID, Attr, CurrAST, SourceFN, DTmp)
+  %  end, AST, ?STYLESHEET_TYPES).
 
-do_handle_zss(Type, ID, Attr, AST, SourceFN, DTmp) ->
-  NormAttr = attribute_alias(Attr, Type, Type ++ "s"),
-  Scripts =
-    get_aux_files(SourceFN, ".zml", ".zss", NormAttr, Type ++ "s",
-      Type == "style"),
-  case Scripts of
-    [] ->
-      AST;
-    _ ->
-      Rules = lists:foldl(fun(A,Acc) -> process_zss(AST,A,Acc,DTmp) end, [], Scripts),
-      Normalized = zss_parser:combine_dups(Rules),
-      CSS = zss:output_css(Normalized),
+get_all_zss_rules(Attr, AST, SourceFN, DTmp) ->
+  Scripts = lists:foldl(
+    fun(Type, ScriptAcc) ->
+        NormAttr = attribute_alias(Attr, Type, Type ++ "s"),
+        get_aux_files(SourceFN, ".zml", ".zss", NormAttr, Type ++ "s",
+          Type == "style") ++ ScriptAcc
+    end, [], ?STYLESHEET_TYPES),
+  Rules = lists:foldl(
+    fun(A,Acc) -> process_zss(AST,A,Acc,DTmp) end,
+    [],Scripts),
+  zss_parser:combine_dups(Rules).
 
-      {PrePend, Append} = proplists:get_value(Type, ?STYLESHEET_TAGS),
-      Style = [lists:flatten([PrePend,CSS,Append])],
+%do_handle_zss(Type, ID, Attr, AST, SourceFN, DTmp) ->
+%  NormAttr = attribute_alias(Attr, Type, Type ++ "s"),
+%  Scripts =
+%    get_aux_files(SourceFN, ".zml", ".zss", NormAttr, Type ++ "s",
+%      Type == "style"),
+%  case Scripts of
+%    [] ->
+%      AST;
+%    _ ->
+%      Rules = lists:foldl(fun(A,Acc) -> process_zss(AST,A,Acc,DTmp) end, [], Scripts),
+%      Normalized = zss_parser:combine_dups(Rules),
+%      CSS = zss:output_css(Normalized),
+%
+%      {PrePend, Append} = proplists:get_value(Type, ?STYLESHEET_TAGS),
+%      Style = [lists:flatten([PrePend,CSS,Append])],
+%
+%      {_,_,HeadAttr,HeadChildren} = zml:get_tag(AST, [{"html",ID},"head"]),
+%      NewHead = zml:new_tag("head", normal, HeadAttr, [Style | HeadChildren]),
+%      zml:replace_tag(AST, [{"html", ID}, "head"], NewHead)
+%  end.
 
-      {_,_,HeadAttr,HeadChildren} = zml:get_tag(AST, [{"html",ID},"head"]),
-      NewHead = zml:new_tag("head", normal, HeadAttr, [Style | HeadChildren]),
-      zml:replace_tag(AST, [{"html", ID}, "head"], NewHead)
-  end.
+
+%% Needs to make a hash of filename -> sprite name + offset to replace in Rules
+process_zss_images(Rules) ->
+  Spriteable = get_spriteable_images(Rules),
+
+
+get_spriteable_images(Rules) ->
+
 
 process_zss(AST, FName, Acc, DTmp) ->
   TmpFN = filename:join([DTmp, zml:tmp_filename()]),
@@ -374,6 +377,37 @@ handle_metas(ID, OldAttr, AST) ->
   NewChildren = zml:replace_tag(Children, ["head"], NewHead),
   NewFull = zml:new_tag({"html",ID}, special, NewAttr, NewChildren),
   zml:replace_tag(AST, [{"html",ID}], NewFull).
+
+metatag(encoding, $x, [Val]) ->
+  % Skipping application/xhtml+xml for now
+  %"<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; " ++
+  "<meta http-equiv=\"content-type\" content=\"text/html; " ++
+  "charset="++to_upper(Val)++"\" />";
+metatag(encoding, _, [Val]) ->
+  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" ++
+  to_lower(Val)++"\">";
+metatag(language, $x, [Val]) ->
+  "<meta http-equiv=\"content-language\" content=\""++to_lower(Val)++"\" />";
+metatag(language, _, [Val]) ->
+  "<meta http-equiv=\"Content-Language\" content=\""++to_lower(Val)++"\">";
+metatag(description, $x, Vals) ->
+  "<meta name=\"description\" content=\""++join(Vals," ")++"\" />";
+metatag(description, _, Vals) ->
+  "<meta name=\"description\" content=\""++join(Vals," ")++"\">";
+metatag(keywords, $x, Vals) ->
+  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\" />";
+metatag(keywords, _, Vals) ->
+  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\">";
+metatag(copyright, $x, Vals) ->
+  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\" />";
+metatag(copyright, _, Vals) ->
+  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\">";
+metatag(nosmarttag, $x, _) ->
+  "<meta name=\"MSSmartTagsPreventParsing\" content=\"true\" />";
+metatag(nosmarttag, _, _) ->
+  "<meta name=\"MSSmartTagsPreventParsing\" content=\"TRUE\">";
+metatag(title, _, Vals) ->
+  zml:new_tag(title, [], Vals).
 
 new_metas({Name, Type, Def}, {Attr, Acc}) ->
   case pop_html_attr(Name, Attr, Def) of
