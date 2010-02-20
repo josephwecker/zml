@@ -7,6 +7,16 @@
  #   - Font family presets for the different types for easy inclusion
  #   - Make colors and sizes relative to some foundation (at least colors)
  #|
+
+[type-sans]
+  :font-family "Liberation Sans", Helvetica, Arial, sans-serif
+[type-mono]
+  :font-family monaco, "Lucida Console", courier, monospace
+
+
+[c-light = #666]
+[c-bright = c-light * 2]
+
 || MEYER RESET v1.0
 html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p,
 blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em,
@@ -42,7 +52,7 @@ table
 || Basic Typography
 html
   :font-size 62.5%
-  :font-family "Liberation Sans", Helvetica, Arial, sans-serif
+  [type-sans]
 
 strong, th, thead td, h1, h2, h3, h4, h5, h6
   :font-weight bold
@@ -53,14 +63,14 @@ cite, em, dfn
 code, kbd, samp, pre, tt, var, input[type='text'], input[type='password'],
 textarea
   :font-size 92%
-  :font-family monaco, "Lucida Console", courier, monospace
+  [type-mono]
 
 del
   :text-decoration line-through
-  :color #666
+  :color [c-light]
 
 ins, dfn
-  :border-bottom 1px solid #ccc
+  :border-bottom 1px solid [c-bright]
 
 small, sup, sub
   :font-size 85%
