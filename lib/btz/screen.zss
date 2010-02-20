@@ -11,6 +11,8 @@
 || Font groups
 [type-sans]
   :font-family "Liberation Sans", Helvetica, Arial, sans-serif
+[type-sans2]
+  :font-family "Lucida Grande", Tahoma, Arial, Verdana, sans-serif
 [type-mono]
   :font-family monaco, "Lucida Console", courier, monospace
 [type-fancy]
@@ -18,18 +20,34 @@
     :family "Warnock Pro", "Goudy Old Style", "Palatino", "Book Antiqua", Georgia, serif
     :style italic
 
-|| Colors
-[#soft-text = #666] || del, fancy, quiet
-[#hard-text = #000] || loud, active/hover a
+|| General colors
+[#soft-text = #666] || del, .fancy, .quiet
+[#hard-text = #000] || .loud, active/hover a (as per below)
+[#mono-text = #c33] || code, pre
 
+[#highlight-min = #ffa]
+[#highlight-max = #ff0]
 
+[#bg-norm   = #fff] || hr.space
+[#bg-bright = #fff] || textarea, inputs
 
-[#soft-border = #soft-text * 2] || various borders
-[#soft-border2 = #soft-border + #111]
+|| Border colors
+[#soft-border  = #soft-text    * 2]
+[#soft-border2 = #soft-border  + #111]
 [#soft-border3 = #soft-border2 + #111]
 
-[#hard-border = #soft-border - #222]
-[#hard-border2 = #hard-border - #222]
+[#hard-border  = #soft-border  - #222]
+[#hard-border2 = #hard-border  - #222]
+
+|| Hyperlink colors
+[#a-norm       = #36c]  || Blue
+[#a-visited    = #a-norm + #630]
+[#a-hover      = #c33]  || Red
+[#a-active     = #hard-text]
+
+|| Button colors (Normal)
+[#btn-norm-bg  = #bg-norm   - #0a0a0a]
+[#btn-norm-txt = #soft-text - #101010]
 
 || MEYER RESET v1.0
 html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p,
@@ -135,12 +153,12 @@ label :font-weight bold
 
 textarea, input[type='text'], input[type='password'], select
   :border 1px solid [#soft-border]
-  :background #fff
+  :background [#bg-bright]
   &:hover
     :border-color [#hard-border]
   &:focus
     :border-color [#hard-border2]
-    :outline 2px solid #ffffaa
+    :outline 2px solid [#highlight-min]
 
 input, select
   :cursor pointer
@@ -239,23 +257,22 @@ form div :margin-bottom .8em
 
 a:link
   :text-decoration underline
-  :color #36c
+  :color [#a-norm]
 
 a:visited
   :text-decoration underline
-  :color #99c
+  :color [#a-visited]
 
 a:hover
   :text-decoration underline
-  :color #c33
+  :color [#a-hover]
 
 a
   &:active, &:focus
     :text-decoration underline
-    :color [#hard-text]
+    :color [#a-active]
 
-code, pre :color #c33
-
+code, pre :color [#mono-text]
 
 || 24 Column Grid
 
@@ -437,8 +454,8 @@ hr
   :margin 0 0 1.45em
   :border none
   .space
-    :background #fff
-    :color #fff
+    :background [#bg-norm]
+    :color [#bg-norm]
 
 .clearfix, .container
   &:after
@@ -492,7 +509,7 @@ hr
 .hide :display none
 .quiet :color [#soft-text]
 .loud :color [#hard-text]
-.highlight :background #ff0
+.highlight :background [#highlight-max]
 .top :margin-top 0
   :padding-top 0
 .bottom :margin-bottom 0
@@ -543,13 +560,13 @@ a.button, button
   :border 1px solid [#soft-border2]
     :top 1px solid [#soft-border3]
     :left 1px solid [#soft-border3]
-  :background-color #f5f5f5
-  :font-family "Lucida Grande", Tahoma, Arial, Verdana, sans-serif
+  :background-color [#btn-norm-bg]
+  [type-sans2]
   :font-size 100%
   :line-height 130%
   :text-decoration none
   :font-weight bold
-  :color #565656
+  :color [#btn-norm-txt]
   :cursor pointer
 
 button
@@ -574,7 +591,7 @@ button, a.button
     :float none
 
 
-|| Standard buttons
+|| Preset buttons
 
 button, a.button
   &:hover

@@ -75,7 +75,9 @@
       [ ] No selected: <input>...
 
 -- ZSS --
+  [ ] "var1 - var2" when var2 doesn't exist gives uninformative error message
   [ ] Keywords in variable names (like "color") throw off syntax highlighting
+  [ ] Variable names starting with # and probably others throw off syntax highlighting
   [ ] Boolean expressions / blocks / or ternary expression
   [ ] Right now it cuts color values every time it does an operation- maybe it
       makes more sense to cut them only when they're being rendered finally.
