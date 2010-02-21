@@ -49,6 +49,7 @@
 [#btn-norm-bg  = #bg-norm   - #0a0a0a]
 [#btn-norm-txt = #soft-text - #101010]
 
+
 || MEYER RESET v1.0
 html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p,
 blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em,
@@ -622,3 +623,5 @@ button, a.button
 body
   .positive :color #529214
   .negative :color #d12f19
+
+a img :border none

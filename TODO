@@ -75,6 +75,7 @@
       [ ] No selected: <input>...
 
 -- ZSS --
+  [ ] Attribute keys with non-numeric starts break syn highlighting (ex:  :*white-space...)
   [ ] "var1 - var2" when var2 doesn't exist gives uninformative error message
   [ ] Keywords in variable names (like "color") throw off syntax highlighting
   [ ] Variable names starting with # and probably others throw off syntax highlighting
