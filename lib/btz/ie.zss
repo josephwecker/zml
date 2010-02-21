@@ -1,0 +1,53 @@
+|#
+ # Adapted from the BlueTrip CSS Framework,
+ #   Mike Crittenden, mike@capsizedesigns.com, Copyright 2008 Mike Crittenden
+ #   Used under the MIT license
+ #|
+
+body :text-align center
+
+.container :text-align left
+
+* html
+  .column :overflow-x hidden
+  legend
+    :margin -18px -8px 16px 0
+    :padding 0
+  textarea, input
+    :padding 0  || IE < 7 form fix
+
+ol :margin-left 2em
+
+sup :vertical-align text-top
+
+sub :vertical-align text-bottom
+
+sup, sub :font-size 100%  || IE superscript & subscript bug
+
+html>body p code :*white-space normal
+
+hr :margin -8px auto 11px
+
+ul  || IE can't handle :before and :after
+  :list-style disc outside
+  :margin-left 0
+  li
+    :text-indent 0
+    :margin-left 0
+
+legend
+  :margin-bottom 1.6em  || IE form margin bug
+  &+* :margin-top 0
+
+blockquote  || IE can't handle :first-child
+  p, ul, ol, dl, pre, address, table, form, h1, h2, h3, h4, h5, h6
+    :margin-top .8em
+    :margin-bottom .8em
+
+input
+  &[type='submit'], &[type='button'] :padding 0
+
+a
+  abbr acronym :text-decoration underline || IE 7 bug
+
+fieldset legend :margin 0 || IE 6 disappearing legend bug
