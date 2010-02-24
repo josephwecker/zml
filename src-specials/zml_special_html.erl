@@ -175,6 +175,7 @@ add_or_replace_doctype(AST, Attr) ->
 handle_zss_and_images(ID, Attr, AST, SourceFN, {_, DTmp, _, _DCSS, _, _}) ->
   Rules = get_all_zss_rules(Attr, AST, SourceFN, DTmp),
   Rules2 = process_zss_images(Rules),
+
   %lists:foldl(
   %  fun(Type, CurrAST) ->
   %      do_handle_zss(Type, ID, Attr, CurrAST, SourceFN, DTmp)
@@ -216,11 +217,23 @@ get_all_zss_rules(Attr, AST, SourceFN, DTmp) ->
 
 %% Needs to make a hash of filename -> sprite name + offset to replace in Rules
 process_zss_images(Rules) ->
-  Spriteable = get_spriteable_images(Rules),
+  {Spriteable, Other} = get_images(Rules),
 
 
-get_spriteable_images(Rules) ->
+get_images(Rules) ->
+  get_images(Rules, []).
+get_images([], {AccSprite, AccOther}) ->
+  {lists:reverse(lists:flatten(AccSprite)),
+   lists:reverse(lists:flatten(AccOther))};
+get_images([{_Selectors, AttVals} | T], {AccSprite, AccOther}) ->
+  Spriteable = lists:foldl(fun get_spriteable_imgs/2, AttVals),
+  Other = lists:foldl(fun get_other_imgs/2, AttVals),
+  get_images(T, {[Spriteable | AccSprite], [Other | AccOther]}).
 
+get_spriteable_imgs({_Att, Val}, Acc) ->
+  Imgs = rex:sub_matches(Val, "[Uu][Rr][Ll]\\(['\"]?([^'\"\)])['\"]?\\)"),
+  %[  || [Img] <- Imgs, 
+  % TODO, you are here
 
 process_zss(AST, FName, Acc, DTmp) ->
   TmpFN = filename:join([DTmp, zml:tmp_filename()]),
