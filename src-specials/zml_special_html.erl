@@ -163,7 +163,7 @@ add_or_replace_doctype(AST, Attr) ->
 
 %% TODO:
 %%  - Get list of URL images (only if:)
-%%    * No offset already set
+%%    * No offset already set (actually we can combine pretty easily)
 %%    * gif or png
 %%  - Load them into tmp
 %%  - Figure out size of each
@@ -220,18 +220,18 @@ process_zss_images(Rules) ->
   {Spriteable, Other} = get_images(Rules),
 
 
-get_images(Rules) ->
-  get_images(Rules, []).
-get_images([], {AccSprite, AccOther}) ->
+images(Rules) ->
+  images(Rules, []).
+images([], {AccSprite, AccOther}) ->
   {lists:reverse(lists:flatten(AccSprite)),
    lists:reverse(lists:flatten(AccOther))};
-get_images([{_Selectors, AttVals} | T], {AccSprite, AccOther}) ->
-  Spriteable = lists:foldl(fun get_spriteable_imgs/2, AttVals),
-  Other = lists:foldl(fun get_other_imgs/2, AttVals),
-  get_images(T, {[Spriteable | AccSprite], [Other | AccOther]}).
+images([{_Selectors, AttVals} | T], {AccSprite, AccOther}) ->
+  Spriteable = lists:foldl(fun spriteable_imgs/2, AttVals),
+  Other = lists:foldl(fun other_imgs/2, AttVals),
+  images(T, {[Spriteable | AccSprite], [Other | AccOther]}).
 
-get_spriteable_imgs({_Att, Val}, Acc) ->
-  Imgs = rex:sub_matches(Val, "[Uu][Rr][Ll]\\(['\"]?([^'\"\)])['\"]?\\)"),
+spriteable_imgs({_Att, Val}, Acc) ->
+  Imgs = rex:sub_matches(Val, "[Uu][Rr][Ll]\\(['\"]?([^'\"\)]+\\.([Pp][Nn][Gg]|[Gg][Ii][Ff]))['\"]?\\)"),
   %[  || [Img] <- Imgs, 
   % TODO, you are here
 
