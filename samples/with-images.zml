@@ -1,0 +1,9 @@
+*html
+  #pi :img(src: images/pi.jpg);
+  #more-pi
+  .img2
+  #img3
+  .img4
+  #img5
+    :img(src: images/penguin-big.png)
+  #img6

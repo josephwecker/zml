@@ -1,0 +1,9 @@
+#more-pi
+  :background url(../images/pi.jpg)
+.img2
+  :background url(../images/Penguin Small.PNG)
+html
+  #img3 :background Url("../images/hearts.Png")
+  .img4 :background URL('../images/dancing_skeletons.png')
+#img6 :background url(../images/underConstruction.gif)
+  :background-position x-2 y-2
