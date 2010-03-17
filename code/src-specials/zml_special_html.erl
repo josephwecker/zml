@@ -86,8 +86,8 @@ run_handler(ID, Attr, Children, FAST, SourceFN, StagingDir) ->
   FAST3 = ensure_head_and_body(ID, Attr, Children, FAST2),
   FAST4 = handle_javascript(ID, Attr, Children, FAST3, SourceFN, StagingDir),
   FAST5 = handle_xhtml(ID, Attr, Children, FAST4),
-  FAST6 = handle_zss_and_images(ID, Attr, FAST5, SourceFN, StagingDir),
-  FAST7 = handle_metas(ID, Attr, FAST6),
+  %FAST6 = handle_zss_and_images(ID, Attr, FAST5, SourceFN, StagingDir),
+  FAST7 = handle_metas(ID, Attr, FAST5),
   ASTFin = remove_special_attributes(ID, FAST7),
   ASTFin.
 
@@ -173,8 +173,9 @@ add_or_replace_doctype(AST, Attr) ->
 %%  - Replace all url id's with correct new one and offset
 %%  - 
 handle_zss_and_images(ID, Attr, AST, SourceFN, {_, DTmp, _, _DCSS, _, _}) ->
-  Rules = get_all_zss_rules(Attr, AST, SourceFN, DTmp),
-  Rules2 = process_zss_images(Rules),
+%  Rules = get_all_zss_rules(Attr, AST, SourceFN, DTmp),
+%  Rules2 = process_zss_images(Rules),
+  nyi.
 
   %lists:foldl(
   %  fun(Type, CurrAST) ->
@@ -217,7 +218,8 @@ get_all_zss_rules(Attr, AST, SourceFN, DTmp) ->
 
 %% Needs to make a hash of filename -> sprite name + offset to replace in Rules
 process_zss_images(Rules) ->
-  {Spriteable, Other} = get_images(Rules),
+  %{Spriteable, Other} = get_images(Rules),
+  nyi.
 
 
 images(Rules) ->
@@ -226,14 +228,16 @@ images([], {AccSprite, AccOther}) ->
   {lists:reverse(lists:flatten(AccSprite)),
    lists:reverse(lists:flatten(AccOther))};
 images([{_Selectors, AttVals} | T], {AccSprite, AccOther}) ->
-  Spriteable = lists:foldl(fun spriteable_imgs/2, AttVals),
-  Other = lists:foldl(fun other_imgs/2, AttVals),
-  images(T, {[Spriteable | AccSprite], [Other | AccOther]}).
+  nyi.
+  %Spriteable = lists:foldl(fun spriteable_imgs/2, AttVals),
+  %Other = lists:foldl(fun other_imgs/2, AttVals),
+  %images(T, {[Spriteable | AccSprite], [Other | AccOther]}).
 
 spriteable_imgs({_Att, Val}, Acc) ->
-  Imgs = rex:sub_matches(Val, "[Uu][Rr][Ll]\\(['\"]?([^'\"\)]+\\.([Pp][Nn][Gg]|[Gg][Ii][Ff]))['\"]?\\)"),
+  %Imgs = rex:sub_matches(Val, "[Uu][Rr][Ll]\\(['\"]?([^'\"\)]+\\.([Pp][Nn][Gg]|[Gg][Ii][Ff]))['\"]?\\)"),
   %[  || [Img] <- Imgs, 
   % TODO, you are here
+  nyi.
 
 process_zss(AST, FName, Acc, DTmp) ->
   TmpFN = filename:join([DTmp, zml:tmp_filename()]),
