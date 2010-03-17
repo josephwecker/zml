@@ -1,0 +1,21 @@
+|#  here's
+
+ a block
+
+:without-auto(id: some-id)
+:with-auto#some-id.first-class.second-class.etc#lkajsdf(class: yet-another)
+#|
+||#laksdf
+||:something blah #something-else blah2 ;
+:tag1(prop: blah owiejfkj fijew oijf ew another: kjlk)
+  :blah some stuff || comment
+    :kjfe blah :kjfe2000 blah again
+    *wow ksjdf owiejf  || Will look for a compiled module
+                       ||zml_special_wow:run_handler/6
+    and even more jfewiojfo iwje eofij weofij 
+    *wow(blah: some attribute) another one
+      jfweoijfwe jiwo ef
+      :lkbjiej weflkjk
+  :another
+
+
