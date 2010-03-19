@@ -1,0 +1,42 @@
+*html(screen-style: lib/btz/screen.zss
+      print-style:  lib/btz/print.zss
+      ie-style:     lib/btz/ie.zss)
+  :h1 ZML
+  :h2 Zerl Markup Language
+
+  .description
+    Concise markup language + templating system using Erlang.  Inspired by
+    haml, SLiP, sexp2xml, and tenjin.  Either a static compiler or compiles to
+    a template for use with the zerl web framework.
+
+  :table.attributes
+    :tr :td.h Author    ;:td Joseph Wecker <joseph.wecker@gmail.com>;
+    :tr :td.h Copyright ;:td 2010 Joseph Wecker;
+    :tr :td.h License   ;
+      :td
+        :a(href:http\://www.opensource.org/licenses/mit-license.php)
+          MIT License
+        (Some individual files may be under other licenses)
+
+  :h3 Dependencies
+  :ul
+    :li Erlang / OTP
+    :li Build script uses Python
+    :li Hasn't really been tested on windows
+  
+  :h3 Getting it
+  :p Download a :a(href:http\://github.com/josephwecker/zml/zipball/master)zip;
+    or a :a(href:http\://github.com/josephwecker/zml/tarball/master)tar; of the
+    source.
+  :p You can also clone the project by running:
+  :code(lang:bash) git clone git://github.com/josephwecker/zml
+  :p Obviously feel free to browse the project
+    :a(href:http\://github.com/josephwecker/zml) here.
+  
+  :h3 Install
+  :ol
+    :li Download source
+    :li In 'code/' directory run ./build
+      (which creates several beams in the ebin directory)
+    :li Run erl -pa ebin
+    :li Uhh.. which is to say, there is no installation yet

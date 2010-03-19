@@ -1,0 +1,4 @@
+.description
+  :margin 0.5in 0.5in 0.5in 0.5in
+  :border 1px dashed gray
+  :background-color #ccc
