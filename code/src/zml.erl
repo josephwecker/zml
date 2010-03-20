@@ -73,35 +73,21 @@ do_compile(Tokenizer, Input, Options) ->
 %  {DirMain, DirTmp, DirJS, DirCSS, DirImg, DirDyn}.
 
 run_specialized_handlers(AST, Options) ->
-  AST.
-
-%run_specialized_handlers(AST, SourceFN, StagingDir) ->
-%  run_spec_handler_inner(AST, SourceFN, StagingDir, AST).
-
-%run_spec_handler_inner([], _, _, _, NewAST) ->
-%  NewAST;
-%run_spec_handler_inner([{{Name,ID}, special, Attr, Children} | T],
-%    FSource, DStage, DSpec, FullAST) ->
-%  HandlerName = list_to_atom("zml_special_" ++ string:to_lower(Name)),
-%  case code:ensure_loaded(HandlerName) of
-%    {module, _} ->
-%      great;
-%    _ ->
-%      HandlerSource = filename:join([DSpec, HandlerName]),
-%      case code:load_abs(HandlerSource) of
-%        {module, _} ->
-%          whew;
-%        {error, What} ->
-%          erlang:error([
-%                "'",What,"' When trying to load handler for ",
-%                Name," special tag types."])
-%      end
-%  end,
-%  NewAST = HandlerName:run_handler(ID, Attr, Children, FullAST, FSource,
-%    DStage),
-%  run_spec_handler_inner(T, FSource, DStage, DSpec, NewAST);
-%run_spec_handler_inner([_H|T],FSource,DStage,DSpec,FullAST) ->
-%  run_spec_handler_inner(T, FSource, DStage, DSpec, FullAST).
+  run_specialized_handlers_inner(AST, Options, AST).
+run_specialized_handlers_inner([], _, NewAST) ->
+  NewAST;
+run_specialized_handlers_inner([{{Name,ID}, special, Attr, Children} | T],
+    Options, FullAST) ->
+  HandlerModule = list_to_atom("zml_special_" ++ string:to_lower(Name)),
+  case code:ensure_loaded(HandlerModule) of
+    {module, _} ->
+      NewAST = HandlerModule:run_handler(ID, Attr, Children, FullAST, Options),
+      run_specialized_handlers_inner(T, Options, NewAST);
+    _ ->
+      erlang:error(["No code found to handle special tag type:",Name])
+  end;
+run_specialized_handlers_inner([_H|T], Options, FullAST) ->
+  run_specialized_handlers_inner(T, Options, FullAST).
 
 
 translate_ast_item([], Acc) ->
