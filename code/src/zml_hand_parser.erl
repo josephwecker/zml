@@ -1,35 +1,35 @@
 -module(zml_hand_parser).
 
--export([parse/1]).
+-export([parse/2]).
 
-parse(Tokens) ->
-  parse(Tokens, []).
+parse(Tokens, Options) ->
+  parse(Tokens, [], Options).
 
-parse([{end_of_file,_}], CurrLvl) ->
-  parse([], CurrLvl);
-parse([], CurrLvl) ->
+parse([{end_of_file,_}], CurrLvl, Options) ->
+  parse([], CurrLvl, Options);
+parse([], CurrLvl, _Options) ->
   lists:reverse(CurrLvl);
-parse([{dedent,_}|{end_of_file,_}], CurrLvl) ->
+parse([{dedent,_}|{end_of_file,_}], CurrLvl, _Options) ->
   lists:reverse(CurrLvl);
-parse([{dedent,_}|T], CurrLvl) ->
+parse([{dedent,_}|T], CurrLvl, _Options) ->
   {T, lists:reverse(CurrLvl)};
-parse([{start_code, _} | T], CurrLvl) ->
+parse([{start_code, _} | T], CurrLvl, Options) ->
   {T2, InnerCode} = pull_code_children(T),
   {T3, LChildren} = pull_line_children(T2),
   {T4, Children} = pull_children(T3),
   CodeTag = {InnerCode, code, [], LChildren ++ Children},
-  parse(T4, [CodeTag | CurrLvl]);
+  parse(T4, [CodeTag | CurrLvl], Options);
 parse([{start_tag, _, Type} |
-    [{string, _, TagText} | T]], CurrLvl) ->
+    [{string, _, TagText} | T]], CurrLvl, Options) ->
   {T2, Attr} = pull_attributes(T),
   {T3, LChildren} = pull_line_children(T2),
   {T4, Children} = pull_children(T3),
   Tag = tricky_attributes(TagText, Type, Attr, LChildren ++ Children),
-  parse(T4, [Tag | CurrLvl]);
-parse([{string, _, Text} | T], CurrLvl) ->
-  parse(T, [Text | CurrLvl]);
-parse([{newline, _} | T], CurrLvl) ->
-  parse(T, CurrLvl).
+  parse(T4, [Tag | CurrLvl], Options);
+parse([{string, _, Text} | T], CurrLvl, Options) ->
+  parse(T, [Text | CurrLvl], Options);
+parse([{newline, _} | T], CurrLvl, Options) ->
+  parse(T, CurrLvl, Options).
 
 
 pull_attributes([{start_attrs,_} | T]) ->
