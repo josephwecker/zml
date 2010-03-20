@@ -18,12 +18,12 @@
 run_handler(ID, _Attr, _Children, AST, Options) ->
   Transformations = [
     fun process_doctype/5,
-    fun process_head_and_body/5
-%    fun process_javascript/5,
-%    fun process_xhtml/5,
-%    fun process_zss_and_images/5,
+    fun process_head_and_body/5,
+    fun process_xhtml/5,
 %    fun process_metas/5,
-%    fun process_special_attributes/5
+%    fun process_javascript/5,
+%    fun process_zss_and_images/5,
+    fun process_cleanup/5
   ],
   lists:foldl(
     fun(Transformer, NewAST) ->
@@ -80,3 +80,25 @@ process_head_and_body(ID, Attr, Children, AST, _Options) ->
       Children3 = [ExistingHead | Children2],
       zml:update_tag(AST2, {"html",ID}, special, Attr, Children3)
   end.
+
+process_xhtml(ID, Attr, Children, AST, _Options) ->
+  [TypeFC | _] = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
+  case TypeFC == $x of
+    false ->
+      AST;
+    true ->
+      Namespace = zml:get_attr(xmlns, Attr, ?XMLNS),
+      Language = zml:get_attr("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
+      Att2 = dict:store("xmlns",[Namespace], Attr),
+      Att3 = dict:store("xml:lang",[Language], Att2),
+      zml:update_tag(AST, {"html",ID}, special, Att3, Children)
+
+      %% Skipping for now - xml declaration
+      % TODO: flag to force insertion of the xml declaration
+      %Encoding = get_html_attr(encoding, Attr, ?ENCODING_DEFAULT),
+      %[?ENC_TOP_X(Encoding) | AST]
+  end.
+
+process_cleanup(ID, Attr, Children, AST, _Options) ->
+  CleanAttrs = lists:foldl(fun dict:erase/2, Attr, ?SPECIAL_ATTRIBUTES),
+  zml:update_tag(AST, {"html",ID}, special, CleanAttrs, Children).
