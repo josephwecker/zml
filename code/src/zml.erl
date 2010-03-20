@@ -19,7 +19,9 @@
     new_tag/3,
     new_tag/4,
     get_tag/2,
-    replace_tag/3
+    get_attr/3,
+    replace_tag/3,
+    update_tag/5
   ]).
 
 compile_file(InFile) ->
@@ -205,6 +207,10 @@ replace_tag([{Name,Tp,Att,Children} | T], Search, NewTag, CurrPath, Acc) ->
         [{Name,Tp,Att,NewChildren} | Acc])
   end.
 
+%% Shortcut for basically changing the attributes / children of a specific tag.
+update_tag(AST, Name, Type, NewAttr, NewChildren) ->
+  replace_tag(AST, [Name], new_tag(Name, Type, NewAttr, NewChildren)).
+
 %% Similar to replace_tag, only is stops when it finds it and returns it
 %% instead of returning a rebuilt full AST.
 get_tag(AST, Search) ->
@@ -227,3 +233,13 @@ get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
       end
   end.
 
+get_attr(Find, Attr, Default) when is_atom(Find) ->
+  get_attr(atom_to_list(Find), Attr, Default);
+get_attr(Find, Attr, Default) ->
+  case dict:find(Find, Attr) of
+    {ok, [Val]} -> Val;
+    error when is_atom(Default) ->
+      atom_to_list(Default);
+    error ->
+      Default
+  end.
