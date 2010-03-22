@@ -55,12 +55,17 @@
      (2 font-lock-variable-name-face))
     ("\\(?:^\\|\\s \\)\\(\\(?:[.#]\\w+\\)+\\)"
      (1 font-lock-variable-name-face))
+    ("\\(\\w+:\\)"
+     (1 font-lock-type-face))
+    ("\\(\\<-?\\(?:[0-9]+\\.?\\|\\.[0-9]+\\)[0-9]*\\(?:[eE][-+]?[0-9]+\\)?\\>\\)"
+     (1 font-lock-constant-face))
     ("\\(|\"[^\d]*?\"|\\)"
      (1 font-lock-string-face)))
   "regexps to highlight in pig mode")
 
 (defvar zml-mode-syntax-table
   (let ((st (make-syntax-table)))
+    (modify-syntax-entry ?-  "w"     st)
     (modify-syntax-entry ?|  ". 124" st)
     (modify-syntax-entry ?#  ". 23b" st)
     (modify-syntax-entry ?\n ">"     st)
