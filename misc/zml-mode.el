@@ -46,7 +46,7 @@
 
 (add-to-list 'auto-mode-alist '("\\.zml\\'" . zml-mode))
 
-(defconst zml-font-lock-keywords
+(defconst zml-font-lock-defaults
   '(("\\(?:^\\|\\s \\)\\(\\*\\w+\\)\\(\\(?:[.#]\\w+\\)*\\)"
      (1 font-lock-keyword-face)
      (2 font-lock-variable-name-face))
@@ -61,7 +61,12 @@
      (1 font-lock-constant-face))
     ("\\(|\"[^\d]*?\"|\\)"
      (1 font-lock-string-face)))
-  "regexps to highlight in pig mode")
+  "Regexps to highlight in zml mode")
+
+(defconst zml-font-lock-syntactic-keywords
+  '(("\\(|\\)\\(\"\\)" (1 "\"") (2 "\""))
+    ("\\(\"\\)\\(|\\)" (1 "\"") (2 "\"")))
+  "Syntactic keywords for zml mode")
 
 (defvar zml-mode-syntax-table
   (let ((st (make-syntax-table)))
@@ -76,8 +81,10 @@
 (define-derived-mode zml-mode fundamental-mode "zml"
   "Major mode for editing ZML files"
   :syntax-table zml-mode-syntax-table
+  (set (make-local-variable 'font-lock-syntactic-keywords)
+       zml-font-lock-syntactic-keywords)
   (set (make-local-variable 'font-lock-defaults)
-       '(zml-font-lock-keywords nil t)) )
+       '(zml-font-lock-defaults nil t)) )
 
 (provide 'zml-mode)
 
