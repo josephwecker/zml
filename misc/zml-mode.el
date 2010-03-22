@@ -71,6 +71,7 @@
 (defvar zml-mode-syntax-table
   (let ((st (make-syntax-table)))
     (modify-syntax-entry ?-  "w"     st)
+    (modify-syntax-entry ?_  "w"     st)
     (modify-syntax-entry ?|  ". 124" st)
     (modify-syntax-entry ?#  ". 23b" st)
     (modify-syntax-entry ?\n ">"     st)
