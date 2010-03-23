@@ -1,5 +1,5 @@
--module(template_scratch).
--export(test/0, render/1).
+-module(out_scratch).
+-export([test/0, render/1]).
 
 test() ->
   render([
@@ -59,10 +59,10 @@ render(D) ->
 %            "!!END!!"]],
           [[lists:map(fun([Val1,Val2,Val3]) -> 
             [["<","tr",[],">",
-              [["<","td",[],">",[io_lib:format("~s",[Val1])],"</","td",">"],
-               ["<","td",[],">",[io_lib:format("~s",[Val2])],"</","td",">"],
-               ["<","td",[],">",[io_lib:format("~s",[Val3])],"</","td",">"]],
-              "</","tr",">"]],
+              [["<","td",[],">",[io_lib:format("~p",[Val1])],"</","td",">"],
+               ["<","td",[],">",[io_lib:format("~p",[Val2])],"</","td",">"],
+               ["<","td",[],">",[io_lib:format("~p",[Val3])],"</","td",">"]],
+              "</","tr",">"]] end,
           proplists:get_value(data, D))]],
           "</","table",">"],
          ["<","div",
@@ -100,5 +100,5 @@ render(D) ->
         "</","div",">"]],
       "</","div",">"]],
     "</","body",">"]],
-  "</","html",">"]]
+  "</","html",">"]].
 
