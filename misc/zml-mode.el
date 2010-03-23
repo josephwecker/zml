@@ -58,9 +58,7 @@
     ("\\(\\w+:\\)"
      (1 font-lock-type-face))
     ("\\(\\<-?\\(?:[0-9]+\\.?\\|\\.[0-9]+\\)[0-9]*\\(?:[eE][-+]?[0-9]+\\)?\\>\\)"
-     (1 font-lock-constant-face))
-    ("\\(|\"[^\d]*?\"|\\)"
-     (1 font-lock-string-face)))
+     (1 font-lock-constant-face)))
   "Regexps to highlight in zml mode")
 
 (defconst zml-font-lock-syntactic-keywords
