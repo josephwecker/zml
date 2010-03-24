@@ -47,6 +47,7 @@ ensure_head_and_body(ID, Attr, Children, AST) ->
   {AST2, CurrChildren} =
     case zml:get_tag(Children, ["body"]) of
       undefined ->
+        % No body
         RemovedHead = zml:replace_tag(Children, ["head"], []),
         NewChildren = [zml:new_tag(body, normal, dict:new(), RemovedHead)],
         {zml:replace_tag(AST, [{"html", ID}],

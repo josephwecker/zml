@@ -99,6 +99,23 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
       %[?ENC_TOP_X(Encoding) | AST]
   end.
 
+process_metas(ID, Attr, Children, AST, Options) ->
+  [Tp | _] = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
+
+  {NewAttr, Metas} = lists:foldr(fun new_metas/2, {Attr, []}, [
+      {encoding,    Tp, ?ENCODING_DEFAULT},
+      {language,    Tp, ?LANGUAGE_DEFAULT},
+      {description, Tp, none},
+      {keywords,    Tp, none},
+      {copyright,   Tp, none},
+      {nosmarttag,  Tp, true},
+      {title,       Tp, none}]),
+  {_,_,HAttr,HChildren} = zml:get_tag(Children, ["head"]),
+  NewHead = zml:new_tag("head", normal, HAttr, HChildren ++ Metas),
+  %NewChildren = zml:replace_tag(Children, ["head"], NewHead),
+  zml
+
+
 process_cleanup(ID, Attr, Children, AST, _Options) ->
   CleanAttrs = lists:foldl(fun dict:erase/2, Attr, ?SPECIAL_ATTRIBUTES),
   zml:update_tag(AST, {"html",ID}, special, CleanAttrs, Children).
