@@ -1,77 +1,95 @@
 -module(zml).
 
 % Main function
--export([compile/1, compile/2]).
+-export([
+    compile_file/1,
+    compile_file/2,
+    compile_stream/1,
+    compile_stream/2,
+    compile_string/1,
+    compile_string/2
+  ]).
 
 % Utilities for special handlers:
--export([search_for_file/2, tmp_filename/0, tmp_filename/1, pull_in_file/2,
-    new_tag/3, new_tag/4, get_tag/2, replace_tag/3]).
+-export([
+    search_for_file/2,
+    tmp_filename/0,
+    tmp_filename/1,
+    pull_in_file/2,
+    new_tag/3,
+    new_tag/4,
+    get_tag/2,
+    get_attr/3,
+    replace_tag/3,
+    update_tag/5
+  ]).
 
--define(DIR_TMP, ".tmp").
--define(DIR_JS,  "js").
--define(DIR_CSS, "css").
--define(DIR_IMG, "img").
--define(DIR_DYN, "dynamic").
-
-compile(InFile) ->
-  {ok, CWD} = file:get_cwd(),
-  compile(InFile, CWD).
-
-compile(InFile, SpecialDir) ->
-  AST = zml_hand_parser:parse(zml_tokenizer:tokenize_file(InFile)),
+compile_file(InFile) ->
+  compile_file(InFile, []).
+compile_file(InFile, Options) ->
   SourceFName = filename:absname(InFile),
-  StagingDir = set_up_staging(),
-  AST2 = run_specialized_handlers(AST, SourceFName, StagingDir, SpecialDir),
-  Out = translate_ast_item(AST2, []),
-  io:format("~s", [Out]),
-  %ok = file:write_file(filename:join([StagingDir, "output.html"]), Out),
-  StagingDir.
+  Options2 =
+    case proplists:lookup(source_filename, Options) of
+      none -> [{source_filename, SourceFName} | Options];
+      _ -> Options
+    end,
+  do_compile(fun zml_tokenizer:tokenize_file/1, InFile, Options2).
 
-set_up_staging() ->
-  {ok, CurrDir} = file:get_cwd(),
-  BaseDir = tmp_filename(),
-  DirMain = filename:join([CurrDir, BaseDir]),
-  DirTmp =  filename:join([DirMain, ?DIR_TMP]),
-  DirJS =   filename:join([DirMain, ?DIR_JS]),
-  DirCSS =  filename:join([DirMain, ?DIR_CSS]),
-  DirImg =  filename:join([DirMain, ?DIR_IMG]),
-  DirDyn =  filename:join([DirMain, ?DIR_DYN]),
-  file:make_dir(DirMain),
-  file:make_dir(DirTmp),
-  file:make_dir(DirJS),
-  file:make_dir(DirCSS),
-  file:make_dir(DirImg),
-  file:make_dir(DirDyn),
-  {DirMain, DirTmp, DirJS, DirCSS, DirImg, DirDyn}.
+compile_stream(Stream) ->
+  compile_stream(Stream, []).
+compile_stream(Stream, Options) ->
+  do_compile(fun zml_tokenizer:tokenize_stream/1, Stream, Options).
 
+compile_string(Str) ->
+  compile_string(Str, []).
+compile_string(Str, Options) ->
+  do_compile(fun zml_tokenizer:tokenize_string/1, Str, Options).
 
-run_specialized_handlers(AST, SourceFN, StagingDir, SpecialDir) ->
-  run_spec_handler_inner(AST, SourceFN, StagingDir, SpecialDir, AST).
+do_compile(Tokenizer, Input, Options) ->
+  Tokens = Tokenizer(Input),
+  AST = zml_hand_parser:parse(Tokens, Options),
+  AST2 = run_specialized_handlers(AST, Options),
+  translate_ast_item(AST2, []).
 
-run_spec_handler_inner([], _, _, _, NewAST) ->
+%-define(DIR_TMP, ".tmp").
+%-define(DIR_JS,  "js").
+%-define(DIR_CSS, "css").
+%-define(DIR_IMG, "img").
+%-define(DIR_DYN, "dynamic").
+
+%set_up_staging() ->
+%  {ok, CurrDir} = file:get_cwd(),
+%  BaseDir = tmp_filename(),
+%  DirMain = filename:join([CurrDir, BaseDir]),
+%  DirTmp =  filename:join([DirMain, ?DIR_TMP]),
+%  DirJS =   filename:join([DirMain, ?DIR_JS]),
+%  DirCSS =  filename:join([DirMain, ?DIR_CSS]),
+%  DirImg =  filename:join([DirMain, ?DIR_IMG]),
+%  DirDyn =  filename:join([DirMain, ?DIR_DYN]),
+%  file:make_dir(DirMain),
+%  file:make_dir(DirTmp),
+%  file:make_dir(DirJS),
+%  file:make_dir(DirCSS),
+%  file:make_dir(DirImg),
+%  file:make_dir(DirDyn),
+%  {DirMain, DirTmp, DirJS, DirCSS, DirImg, DirDyn}.
+
+run_specialized_handlers(AST, Options) ->
+  run_specialized_handlers_inner(AST, Options, AST).
+run_specialized_handlers_inner([], _, NewAST) ->
   NewAST;
-run_spec_handler_inner([{{Name,ID}, special, Attr, Children} | T],
-    FSource, DStage, DSpec, FullAST) ->
-  HandlerName = list_to_atom("zml_special_" ++ string:to_lower(Name)),
-  case code:ensure_loaded(HandlerName) of
+run_specialized_handlers_inner([{{Name,ID}, special, Attr, Children} | T],
+    Options, FullAST) ->
+  HandlerModule = list_to_atom("zml_special_" ++ string:to_lower(Name)),
+  case code:ensure_loaded(HandlerModule) of
     {module, _} ->
-      great;
+      NewAST = HandlerModule:run_handler(ID, Attr, Children, FullAST, Options),
+      run_specialized_handlers_inner(T, Options, NewAST);
     _ ->
-      HandlerSource = filename:join([DSpec, HandlerName]),
-      case code:load_abs(HandlerSource) of
-        {module, _} ->
-          whew;
-        {error, What} ->
-          erlang:error([
-                "'",What,"' When trying to load handler for ",
-                Name," special tag types."])
-      end
-  end,
-  NewAST = HandlerName:run_handler(ID, Attr, Children, FullAST, FSource,
-    DStage),
-  run_spec_handler_inner(T, FSource, DStage, DSpec, NewAST);
-run_spec_handler_inner([_H|T],FSource,DStage,DSpec,FullAST) ->
-  run_spec_handler_inner(T, FSource, DStage, DSpec, FullAST).
+      erlang:error(["No code found to handle special tag type:",Name])
+  end;
+run_specialized_handlers_inner([_H|T], Options, FullAST) ->
+  run_specialized_handlers_inner(T, Options, FullAST).
 
 
 translate_ast_item([], Acc) ->
@@ -189,6 +207,10 @@ replace_tag([{Name,Tp,Att,Children} | T], Search, NewTag, CurrPath, Acc) ->
         [{Name,Tp,Att,NewChildren} | Acc])
   end.
 
+%% Shortcut for basically changing the attributes / children of a specific tag.
+update_tag(AST, Name, Type, NewAttr, NewChildren) ->
+  replace_tag(AST, [Name], new_tag(Name, Type, NewAttr, NewChildren)).
+
 %% Similar to replace_tag, only is stops when it finds it and returns it
 %% instead of returning a rebuilt full AST.
 get_tag(AST, Search) ->
@@ -211,3 +233,13 @@ get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
       end
   end.
 
+get_attr(Find, Attr, Default) when is_atom(Find) ->
+  get_attr(atom_to_list(Find), Attr, Default);
+get_attr(Find, Attr, Default) ->
+  case dict:find(Find, Attr) of
+    {ok, [Val]} -> Val;
+    error when is_atom(Default) ->
+      atom_to_list(Default);
+    error ->
+      Default
+  end.

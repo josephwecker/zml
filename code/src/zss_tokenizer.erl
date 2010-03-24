@@ -1,6 +1,6 @@
 -module(zss_tokenizer).
 
--export([tokenize_str/1, tokenize_file/1, tokenize_stream/1]).
+-export([tokenize_string/1, tokenize_file/1, tokenize_stream/1]).
 
 -define(FLUSH(Other),
   case CurrTAcc of
@@ -65,7 +65,7 @@
 -define(T_CODE_ST, $[).
 -define(T_CODE_EN, $]).
 
-tokenize_str(InStr) ->
+tokenize_string(InStr) ->
   erase(),
   put(line_num, 0),
   put('--input-string--', InStr),
@@ -213,7 +213,7 @@ line_tokens([?T_ATTR_ST | T], $ , CurrTAcc, AllTAcc, State) ->
   line_tokens(T, ?T_ATTR_ST, [], ?SFLUSH, {true});
 
 % Assignment or code
-line_tokens([?T_CODE_ST | T], _, CurrTAcc, AllTAcc, {false} = State) ->
+line_tokens([?T_CODE_ST | T], _, CurrTAcc, AllTAcc, {false} = _State) ->
   {Code, T2} = pull_inner(T, fun line_pull_in_code/1),
   line_tokens(T2, code, Code ++ [?T_CODE_ST] ++ CurrTAcc, AllTAcc, {false});
 

@@ -26,7 +26,7 @@
 
 -module(zml_tokenizer).
 
--export([tokenize_stream/1, tokenize_file/1]).
+-export([tokenize_stream/1, tokenize_file/1, tokenize_string/1]).
 
 
 -define(FLUSH(Other),
@@ -70,19 +70,39 @@
 
 tokenize_file(Filename) when is_list(Filename) ->
   {ok, File} = file:open(Filename, [read]),
-  erase(),
-  put(line_num, 0),
-  parse_lines(File, [0], [], false).  % Just ignore leading "indent" token if needed
+  tokenize_stream(File).
 
 tokenize_stream(Stream) ->
   erase(),
   put(line_num, 0),
-  parse_lines(Stream, [0], [], false).
+  % Just ignore leading "indent" token if needed
+  parse_lines(fun() -> io:get_line(Stream, "") end, [0], [], false).
 
-parse_lines(File, IndentStack, RTokens, InAttr) ->
-  put(file, File),
+tokenize_string(InStr) ->
+  erase(),
+  put(line_num, 0),
+  put('--input-string--', InStr),
+  parse_lines(fun string_feed/0, [0], [], false).
+
+% Fake string equivalent of io:get_line
+string_feed() ->
+  Str = get('--input-string--'),
+  {Res, NewStr} =
+    case Str of
+      "" -> {eof, ""};
+      _ ->
+        case string:chr(Str, $\n) of
+          0 -> {Str, ""};
+          Idx -> lists:split(Idx, Str)
+        end
+    end,
+  put('--input-string--', NewStr),
+  Res.
+
+parse_lines(Next, IndentStack, RTokens, InAttr) ->
   put(line_num, get(line_num) + 1),
-  case io:get_line(File, "") of
+  put(next_fun, Next),
+  case Next() of
     eof ->
       LN = get(line_num) - 1,
       Tokens2 = lists:reverse(lists:flatten(RTokens)),
@@ -95,15 +115,15 @@ parse_lines(File, IndentStack, RTokens, InAttr) ->
       {NumDents, RemainingLine} = get_dent(Line),
       case RemainingLine of
         [] -> % Blank line
-          parse_lines(File, IndentStack, RTokens, InAttr);
+          parse_lines(Next, IndentStack, RTokens, InAttr);
         _ ->
           {NewStack, MoreTokens, InAttr2} =
             parse_line(NumDents, IndentStack, RemainingLine, InAttr),
           case MoreTokens of
             [] ->
-              parse_lines(File, NewStack, RTokens, InAttr2);
+              parse_lines(Next, NewStack, RTokens, InAttr2);
             _ ->
-              parse_lines(File, NewStack, [MoreTokens | RTokens], InAttr2)
+              parse_lines(Next, NewStack, [MoreTokens | RTokens], InAttr2)
           end
       end
   end.
@@ -260,8 +280,8 @@ pull_in_string(Line, Acc, LN, InnerFun) ->
       put(line_num, LN),
       {lists:flatten(lists:reverse([StrAcc | Acc])), Tail};
     false ->
-      File = get(file),
-      case io:get_line(File, "") of
+      Next = get(next_fun),
+      case Next() of
         eof ->
           erlang:error({string_or_comment_not_closed_before_eof,
               {line, get(line_num)}});
