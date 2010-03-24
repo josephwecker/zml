@@ -212,9 +212,11 @@ parse_inner([?T_ATTR_EN | T], _Last, CurrTAcc, AllTAcc, true) ->
 
 % Code chunk in main body
 parse_inner([?T_CODE_ST | T], _, CurrTAcc, AllTAcc, false) ->
-  parse_inner(T, ?T_CODE_ST, [], ?FLUSH({start_code, get(line_num)}), false);
-parse_inner([?T_CODE_EN | T], _, CurrTAcc, AllTAcc, false) ->
-  parse_inner(T, ?T_CODE_EN, [], ?FLUSH({finish_code, get(line_num)}), false);
+  {Code, Remaining} = pull_in_code(T),
+  StartLNum = get(line_num),
+  parse_inner(Remaining, none, [],
+    ?FLUSH([{finish_code, get(line_num)} | [{string, get(line_num), Code} |
+      [{start_code, StartLNum}]]]), false);
 
 % Whitespace.  Flush token.
 parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) when
@@ -251,6 +253,7 @@ parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) ->
   parse_inner(T, H, [H | CurrTAcc], AllTAcc, InAttr).
 
 
+
 pull_in_string(Line, InnerFun) ->
   pull_in_string(Line, [], get(line_num), InnerFun).
 pull_in_string(Line, Acc, LN, InnerFun) ->
@@ -272,6 +275,28 @@ pull_in_string(Line, Acc, LN, InnerFun) ->
       end
   end.
 
+% Mostly copies pull_in_string but had to make a new one (sigh) because I
+% needed to pass state for the brackets.
+pull_in_code(Line) ->
+  pull_in_code(Line, [], get(line_num), 0).
+pull_in_code(Line, Acc, LN, BrLvl) ->
+  {StrAcc, Finished, Tail, BrLvl2} = line_pull_in_code(Line, none, BrLvl, []),
+  case Finished of
+    true ->
+      put(line_num, LN),
+      {lists:flatten(lists:reverse([StrAcc | Acc])), Tail};
+    false ->
+      File = get(file),
+      case io:get_line(File, "") of
+        eof ->
+          erlang:error({code_block_not_closed_before_eof,
+            {line, get(line_num)}});
+        {error, Reason} ->
+          erlang:error({input_zml_file_read_error, Reason});
+        NewLine ->
+          pull_in_code(NewLine, [StrAcc | Acc], LN + 1, BrLvl2)
+      end
+  end.
 line_pull_in_str(Line) ->
   line_pull_in_str(Line, none, []).
 line_pull_in_str([Any | T], ?T_ESC, [?T_ESC | Acc]) ->
@@ -282,6 +307,19 @@ line_pull_in_str([], _, Acc) ->
   {lists:reverse(Acc), false, []};
 line_pull_in_str([H | T], _, Acc) ->
   line_pull_in_str(T, H, [H | Acc]).
+
+line_pull_in_code([Any | T], ?T_ESC, BLvl, [?T_ESC | Acc]) ->
+  line_pull_in_code(T, none, BLvl, [Any | Acc]);
+line_pull_in_code([?T_CODE_ST | T], _, BLvl, Acc) ->
+  line_pull_in_code(T, none, BLvl+1, [?T_CODE_ST | Acc]);
+line_pull_in_code([?T_CODE_EN | T], _, 0, Acc) ->
+  {lists:reverse(Acc), true, T, 0};
+line_pull_in_code([?T_CODE_EN | T], _, BLvl, Acc) ->
+  line_pull_in_code(T, none, BLvl - 1, [?T_CODE_EN | Acc]);
+line_pull_in_code([], _, BLvl, Acc) ->
+  {lists:reverse(Acc), false, [], BLvl};
+line_pull_in_code([H | T], _, BLvl, Acc) ->
+  line_pull_in_code(T, H, BLvl, [H | Acc]).
 
 % Should combine this with the above via macro probably.  Or something.  As far
 % as I can think at the moment I need the tokens compiled into the function
