@@ -100,20 +100,21 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
   end.
 
 process_metas(ID, Attr, Children, AST, Options) ->
-  [Tp | _] = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
+%  [Tp | _] = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
 
-  {NewAttr, Metas} = lists:foldr(fun new_metas/2, {Attr, []}, [
-      {encoding,    Tp, ?ENCODING_DEFAULT},
-      {language,    Tp, ?LANGUAGE_DEFAULT},
-      {description, Tp, none},
-      {keywords,    Tp, none},
-      {copyright,   Tp, none},
-      {nosmarttag,  Tp, true},
-      {title,       Tp, none}]),
-  {_,_,HAttr,HChildren} = zml:get_tag(Children, ["head"]),
-  NewHead = zml:new_tag("head", normal, HAttr, HChildren ++ Metas),
-  %NewChildren = zml:replace_tag(Children, ["head"], NewHead),
-  zml
+%  {NewAttr, Metas} = lists:foldr(fun new_metas/2, {Attr, []}, [
+%      {encoding,    Tp, ?ENCODING_DEFAULT},
+%      {language,    Tp, ?LANGUAGE_DEFAULT},
+%      {description, Tp, none},
+%      {keywords,    Tp, none},
+%      {copyright,   Tp, none},
+%      {nosmarttag,  Tp, true},
+%      {title,       Tp, none}]),
+%  {_,_,HAttr,HChildren} = zml:get_tag(Children, ["head"]),
+%  NewHead = zml:new_tag("head", normal, HAttr, HChildren ++ Metas),
+%  %NewChildren = zml:replace_tag(Children, ["head"], NewHead),
+%  zml
+  AST.
 
 
 process_cleanup(ID, Attr, Children, AST, _Options) ->
