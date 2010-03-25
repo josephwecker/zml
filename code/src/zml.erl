@@ -20,6 +20,7 @@
     new_tag/4,
     get_tag/2,
     get_attr/3,
+    pop_attr/3,
     replace_tag/3,
     update_tag/5
   ]).
@@ -208,6 +209,9 @@ replace_tag([{Name,Tp,Att,Children} | T], Search, NewTag, CurrPath, Acc) ->
   end.
 
 %% Shortcut for basically changing the attributes / children of a specific tag.
+update_tag(AST, [F | _] = Search, Type, NewAttr, NewChildren) when
+    is_list(Search) and (is_list(F) or is_tuple(F)) ->
+  replace_tag(AST, Search, new_tag(lists:last(Search), Type, NewAttr, NewChildren));
 update_tag(AST, Name, Type, NewAttr, NewChildren) ->
   replace_tag(AST, [Name], new_tag(Name, Type, NewAttr, NewChildren)).
 
@@ -243,3 +247,16 @@ get_attr(Find, Attr, Default) ->
     error ->
       Default
   end.
+
+pop_attr(Find, Attr, Default) when is_atom(Find) ->
+  pop_attr(atom_to_list(Find), Attr, Default);
+pop_attr(Find, Attr, Default) ->
+  case dict:find(Find, Attr) of
+    {ok, Val} ->
+      {dict:erase(Find, Attr), Val};
+    error when is_atom(Default) ->
+      {Attr, [atom_to_list(Default)]};
+    error ->
+      {Attr, [Default]}
+  end.
+
