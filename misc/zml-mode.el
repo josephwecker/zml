@@ -48,12 +48,14 @@
 
 (defconst zml-font-lock-defaults
   '(("\\(?:^\\|\\s \\)\\(\\*\\w+\\)\\(\\(?:[.#]\\w+\\)*\\)"
-     (1 font-lock-keyword-face)
-     (2 font-lock-variable-name-face))
+     (1 font-lock-function-name-face)
+     (2 font-lock-builtin-face))
     ("\\(?:^\\|\\s \\)\\(:\\w+\\)\\(\\(?:[.#]\\w+\\)*\\)"
-     (1 font-lock-builtin-face)
-     (2 font-lock-variable-name-face))
+     (1 font-lock-keyword-face)
+     (2 font-lock-builtin-face))
     ("\\(?:^\\|\\s \\)\\(\\(?:[.#]\\w+\\)+\\)"
+     (1 font-lock-builtin-face))
+    ("\\(\\$\\w+\\)"
      (1 font-lock-variable-name-face))
     ("\\(\\w+:\\)"
      (1 font-lock-type-face))
