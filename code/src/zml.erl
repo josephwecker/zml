@@ -19,7 +19,7 @@
     new_tag/3,
     new_tag/4,
     get_tag/2,
-    get_attr/3,
+    get_attr_vals/3,
     pop_attr/3,
     replace_tag/3,
     update_tag/5
@@ -237,15 +237,15 @@ get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
       end
   end.
 
-get_attr(Find, Attr, Default) when is_atom(Find) ->
-  get_attr(atom_to_list(Find), Attr, Default);
-get_attr(Find, Attr, Default) ->
+get_attr_vals(Find, Attr, Default) when is_atom(Find) ->
+  get_attr_vals(atom_to_list(Find), Attr, Default);
+get_attr_vals(Find, Attr, Default) ->
   case dict:find(Find, Attr) of
-    {ok, [Val]} -> Val;
+    {ok, Vals} -> Vals;
     error when is_atom(Default) ->
-      atom_to_list(Default);
+      [atom_to_list(Default)];
     error ->
-      Default
+      [Default]
   end.
 
 pop_attr(Find, Attr, Default) when is_atom(Find) ->

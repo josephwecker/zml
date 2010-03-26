@@ -42,7 +42,7 @@ process_doctype(_ID, Attr, _Children, AST, _Options) ->
       end;
     _ -> ok
   end,
-  Type = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
+  [Type] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
   DoctypeString =
     case proplists:get_value(list_to_atom(Type), ?TYPES) of
       undefined ->
@@ -82,13 +82,14 @@ process_head_and_body(ID, Attr, Children, AST, _Options) ->
   end.
 
 process_xhtml(ID, Attr, Children, AST, _Options) ->
-  [TypeFC | _] = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
+  [[TypeFC | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
+  io:format("~p",[TypeFC]),
   case TypeFC == $x of
     false ->
       AST;
     true ->
-      Namespace = zml:get_attr(xmlns, Attr, ?XMLNS),
-      Language = zml:get_attr("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
+      [Namespace] = zml:get_attr_vals(xmlns, Attr, ?XMLNS),
+      [Language] = zml:get_attr_vals("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
       Att2 = dict:store("xmlns",[Namespace], Attr),
       Att3 = dict:store("xml:lang",[Language], Att2),
       zml:update_tag(AST, {"html",ID}, special, Att3, Children)
@@ -100,7 +101,7 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
   end.
 
 process_metas(ID, Attr, Children, AST, _Options) ->
-  [Tp | _] = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
+  [[Tp | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
 
   Metas = lists:foldr(fun(Input,Acc) -> new_metas(Input, Acc, Attr) end, [],
     [
@@ -122,11 +123,11 @@ process_cleanup(ID, Attr, Children, AST, _Options) ->
 
 
 new_metas({Name, Type, Def}, Acc, Attr) ->
-  case zml:get_attr(Name, Attr, Def) of
-    none -> Acc;
-    Val ->
-      io:format("~p", [Val]),
-      [metatag(Name, Type, Val) | Acc]
+  case zml:get_attr_vals(Name, Attr, Def) of
+    ["none"] -> Acc;
+    Vals ->
+      io:format("~p|~p|~p~n", [Name,Type,Vals]),
+      [metatag(Name, Type, Vals) | Acc]
   end.
 
 metatag(encoding, $x, [Val]) ->
