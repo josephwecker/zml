@@ -57,29 +57,25 @@ process_doctype(_ID, Attr, _Children, AST, _Options) ->
 
 process_head_and_body(ID, Attr, Children, AST, _Options) ->
   % Ensure there is a body
-  {AST2, Children2} =
-    case zml:get_tag(Children, ["body"]) of
+  ExistingHead = zml:get_tag(Children, ["head"]),
+  ExistingBody = zml:get_tag(Children, ["body"]),
+
+  {Head, AllButHead} =
+    case ExistingHead of
       undefined ->
-        % Temporarily remove head if any, add rest to a "body" which
-        % then becomes the new children of the html tag
-        AllButHead = zml:replace_tag(Children, ["head"], []),
-        NewChildren = [zml:new_tag(body, normal, dict:new(), AllButHead)],
-        {zml:update_tag(AST, {"html",ID}, special, Attr, NewChildren),
-          NewChildren};
+        {zml:new_tag("head", normal, dict:new(), []),
+          zml:replace_tag(Children, ["head"], [])};
       _ ->
-        {AST, Children}
+        {ExistingHead, Children}
     end,
-  % Ensure there is a head
-  % Look in original children for that head
-  case zml:get_tag(Children, ["head"]) of
-    undefined ->
-      % Pop in a blank head
-      Children3 = [zml:new_tag("head", normal, dict:new(), []) | Children2],
-      zml:update_tag(AST2, {"html",ID}, special, Attr, Children3);
-    ExistingHead ->
-      Children3 = [ExistingHead | Children2],
-      zml:update_tag(AST2, {"html",ID}, special, Attr, Children3)
-  end.
+  Body =
+    case ExistingBody of
+      undefined ->
+        zml:new_tag(body, normal, dict:new(), AllButHead);
+      _ ->
+        ExistingBody
+    end,
+  zml:update_tag(AST, {"html",ID}, special, Attr, [Head, Body]).
 
 process_xhtml(ID, Attr, Children, AST, _Options) ->
   [[TypeFC | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
