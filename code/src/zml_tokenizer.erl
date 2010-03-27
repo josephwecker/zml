@@ -306,8 +306,8 @@ pull_in_code(Line, Acc, LN, BrLvl) ->
       put(line_num, LN),
       {lists:flatten(lists:reverse([StrAcc | Acc])), Tail};
     false ->
-      File = get(file),
-      case io:get_line(File, "") of
+      Next = get(next_fun),
+      case Next() of
         eof ->
           erlang:error({code_block_not_closed_before_eof,
             {line, get(line_num)}});

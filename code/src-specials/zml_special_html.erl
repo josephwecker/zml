@@ -20,7 +20,7 @@ run_handler(ID, _Attr, _Children, AST, Options) ->
     fun process_doctype/5,
     fun process_head_and_body/5,
     fun process_xhtml/5,
-%    fun process_metas/5,
+    fun process_metas/5,
 %    fun process_javascript/5,
 %    fun process_zss_and_images/5,
     fun process_cleanup/5
@@ -42,7 +42,7 @@ process_doctype(_ID, Attr, _Children, AST, _Options) ->
       end;
     _ -> ok
   end,
-  Type = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
+  [Type] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
   DoctypeString =
     case proplists:get_value(list_to_atom(Type), ?TYPES) of
       undefined ->
@@ -82,13 +82,14 @@ process_head_and_body(ID, Attr, Children, AST, _Options) ->
   end.
 
 process_xhtml(ID, Attr, Children, AST, _Options) ->
-  [TypeFC | _] = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
+  [[TypeFC | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
+  io:format("~p",[TypeFC]),
   case TypeFC == $x of
     false ->
       AST;
     true ->
-      Namespace = zml:get_attr(xmlns, Attr, ?XMLNS),
-      Language = zml:get_attr("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
+      [Namespace] = zml:get_attr_vals(xmlns, Attr, ?XMLNS),
+      [Language] = zml:get_attr_vals("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
       Att2 = dict:store("xmlns",[Namespace], Attr),
       Att3 = dict:store("xml:lang",[Language], Att2),
       zml:update_tag(AST, {"html",ID}, special, Att3, Children)
@@ -99,10 +100,11 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
       %[?ENC_TOP_X(Encoding) | AST]
   end.
 
-process_metas(ID, Attr, Children, AST, Options) ->
-  [Tp | _] = zml:get_attr(type, Attr, ?DEFAULT_TYPE),
+process_metas(ID, Attr, Children, AST, _Options) ->
+  [[Tp | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
 
-  {NewAttr, Metas} = lists:foldr(fun new_metas/2, {Attr, []}, [
+  Metas = lists:foldr(fun(Input,Acc) -> new_metas(Input, Acc, Attr) end, [],
+    [
       {encoding,    Tp, ?ENCODING_DEFAULT},
       {language,    Tp, ?LANGUAGE_DEFAULT},
       {description, Tp, none},
@@ -111,11 +113,52 @@ process_metas(ID, Attr, Children, AST, Options) ->
       {nosmarttag,  Tp, true},
       {title,       Tp, none}]),
   {_,_,HAttr,HChildren} = zml:get_tag(Children, ["head"]),
-  NewHead = zml:new_tag("head", normal, HAttr, HChildren ++ Metas),
-  %NewChildren = zml:replace_tag(Children, ["head"], NewHead),
-  zml
+  zml:update_tag(AST, [{"html",ID}, "head"], normal, HAttr, HChildren ++ Metas).
+
 
 
 process_cleanup(ID, Attr, Children, AST, _Options) ->
   CleanAttrs = lists:foldl(fun dict:erase/2, Attr, ?SPECIAL_ATTRIBUTES),
   zml:update_tag(AST, {"html",ID}, special, CleanAttrs, Children).
+
+
+new_metas({Name, Type, Def}, Acc, Attr) ->
+  case zml:get_attr_vals(Name, Attr, Def) of
+    ["none"] -> Acc;
+    Vals ->
+      io:format("~p|~p|~p~n", [Name,Type,Vals]),
+      [metatag(Name, Type, Vals) | Acc]
+  end.
+
+metatag(encoding, $x, [Val]) ->
+  % Skipping application/xhtml+xml for now
+  %"<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; " ++
+  "<meta http-equiv=\"content-type\" content=\"text/html; " ++
+  "charset="++to_upper(Val)++"\" />";
+metatag(encoding, _, [Val]) ->
+  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" ++
+  to_lower(Val)++"\">";
+metatag(language, $x, [Val]) ->
+  "<meta http-equiv=\"content-language\" content=\""++to_lower(Val)++"\" />";
+metatag(language, _, [Val]) ->
+  "<meta http-equiv=\"Content-Language\" content=\""++to_lower(Val)++"\">";
+metatag(description, $x, Vals) ->
+  "<meta name=\"description\" content=\""++join(Vals," ")++"\" />";
+metatag(description, _, Vals) ->
+  "<meta name=\"description\" content=\""++join(Vals," ")++"\">";
+metatag(keywords, $x, Vals) ->
+  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\" />";
+metatag(keywords, _, Vals) ->
+  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\">";
+metatag(copyright, $x, Vals) ->
+  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\" />";
+metatag(copyright, _, Vals) ->
+  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\">";
+metatag(nosmarttag, $x, _) ->
+  "<meta name=\"MSSmartTagsPreventParsing\" content=\"true\" />";
+metatag(nosmarttag, _, _) ->
+  "<meta name=\"MSSmartTagsPreventParsing\" content=\"TRUE\">";
+metatag(title, _, Vals) ->
+  zml:new_tag(title, [], Vals).
+
+
