@@ -128,7 +128,7 @@ new_metas({Name, Type, Def}, Acc, Attr) ->
     ["none"] -> Acc;
     Vals ->
       io:format("~p|~p|~p~n", [Name,Type,Vals]),
-      [metatag(Name, Type, Vals) | Acc]
+      metatag(Name, Type, Vals) ++ Acc
   end.
 
 metatag(encoding, IsXml, [Val]) ->
@@ -147,11 +147,11 @@ metatag(nosmarttag, $x, _) ->
 metatag(nosmarttag, IsXml, _) ->
   build_meta(name, "MSSmartTagsPreventParsing", ["TRUE"], IsXml);
 
-metatag(title, _, Vals) -> zml:new_tag(title, [], Vals);
+metatag(title, _, Vals) -> [zml:new_tag(title, [], Vals)];
 
 metatag(favicon, _, Vals) ->
-  zml:new_tag(link, [{"rel", ["icon"]}, {"href", Vals}], []),
-  zml:new_tag(link, [{"rel", ["shortcut icon"]}, {"href", Vals}], []);
+  [zml:new_tag(link, [{"rel", ["icon"]}, {"href", Vals}], []),
+   zml:new_tag(link, [{"rel", ["shortcut icon"]}, {"href", Vals}], [])];
 
 metatag(Name, IsXml, Vals) -> build_meta(name, Name, Vals, IsXml).
 
@@ -161,8 +161,8 @@ build_meta(Key, Name, Vals, IsXml) ->
     {_, $x} -> {to_lower(str(Name)), "/>"};
     {_, _ } -> {str(Name), ">" }
   end,
-  "<meta " ++ str(Key) ++ "=\"" ++ ProcName ++
-    "\" content=\"" ++ join(Vals, " ") ++ "\"" ++ End.
+  ["<meta " ++ str(Key) ++ "=\"" ++ ProcName ++
+    "\" content=\"" ++ join(Vals, " ") ++ "\"" ++ End].
 
 str(Val) when is_atom(Val) -> atom_to_list(Val);
 str(Val) -> Val.
