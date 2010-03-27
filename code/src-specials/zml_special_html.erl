@@ -148,8 +148,8 @@ metatag(title, _, Vals) ->
   zml:new_tag(title, [], Vals);
 
 metatag(favicon, _, Vals) ->
-  zml:new_tag(link, [{rel, ["icon"]}, {href, Vals}], []),
-  zml:new_tag(link, [{rel, ["shortcut icon"]}, {href, Vals}], []);
+  zml:new_tag(link, [{"rel", ["icon"]}, {"href", Vals}], []),
+  zml:new_tag(link, [{"rel", ["shortcut icon"]}, {"href", Vals}], []);
 
 metatag(Name, Close, Vals) -> build_meta(name, Name, Vals, Close).
 
