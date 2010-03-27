@@ -111,7 +111,8 @@ process_metas(ID, Attr, Children, AST, _Options) ->
       {keywords,    Tp, none},
       {copyright,   Tp, none},
       {nosmarttag,  Tp, true},
-      {title,       Tp, none}]),
+      {title,       Tp, none},
+      {favicon,     Tp, none}]),
   {_,_,HAttr,HChildren} = zml:get_tag(Children, ["head"]),
   zml:update_tag(AST, [{"html",ID}, "head"], normal, HAttr, HChildren ++ Metas).
 
@@ -119,7 +120,7 @@ process_metas(ID, Attr, Children, AST, _Options) ->
 
 process_cleanup(ID, Attr, Children, AST, _Options) ->
   CleanAttrs = lists:foldl(fun dict:erase/2, Attr, ?SPECIAL_ATTRIBUTES),
-  zml:update_tag(AST, {"html",ID}, special, CleanAttrs, Children).
+  zml:update_tag(AST, {"html", ID}, special, CleanAttrs, Children).
 
 
 new_metas({Name, Type, Def}, Acc, Attr) ->
@@ -130,35 +131,36 @@ new_metas({Name, Type, Def}, Acc, Attr) ->
       [metatag(Name, Type, Vals) | Acc]
   end.
 
-metatag(encoding, $x, [Val]) ->
-  % Skipping application/xhtml+xml for now
-  %"<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; " ++
-  "<meta http-equiv=\"content-type\" content=\"text/html; " ++
-  "charset="++to_upper(Val)++"\" />";
-metatag(encoding, _, [Val]) ->
-  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" ++
-  to_lower(Val)++"\">";
-metatag(language, $x, [Val]) ->
-  "<meta http-equiv=\"content-language\" content=\""++to_lower(Val)++"\" />";
-metatag(language, _, [Val]) ->
-  "<meta http-equiv=\"Content-Language\" content=\""++to_lower(Val)++"\">";
-metatag(description, $x, Vals) ->
-  "<meta name=\"description\" content=\""++join(Vals," ")++"\" />";
-metatag(description, _, Vals) ->
-  "<meta name=\"description\" content=\""++join(Vals," ")++"\">";
-metatag(keywords, $x, Vals) ->
-  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\" />";
-metatag(keywords, _, Vals) ->
-  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\">";
-metatag(copyright, $x, Vals) ->
-  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\" />";
-metatag(copyright, _, Vals) ->
-  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\">";
-metatag(nosmarttag, $x, _) ->
-  "<meta name=\"MSSmartTagsPreventParsing\" content=\"true\" />";
-metatag(nosmarttag, _, _) ->
-  "<meta name=\"MSSmartTagsPreventParsing\" content=\"TRUE\">";
-metatag(title, _, Vals) ->
-  zml:new_tag(title, [], Vals).
+metatag(encoding, Close, [Val]) ->
+  build_meta("http-equiv", "Content-Type",
+             ["text/html;", "charset=", to_lower(Val)], Close);
 
+metatag(language, Close, [Val]) ->
+  build_meta("http-equiv", "Content-Language", [to_lower(Val)], Close);
+
+metatag(copyright, Close, Vals) ->
+  build_meta(name, copyright, ["Copyright (c)" | Vals], Close);
+
+metatag(nosmarttag, Close, _) ->
+  build_meta(name, "MSSmartTagsPreventParsing", ["true"], Close);
+
+metatag(title, _, Vals) ->
+  zml:new_tag(title, [], Vals);
+
+metatag(favicon, _, Vals) ->
+  zml:new_tag(link, [{rel, ["icon"]}, {href, Vals}], []),
+  zml:new_tag(link, [{rel, ["shortcut icon"]}, {href, Vals}], []);
+
+metatag(Name, Close, Vals) -> build_meta(name, Name, Vals, Close).
+
+build_meta(Key, Name, Vals, Close) ->
+  "<meta " ++ str(Key) ++ "=\"" ++ str(Name) ++
+        "\" content=\"" ++ join(Vals, " ") ++ "\"" ++
+        case Close of
+            $x -> "/>";
+            _  -> ">"
+        end.
+
+str(Val) when is_atom(Val) -> atom_to_list(Val);
+str(Val) -> Val.
 
