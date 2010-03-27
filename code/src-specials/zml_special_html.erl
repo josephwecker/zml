@@ -79,7 +79,6 @@ process_head_and_body(ID, Attr, Children, AST, _Options) ->
 
 process_xhtml(ID, Attr, Children, AST, _Options) ->
   [[TypeFC | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
-  io:format("~p",[TypeFC]),
   case TypeFC == $x of
     false ->
       AST;
@@ -122,7 +121,6 @@ new_metas({Name, Type, Def}, Acc, Attr) ->
   case zml:get_attr_vals(Name, Attr, Def) of
     ["none"] -> Acc;
     Vals ->
-      io:format("~p|~p|~p~n", [Name,Type,Vals]),
       [metatag(Name, Type, Vals) | Acc]
   end.
 
