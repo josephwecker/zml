@@ -48,12 +48,14 @@
 
 (defconst zml-font-lock-defaults
   '(("\\(?:^\\|\\s \\)\\(\\*\\w+\\)\\(\\(?:[.#]\\w+\\)*\\)"
-     (1 font-lock-keyword-face)
-     (2 font-lock-variable-name-face))
+     (1 font-lock-function-name-face)
+     (2 font-lock-builtin-face))
     ("\\(?:^\\|\\s \\)\\(:\\w+\\)\\(\\(?:[.#]\\w+\\)*\\)"
-     (1 font-lock-builtin-face)
-     (2 font-lock-variable-name-face))
+     (1 font-lock-keyword-face)
+     (2 font-lock-builtin-face))
     ("\\(?:^\\|\\s \\)\\(\\(?:[.#]\\w+\\)+\\)"
+     (1 font-lock-builtin-face))
+    ("\\(\\$\\w+\\)"
      (1 font-lock-variable-name-face))
     ("\\(\\w+:\\)"
      (1 font-lock-type-face))
@@ -77,13 +79,32 @@
     st)
   "Syntax table for zml mode")
 
+(defun prev-line-indentation ()
+  "Get the indentation level of the preceding non-empty line"
+    (if (bobp) 0
+      (save-excursion
+        (beginning-of-line)
+        (forward-line -1)
+        (while (and (looking-at "\\s *$") (not (bobp)))
+          (forward-line -1) )
+        (current-indentation) ) ) )
+
+(defun zml-indent-line ()
+  "Indent current line in ZML"
+  (interactive)
+  (beginning-of-line)
+  (let ((cur (current-indentation))
+        (prev (prev-line-indentation)) )
+    (indent-line-to (if (= cur prev) (+ cur default-tab-width) prev)) ) )
+
 (define-derived-mode zml-mode fundamental-mode "zml"
   "Major mode for editing ZML files"
   :syntax-table zml-mode-syntax-table
   (set (make-local-variable 'font-lock-syntactic-keywords)
-       zml-font-lock-syntactic-keywords)
+       zml-font-lock-syntactic-keywords )
   (set (make-local-variable 'font-lock-defaults)
-       '(zml-font-lock-defaults nil t)) )
+       '(zml-font-lock-defaults nil t) )
+  (set (make-local-variable 'indent-line-function) 'zml-indent-line) )
 
 (provide 'zml-mode)
 
