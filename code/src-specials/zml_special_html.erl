@@ -131,35 +131,38 @@ new_metas({Name, Type, Def}, Acc, Attr) ->
       [metatag(Name, Type, Vals) | Acc]
   end.
 
-metatag(encoding, Close, [Val]) ->
+metatag(encoding, IsXml, [Val]) ->
   build_meta("http-equiv", "Content-Type",
-             ["text/html;", "charset=", to_lower(Val)], Close);
+             ["text/html;", "charset=", to_lower(Val)], IsXml);
 
-metatag(language, Close, [Val]) ->
-  build_meta("http-equiv", "Content-Language", [to_lower(Val)], Close);
+metatag(language, IsXml, [Val]) ->
+  build_meta("http-equiv", "Content-Language", [to_lower(Val)], IsXml);
 
-metatag(copyright, Close, Vals) ->
-  build_meta(name, copyright, ["Copyright (c)" | Vals], Close);
+metatag(copyright, IsXml, Vals) ->
+  build_meta(name, copyright, ["Copyright (c)" | Vals], IsXml);
 
-metatag(nosmarttag, Close, _) ->
-  build_meta(name, "MSSmartTagsPreventParsing", ["true"], Close);
+metatag(nosmarttag, $x, _) ->
+  build_meta(name, "MSSmartTagsPreventParsing", ["true"], $x);
 
-metatag(title, _, Vals) ->
-  zml:new_tag(title, [], Vals);
+metatag(nosmarttag, IsXml, _) ->
+  build_meta(name, "MSSmartTagsPreventParsing", ["TRUE"], IsXml);
+
+metatag(title, _, Vals) -> zml:new_tag(title, [], Vals);
 
 metatag(favicon, _, Vals) ->
   zml:new_tag(link, [{"rel", ["icon"]}, {"href", Vals}], []),
   zml:new_tag(link, [{"rel", ["shortcut icon"]}, {"href", Vals}], []);
 
-metatag(Name, Close, Vals) -> build_meta(name, Name, Vals, Close).
+metatag(Name, IsXml, Vals) -> build_meta(name, Name, Vals, IsXml).
 
-build_meta(Key, Name, Vals, Close) ->
-  "<meta " ++ str(Key) ++ "=\"" ++ str(Name) ++
-        "\" content=\"" ++ join(Vals, " ") ++ "\"" ++
-        case Close of
-            $x -> "/>";
-            _  -> ">"
-        end.
+build_meta(Key, Name, Vals, IsXml) ->
+  {ProcName, End} = case {Name, IsXml} of
+    {"MSSmartTagsPreventParsing", $x} -> {Name, "/>"};
+    {_, $x} -> {to_lower(str(Name)), "/>"};
+    {_, _ } -> {str(Name), ">" }
+  end,
+  "<meta " ++ str(Key) ++ "=\"" ++ ProcName ++
+    "\" content=\"" ++ join(Vals, " ") ++ "\"" ++ End.
 
 str(Val) when is_atom(Val) -> atom_to_list(Val);
 str(Val) -> Val.
