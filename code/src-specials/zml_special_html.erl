@@ -63,7 +63,7 @@ process_head_and_body(ID, Attr, Children, AST, _Options) ->
         % Temporarily remove head if any, add rest to a "body" which
         % then becomes the new children of the html tag
         AllButHead = zml:replace_tag(Children, ["head"], []),
-        NewChildren = [zml:new_tag(body, normal, dict:new(), AllButHead)],
+        NewChildren = [zml:new_tag(body, normal, [], AllButHead)],
         {zml:update_tag(AST, {"html",ID}, special, Attr, NewChildren),
           NewChildren};
       _ ->
@@ -74,7 +74,7 @@ process_head_and_body(ID, Attr, Children, AST, _Options) ->
   case zml:get_tag(Children, ["head"]) of
     undefined ->
       % Pop in a blank head
-      Children3 = [zml:new_tag("head", normal, dict:new(), []) | Children2],
+      Children3 = [zml:new_tag("head", normal, [], []) | Children2],
       zml:update_tag(AST2, {"html",ID}, special, Attr, Children3);
     ExistingHead ->
       Children3 = [ExistingHead | Children2],
@@ -90,10 +90,8 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
     true ->
       [Namespace] = zml:get_attr_vals(xmlns, Attr, ?XMLNS),
       [Language] = zml:get_attr_vals("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
-      Att2 = dict:store("xmlns",[Namespace], Attr),
-      Att3 = dict:store("xml:lang",[Language], Att2),
-      zml:update_tag(AST, {"html",ID}, special, Att3, Children)
-
+      zml:update_tag(AST, {"html",ID}, special,
+        [{"xmlns",[Namespace]}, {"xml:lang",[Language]} | Attr], Children)
       %% Skipping for now - xml declaration
       % TODO: flag to force insertion of the xml declaration
       %Encoding = get_html_attr(encoding, Attr, ?ENCODING_DEFAULT),
@@ -118,7 +116,7 @@ process_metas(ID, Attr, Children, AST, _Options) ->
 
 
 process_cleanup(ID, Attr, Children, AST, _Options) ->
-  CleanAttrs = lists:foldl(fun dict:erase/2, Attr, ?SPECIAL_ATTRIBUTES),
+  CleanAttrs = lists:foldl(fun proplists:delete/2, Attr, ?SPECIAL_ATTRIBUTES),
   zml:update_tag(AST, {"html",ID}, special, CleanAttrs, Children).
 
 
