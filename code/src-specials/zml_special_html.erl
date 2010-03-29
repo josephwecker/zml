@@ -36,7 +36,7 @@ process_doctype(_ID, Attr, _Children, AST, _Options) ->
   case is_list(FirstLine) of
     true ->
       case (string:sub_word(FirstLine,1) == "<!DOCTYPE") of
-        true -> erlang:error("Please do not declare a DOCTYPE- use a " ++ 
+        true -> erlang:error("Please do not declare a DOCTYPE- use a " ++
             "'type' attribute on the *html tag instead.");
         false -> ok
       end;
@@ -57,43 +57,35 @@ process_doctype(_ID, Attr, _Children, AST, _Options) ->
 
 process_head_and_body(ID, Attr, Children, AST, _Options) ->
   % Ensure there is a body
-  {AST2, Children2} =
-    case zml:get_tag(Children, ["body"]) of
+  ExistingHead = zml:get_tag(Children, ["head"]),
+  ExistingBody = zml:get_tag(Children, ["body"]),
+
+  {Head, AllButHead} =
+    case ExistingHead of
       undefined ->
-        % Temporarily remove head if any, add rest to a "body" which
-        % then becomes the new children of the html tag
-        AllButHead = zml:replace_tag(Children, ["head"], []),
-        NewChildren = [zml:new_tag(body, normal, dict:new(), AllButHead)],
-        {zml:update_tag(AST, {"html",ID}, special, Attr, NewChildren),
-          NewChildren};
+        {zml:new_tag("head", normal, [], []), Children};
       _ ->
-        {AST, Children}
+        {ExistingHead, zml:replace_tag(Children, ["head"], [])}
     end,
-  % Ensure there is a head
-  % Look in original children for that head
-  case zml:get_tag(Children, ["head"]) of
-    undefined ->
-      % Pop in a blank head
-      Children3 = [zml:new_tag("head", normal, dict:new(), []) | Children2],
-      zml:update_tag(AST2, {"html",ID}, special, Attr, Children3);
-    ExistingHead ->
-      Children3 = [ExistingHead | Children2],
-      zml:update_tag(AST2, {"html",ID}, special, Attr, Children3)
-  end.
+  Body =
+    case ExistingBody of
+      undefined ->
+        zml:new_tag(body, normal, [], AllButHead);
+      _ ->
+        ExistingBody
+    end,
+  zml:update_tag(AST, {"html",ID}, special, Attr, [Head, Body]).
 
 process_xhtml(ID, Attr, Children, AST, _Options) ->
   [[TypeFC | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
-  io:format("~p",[TypeFC]),
   case TypeFC == $x of
     false ->
       AST;
     true ->
       [Namespace] = zml:get_attr_vals(xmlns, Attr, ?XMLNS),
       [Language] = zml:get_attr_vals("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
-      Att2 = dict:store("xmlns",[Namespace], Attr),
-      Att3 = dict:store("xml:lang",[Language], Att2),
-      zml:update_tag(AST, {"html",ID}, special, Att3, Children)
-
+      zml:update_tag(AST, {"html",ID}, special,
+        [{"xmlns",[Namespace]}, {"xml:lang",[Language]} | Attr], Children)
       %% Skipping for now - xml declaration
       % TODO: flag to force insertion of the xml declaration
       %Encoding = get_html_attr(encoding, Attr, ?ENCODING_DEFAULT),
@@ -117,17 +109,15 @@ process_metas(ID, Attr, Children, AST, _Options) ->
   zml:update_tag(AST, [{"html",ID}, "head"], normal, HAttr, HChildren ++ Metas).
 
 
-
 process_cleanup(ID, Attr, Children, AST, _Options) ->
-  CleanAttrs = lists:foldl(fun dict:erase/2, Attr, ?SPECIAL_ATTRIBUTES),
-  zml:update_tag(AST, {"html", ID}, special, CleanAttrs, Children).
+  CleanAttrs = lists:foldl(fun proplists:delete/2, Attr, ?SPECIAL_ATTRIBUTES),
+  zml:update_tag(AST, {"html",ID}, special, CleanAttrs, Children).
 
 
 new_metas({Name, Type, Def}, Acc, Attr) ->
   case zml:get_attr_vals(Name, Attr, Def) of
     ["none"] -> Acc;
     Vals ->
-      io:format("~p|~p|~p~n", [Name,Type,Vals]),
       metatag(Name, Type, Vals) ++ Acc
   end.
 
@@ -158,12 +148,9 @@ metatag(Name, IsXml, Vals) -> build_meta(name, Name, Vals, IsXml).
 build_meta(Key, Name, Vals, IsXml) ->
   {ProcName, End} = case {Name, IsXml} of
     {"MSSmartTagsPreventParsing", $x} -> {Name, "/>"};
-    {_, $x} -> {to_lower(str(Name)), "/>"};
-    {_, _ } -> {str(Name), ">" }
+    {_, $x} -> {to_lower(zml:str(Name)), "/>"};
+    {_, _ } -> {zml:str(Name), ">" }
   end,
-  ["<meta " ++ str(Key) ++ "=\"" ++ ProcName ++
+  ["<meta " ++ zml:str(Key) ++ "=\"" ++ ProcName ++
     "\" content=\"" ++ join(Vals, " ") ++ "\"" ++ End].
-
-str(Val) when is_atom(Val) -> atom_to_list(Val);
-str(Val) -> Val.
 
