@@ -127,8 +127,6 @@ translate_ast_item([{Name,_Type,Attributes,Children} | T], Acc) ->
 
 translate_attributes([]) ->
   "";
-translate_attributes(Atts) when is_tuple(Atts) ->
-  lists:foldl(fun out_attr/2, [], dict:to_list(Atts));
 translate_attributes(Atts) ->
   lists:foldl(fun out_attr/2, [], Atts).
 out_attr({Name, Values}, Acc) ->
@@ -170,8 +168,6 @@ pull_in_file(Name, DestDirAndName) ->
       end
   end.
 
-new_tag(Name, AttrList, Children) when is_list(AttrList) ->
-  new_tag(Name, dict:from_list(AttrList), Children);
 new_tag(Name, Attr, Children) when is_atom(Name) ->
   new_tag(atom_to_list(Name), normal, Attr, Children);
 new_tag(Name, Attr, Children) when is_tuple(Name) ->
@@ -237,26 +233,13 @@ get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
       end
   end.
 
-get_attr_vals(Find, Attr, Default) when is_atom(Find) ->
-  get_attr_vals(atom_to_list(Find), Attr, Default);
 get_attr_vals(Find, Attr, Default) ->
-  case dict:find(Find, Attr) of
-    {ok, Vals} -> Vals;
-    error when is_atom(Default) ->
-      [atom_to_list(Default)];
-    error ->
-      [Default]
-  end.
+  proplists:get_value(str(Find), Attr, [str(Default)]).
 
-pop_attr(Find, Attr, Default) when is_atom(Find) ->
-  pop_attr(atom_to_list(Find), Attr, Default);
 pop_attr(Find, Attr, Default) ->
-  case dict:find(Find, Attr) of
-    {ok, Val} ->
-      {dict:erase(Find, Attr), Val};
-    error when is_atom(Default) ->
-      {Attr, [atom_to_list(Default)]};
-    error ->
-      {Attr, [Default]}
-  end.
+  Key = str(Find),
+  Val = proplists:get_value(Key, Attr, [str(Default)]),
+  {proplists:delete(Key, Attr), Val}.
 
+str(A) when is_atom(A) -> atom_to_list(A);
+str(A) -> A.

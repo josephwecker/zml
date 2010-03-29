@@ -35,7 +35,7 @@ parse([{newline, _} | T], CurrLvl, Options) ->
 pull_attributes([{start_attrs,_} | T]) ->
   pull_inner_attributes(T, [], [], []);
 pull_attributes(AnythingElse) ->  % No attributes for this tag
-  {AnythingElse, dict:new()}.
+  {AnythingElse, []}.
 
 pull_inner_attributes([{attr_delim, _} | T], [], [], AttrAcc) ->
   pull_inner_attributes(T, [], [], AttrAcc);
@@ -54,9 +54,9 @@ pull_inner_attributes([{string, _, Text} | T], CAName, CAVals, AttrAcc) ->
   pull_inner_attributes(T, CAName, [Text | CAVals], AttrAcc);
 
 pull_inner_attributes([{finish_attrs,_} | T], [], [], AttrAcc) ->
-  {T, dict:from_list(AttrAcc)};
+  {T, AttrAcc};
 pull_inner_attributes([{finish_attrs,_} | T], CAName, CAVals, AttrAcc) ->
-  {T, dict:from_list([{CAName, lists:reverse(CAVals)} | AttrAcc])}.
+  {T, [{CAName, lists:reverse(CAVals)} | AttrAcc]}.
 
 pull_code_children(Toks) ->
   pull_code_children(Toks, []).
@@ -97,9 +97,9 @@ tricky_attributes(Tag, Type, Attr, Children) ->
   {Name2, Attr2} = tricky_attributes(lists:reverse(Tag), [], Attr),
   case Type of
     class ->
-      {"div", normal, merge_attr(Attr2, [{"class", [Name2]}]), Children};
+      {"div", normal, append_attr(Attr2, {"class", [Name2]}), Children};
     id ->
-      {"div", normal, merge_attr(Attr2, [{"id", [Name2]}]), Children};
+      {"div", normal, append_attr(Attr2, {"id", [Name2]}), Children};
     special ->
       ID = integer_to_list(erlang:phash2(make_ref())),
       {{Name2, ID}, special, Attr2, Children};
@@ -110,14 +110,21 @@ tricky_attributes(Tag, Type, Attr, Children) ->
 tricky_attributes([], CurrName, Attr) ->
   {CurrName, Attr};
 tricky_attributes([$.|T], CurrName, Attr) ->
-  tricky_attributes(T, [], merge_attr(Attr, [{"class", [CurrName]}]));
+  tricky_attributes(T, [], append_attr(Attr, {"class", [CurrName]}));
 tricky_attributes([$#|T], CurrName, Attr) ->
-  tricky_attributes(T, [], merge_attr(Attr, [{"id", [CurrName]}]));
+  tricky_attributes(T, [], append_attr(Attr, {"id", [CurrName]}));
 tricky_attributes([H|T], CurrName, Attr) ->
   tricky_attributes(T, [H | CurrName], Attr).
 
+%% % Not used for now (and not tested either).
+%% merge_attr(Attributes, MoreAttributes) ->
+%%   lists:foldl(fun append_attr/2, MoreAttributes, Attributes).
 
-merge_attr(Attributes, MoreAttributes) ->
-  dict:merge(fun(_K, V1, V2) -> V1 ++ V2 end,
-    dict:from_list(MoreAttributes), Attributes). 
+append_attr([{K1,V1} | Attributes], {K2,V2}) when K1 =:= K2 ->
+  [{K1, V1 ++ V2} | Attributes];
+
+append_attr([KV1 | Attributes], KV2) ->
+  [KV1 | append_attr(Attributes, KV2)];
+
+append_attr([], KV2) -> [KV2].
 
