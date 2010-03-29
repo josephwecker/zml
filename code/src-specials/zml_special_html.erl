@@ -22,7 +22,7 @@ run_handler(ID, _Attr, _Children, AST, Options) ->
     fun process_xhtml/5,
     fun process_metas/5,
 %    fun process_javascript/5,
-%    fun process_zss_and_images/5,
+    fun process_zss_and_images/5,
     fun process_cleanup/5
   ],
   lists:foldl(
@@ -107,6 +107,9 @@ process_metas(ID, Attr, Children, AST, _Options) ->
   {_,_,HAttr,HChildren} = zml:get_tag(Children, ["head"]),
   zml:update_tag(AST, [{"html",ID}, "head"], normal, HAttr, HChildren ++ Metas).
 
+process_zss_and_images(ID, Attr, Children, AST, Options) ->
+
+  AST.
 
 
 process_cleanup(ID, Attr, Children, AST, _Options) ->
