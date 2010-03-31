@@ -108,8 +108,15 @@ process_metas(ID, Attr, Children, AST, _Options) ->
   zml:update_tag(AST, [{"html",ID}, "head"], normal, HAttr, HChildren ++ Metas).
 
 process_zss_and_images(ID, Attr, Children, AST, Options) ->
-
-  AST.
+  % TODO:
+  %   - Use source_filename's path + search_path + erlang search path for
+  %     finding externals (build into zml?)
+  %   - Figure out list of zss files
+  %   - Pull in zss ASTs
+  %   - Cull AST based on ZML AST
+  %   - (Future) build list of images from culled zss and do image processing
+  %   - Render css inline and attach to AST
+  zs_html_zss_images:process(ID, Attr, Children, AST, Options).
 
 
 process_cleanup(ID, Attr, Children, AST, _Options) ->

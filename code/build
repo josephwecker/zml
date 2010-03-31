@@ -23,6 +23,7 @@ erlc('zml')
 erlc('zml_hand_parser')
 erlc('zml_tokenizer')
 erlc_glob('../src-specials/zml_special*.erl')
+erlc_glob('../src-specials/zs_*.erl')
 
 erlc('zss')
 erlc('zss_tokenizer')
