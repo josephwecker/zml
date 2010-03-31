@@ -13,29 +13,44 @@
 
 process(_ID, Attr, _Children, AST, Options) ->
   DeclaredZSS = get_declared_zss(Attr, Options),
-  io:format("~p", [DeclaredZSS]),
+  Processed = lists:map(fun(Styles) ->
+        process_styles(Styles, AST, Options)
+    end, DeclaredZSS),
   AST.
 
 get_declared_zss(Attr, Options) ->
+  % Explicitly declared
   Declared = lists:map(fun({Type, _Tags}) ->
         {Type,
-          zml:get_attr_vals(Type,Attr) ++
-          zml:get_attr_vals(Type ++ "s",Attr)}
+          zml:get_attr_vals(Type, Attr) ++
+          zml:get_attr_vals(Type ++ "s", Attr)}
     end, ?STYLESHEET_TAGS),
-  case proplists:get_value(source_filename, Options, none) of
-    none ->
-      Declared;
-    SFN ->
-      BaseName = filename:rootname(filename:basename(SFN)),
-      MagicZSSName = BaseName ++ ".zss",
-      SearchPaths = zml:get_search_paths(Options),
-      case file:path_open(SearchPaths, MagicZSSName, [read]) of
-        {ok, IOD, FullName} ->
-          file:close(IOD),
-          zml:append_attr(Declared, {"style", [FullName]});
-        _ ->
-          Declared
-      end
+  % Look for a magic one as well
+  Declared2 =
+    case proplists:get_value(source_filename, Options, none) of
+      none -> Declared;
+      SFN ->
+        case find_magic_file(SFN, Options) of
+          none -> Declared;
+          MagicFile -> zml:append_attr(Declared, {"style", MagicFile})
+        end
+    end,
+  Declared2.
+  % TODO: Look for libraries- ideally pre-loaded paths in Options
+  %Declared3 =
+  %  case proplists:get_value(
+
+% Give back: {Type, InlineCSS}
+process_styles({Type, Sheets}, AST, Options) ->
+  {Type, []}.
+
+find_magic_file(SourceName, Options) ->
+  BaseName = filename:rootname(filename:basename(SourceName)),
+  MagicZSSName = BaseName ++ ".zss",
+  SearchPaths = zml:get_search_paths(Options),
+  case file:path_open(SearchPaths, MagicZSSName, [read]) of
+    {ok, IOD, FullName} ->
+      file:close(IOD),
+      [FullName];
+    _ -> none
   end.
-
-
