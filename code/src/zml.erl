@@ -241,9 +241,11 @@ get_attr_vals(Find, Attr) ->
     V -> V
   end.
 get_attr_vals(Find, Attr, [H|_] = Default) when is_integer(H) ->
-  proplists:get_value(str(Find), Attr, [str(Default)]);
+  proplists:get_value(str(Find), Attr, [Default]);
 get_attr_vals(Find, Attr, Default) when is_list(Default) ->
-  proplists:get_value(str(Find), Attr, [str(V) || V <- Default]).
+  proplists:get_value(str(Find), Attr, [str(V) || V <- Default]);
+get_attr_vals(Find, Attr, Default) ->
+  proplists:get_value(str(Find), Attr, [str(Default)]).
 
 pop_attr(Find, Attr, Default) ->
   Key = str(Find),
