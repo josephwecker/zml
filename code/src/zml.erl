@@ -22,7 +22,8 @@
     get_attr_vals/3,
     pop_attr/3,
     replace_tag/3,
-    update_tag/5
+    update_tag/5,
+    get_search_paths/1
   ]).
 
 compile_file(InFile) ->
@@ -243,3 +244,20 @@ pop_attr(Find, Attr, Default) ->
 
 str(A) when is_atom(A) -> atom_to_list(A);
 str(A) -> A.
+
+get_search_paths(Options) ->
+  % TODO (optionally if needed in the future)
+  % - application parameter
+  % - environment variable
+  % - command line parameter
+  % - config file(s)...
+  case proplists:get_value(source_filename, Options, none) of
+    none -> [];
+    V -> filename:dirname(V)
+  end ++
+  case proplists:get_value(path, Options, none) of
+    none -> [];
+    Vs -> Vs
+  end ++
+  code:get_path().
+
