@@ -8,6 +8,7 @@
 -module(zs_html_zss_images).
 
 -export([process/5]).
+-include("zml_special_html.hrl").
 
 
 process(_ID, Attr, _Children, AST, Options) ->
@@ -16,10 +17,14 @@ process(_ID, Attr, _Children, AST, Options) ->
   AST.
 
 get_declared_zss(Attr, Options) ->
-  zml:get_attr_vals(style,Attr) ++
-  zml:get_attr_vals(styles,Attr) ++
+  Declared = lists:map(fun({Type, _Tags}) ->
+        {Type,
+          zml:get_attr_vals(Type,Attr) ++
+          zml:get_attr_vals(Type ++ "s",Attr)}
+    end, ?STYLESHEET_TAGS),
   case proplists:get_value(source_filename, Options, none) of
-    none -> [];
+    none ->
+      Declared;
     SFN ->
       BaseName = filename:rootname(filename:basename(SFN)),
       MagicZSSName = BaseName ++ ".zss",
@@ -27,8 +32,10 @@ get_declared_zss(Attr, Options) ->
       case file:path_open(SearchPaths, MagicZSSName, [read]) of
         {ok, IOD, FullName} ->
           file:close(IOD),
-          [FullName];
-        _ -> []
+          zml:append_attr(Declared, {"style", [FullName]});
+        _ ->
+          Declared
       end
   end.
+
 
