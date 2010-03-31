@@ -276,7 +276,16 @@ get_search_paths(Options) ->
   ["."] ++
   case proplists:get_value(source_filename, Options, none) of
     none -> [];
-    V -> [filename:dirname(V)]
+    V ->
+      Main = filename:dirname(V),
+      Secondaries = [js, zss, images, scripts, styles, javascript],
+      [Main | lists:foldl(fun(S, Acc) ->
+            S2 = [Main, "/", S],
+            case filelib:is_file(S2) of
+              true -> [filename:flatten(S2) | Acc];
+              false -> Acc
+            end
+        end, [], Secondaries)]
   end ++
   case proplists:get_value(path, Options, none) of
     none -> [];
