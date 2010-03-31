@@ -19,6 +19,7 @@
     new_tag/3,
     new_tag/4,
     get_tag/2,
+    get_attr_vals/2,
     get_attr_vals/3,
     pop_attr/3,
     replace_tag/3,
@@ -234,16 +235,25 @@ get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
       end
   end.
 
-get_attr_vals(Find, Attr, Default) ->
-  proplists:get_value(str(Find), Attr, [str(Default)]).
+get_attr_vals(Find, Attr) ->
+  case proplists:get_value(str(Find), Attr, none) of
+    none -> [];
+    V -> V
+  end.
+get_attr_vals(Find, Attr, [H|_] = Default) when is_integer(H) ->
+  proplists:get_value(str(Find), Attr, [str(Default)]);
+get_attr_vals(Find, Attr, Default) when is_list(Default) ->
+  proplists:get_value(str(Find), Attr, [str(V) || V <- Default]).
 
 pop_attr(Find, Attr, Default) ->
   Key = str(Find),
   Val = proplists:get_value(Key, Attr, [str(Default)]),
   {proplists:delete(Key, Attr), Val}.
 
-str(A) when is_atom(A) -> atom_to_list(A);
-str(A) -> A.
+str(A) when is_atom(A) ->
+  atom_to_list(A);
+str(A) ->
+  A.
 
 get_search_paths(Options) ->
   % TODO (optionally if needed in the future)
