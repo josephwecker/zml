@@ -258,6 +258,5 @@ get_search_paths(Options) ->
   case proplists:get_value(path, Options, none) of
     none -> [];
     Vs -> Vs
-  end ++
-  code:get_path().
+  end.
 
