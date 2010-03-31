@@ -251,9 +251,10 @@ get_search_paths(Options) ->
   % - environment variable
   % - command line parameter
   % - config file(s)...
+  ["."] ++
   case proplists:get_value(source_filename, Options, none) of
     none -> [];
-    V -> filename:dirname(V)
+    V -> [filename:dirname(V)]
   end ++
   case proplists:get_value(path, Options, none) of
     none -> [];
