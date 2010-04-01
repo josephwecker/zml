@@ -123,16 +123,13 @@ new_metas({Name, Type, Def}, Acc, Attr) ->
 
 metatag(encoding, IsXml, [Val]) ->
   build_meta("http-equiv", "Content-Type",
-             ["text/html;", "charset=" ++ to_lower(Val)], IsXml);
+             ["text/html;", "charset=" ++ Val], IsXml);
 
-metatag(language, IsXml, [Val]) ->
-  build_meta("http-equiv", "Content-Language", [to_lower(Val)], IsXml);
+metatag(language, IsXml, Vals) ->
+  build_meta("http-equiv", "Content-Language", Vals, IsXml);
 
 metatag(copyright, IsXml, Vals) ->
-  build_meta(name, copyright, ["Copyright (c)" | Vals], IsXml);
-
-metatag(nosmarttag, $x, _) ->
-  build_meta(name, "MSSmartTagsPreventParsing", ["true"], $x);
+  build_meta(name, copyright, ["Copyright (c)" | Vals], IsXml, false);
 
 metatag(nosmarttag, IsXml, _) ->
   build_meta(name, "MSSmartTagsPreventParsing", ["TRUE"], IsXml);
@@ -146,11 +143,18 @@ metatag(favicon, _, Vals) ->
 metatag(Name, IsXml, Vals) -> build_meta(name, Name, Vals, IsXml).
 
 build_meta(Key, Name, Vals, IsXml) ->
-  {ProcName, End} = case {Name, IsXml} of
+  build_meta(Key, Name, Vals, IsXml, IsXml).
+
+build_meta(Key, Name, Vals, IsXml, LowerVals) ->
+  {NewName, End} = case {Name, IsXml} of
     {"MSSmartTagsPreventParsing", $x} -> {Name, "/>"};
     {_, $x} -> {to_lower(zml:str(Name)), "/>"};
     {_, _ } -> {zml:str(Name), ">" }
   end,
-  ["<meta " ++ zml:str(Key) ++ "=\"" ++ ProcName ++
-    "\" content=\"" ++ join(Vals, " ") ++ "\"" ++ End].
+  NewVals = case LowerVals of
+    $x -> to_lower(join(Vals, " "));
+    _  -> join(Vals, " ")
+  end,
+  ["<meta " ++ zml:str(Key) ++ "=\"" ++ NewName ++
+    "\" content=\"" ++ NewVals ++ "\"" ++ End].
 
