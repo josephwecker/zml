@@ -28,6 +28,9 @@
     get_search_paths/1
   ]).
 
+-define(OPT_ENV(Desc),
+  {proplists:get_value(Desc), os:getenv(string:to_upper(atom_to_list(Desc)))}).
+
 compile_file(InFile) ->
   compile_file(InFile, []).
 compile_file(InFile, Options) ->
@@ -51,9 +54,21 @@ compile_string(Str, Options) ->
 
 do_compile(Tokenizer, Input, Options) ->
   Tokens = Tokenizer(Input),
-  AST = zml_hand_parser:parse(Tokens, Options),
-  AST2 = run_specialized_handlers(AST, Options),
+  Options2 = other_options(Options),
+  AST = zml_hand_parser:parse(Tokens, Options2),
+  AST2 = run_specialized_handlers(AST, Options2),
   translate_ast_item(AST2, []).
+
+other_options(Options) ->
+  case ?OPT_ENV(zml_zss_libs) of
+    {undefined, V1} when V1 =/= false -> [{zml_zss_libs, V1}];
+    _ -> []
+  end ++
+  case ?OPT_ENV(zml_closure_jar) of
+    {undefined, V2} when V2 =/= false -> [{zml_closure_jar, V2}];
+    _ -> []
+  end ++
+  Options.
 
 %-define(DIR_TMP, ".tmp").
 %-define(DIR_JS,  "js").
@@ -278,7 +293,8 @@ get_search_paths(Options) ->
     none -> [];
     V ->
       Main = filename:dirname(V),
-      Secondaries = [js, zss, images, scripts, styles, javascript],
+      Secondaries = [js, zss, images, scripts, styles, javascript,
+        'sample-data', 'test-data'],
       [Main | lists:foldl(fun(S, Acc) ->
             S2 = [Main, "/", S],
             case filelib:is_file(S2) of

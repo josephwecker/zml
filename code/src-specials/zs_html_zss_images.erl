@@ -35,10 +35,30 @@ get_declared_zss(Attr, Options) ->
           MagicFile -> zml:append_attr(Declared, {"style", MagicFile})
         end
     end,
-  Declared2.
-  % TODO: Look for libraries- ideally pre-loaded paths in Options
-  %Declared3 =
-  %  case proplists:get_value(
+  case zml:get_attr_vals(stylelib, Attr) of
+    [] -> Declared2;
+    Libs ->
+      append_lib_styles(Options, Declared2, Libs)
+  end.
+
+append_lib_styles(Opts, Dec, []) ->
+  Dec;
+append_lib_styles(Opts, Dec, [Lib | T]) ->
+  Dir = find_lib_dir(Lib, Opts),
+  Dec2 = lists:foldl(fun({Type,_Tags}, Acc) ->
+      FName = filename:join([Dir, Type ++ ".zss"]),
+      case filelib:is_file(FName) of
+        true ->
+          zml:append_attr(Acc, {Type, FName});
+        false ->
+          Acc
+      end
+    end, Dec, ?STYLESHEET_TAGS),
+  append_lib_styles(Dec2, T).
+
+find_lib_dir(Wanted, Opts) ->
+  % TODO: look in each zml_zss_lib value as directory for Wanted directory-
+  % return first one found
 
 % Give back: {Type, InlineCSS}
 process_styles({Type, Sheets}, AST, Options) ->
