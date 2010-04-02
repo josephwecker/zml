@@ -201,7 +201,8 @@ It also gives special treatment to many attributes, e.g.
 
 <?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" language="ru" xml:lang="en" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      language="ru" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="content-type" content="text/html; charset=koi8-r" />
     <meta http-equiv="content-language" content="ru" />
@@ -220,16 +221,89 @@ parameters.
 Here's the full list of special attributes that *html currently
 supports:
 
-type
-encoding
-language
+type: HTML type. Can be one of:
+
+html2,
+html3,
+strict,
+frameset,
+xhtml_strict,
+xhtml_frameset,
+transitional,
+xhtml_transitional
+
+This attribute selects what HTML template to use, e.g.
+
+*html(type:html2) test
+
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Content-Language" content="en-us">
+    <meta name="MSSmartTagsPreventParsing" content="TRUE">
+  </head>
+  <body>test</body>
+</html>
+
+*html(type:xhtml_frameset) test
+
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="content-language" content="en-us" />
+    <meta name="MSSmartTagsPreventParsing" content="true" />
+  </head>
+  <body>test</body>
+</html>
+
+
+encoding: document encoding. UTF-8 by default.
+
+language: content-language part of the http-equiv. Also sets the lang
+and xml:lang attributes of the html tag, if html type requires
+so. Default is en-us.
+
+TODO: Check the html tag above - is that a bug?
+
+nosmarttag: true or false. Controls MSSmartTagsPreventParsing.
+
 description
 keywords
 copyright
-nosmarttag
 title
 favicon
 
+Various shortcuts. The following example uses them all:
 
+*html(description: document description
+      keywords: zml zss markup erlang
+      copyright: Joseph Wecker
+      title: page title
+      favicon: /img/favicon.ico)
+  test
 
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      description="document description"
+      keywords="zml zss markup erlang"
+      copyright="Joseph Wecker"
+      xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="content-language" content="en-us" />
+    <meta name="description" content="document description" />
+    <meta name="keywords" content="zml zss markup erlang" />
+    <meta name="copyright" content="Copyright (c) Joseph Wecker" />
+    <meta name="MSSmartTagsPreventParsing" content="true" />
+    <title>page title</title>
+    <link href="/img/favicon.ico" rel="icon" />
+    <link href="/img/favicon.ico" rel="shortcut icon" />
+  </head>
+  <body>test</body>
+</html>
 
+TODO: shouldn't we delete all these attributes from the html tag?
