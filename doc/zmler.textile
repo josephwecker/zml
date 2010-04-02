@@ -1,0 +1,235 @@
+
+ZML is a small markup language that uses indentation to represent
+hierarchy of tags.
+
+By default, ZML document translates into XML:
+
+:document
+  :title My first ZML example
+    has a pretty long title
+  :table
+    :tr
+      :td cell 11
+      :td cell 12
+    :tr
+      :td cell 21
+      :td cell 22
+
+<?xml version="1.0"?>
+<document>
+  <title>My first ZML example has a pretty long title</title>
+  <table>
+    <tr>
+      <td>cell 11</td>
+      <td>cell 12</td>
+    </tr>
+    <tr>
+      <td>cell 21</td>
+      <td>cell 22</td>
+    </tr>
+  </table>
+</document>
+
+
+Note how it treats indentation to mix text and tags:
+
+:document
+  :head First line of the HEAD tag.
+    Second line of the HEAD - note the indentation.
+  :body Obviously, that line belongs to BODY.
+    This one is also part of the BODY.
+  OOPS, this line is part of the DOCUMENT tag!
+
+<?xml version="1.0"?>
+<document>
+  <head>
+    First line of the HEAD tag. Second line
+    of the HEAD - note the indentation.
+  </head>
+  <body>
+    Obviously, that line belongs to BODY.
+    This one is also part of the BODY.
+  </body>
+  OOPS, this line is part of the DOCUMENT tag!
+</document>
+
+
+ZML supports single- and multi-line comments:
+
+:document || Comment to the end of line
+  :title This tag has comment |# - and a
+         multiline one! #| in its body
+  :body || Note this tag has an empty body!
+
+<?xml version="1.0"?>
+<document>
+  <title>This tag has comment in its body</title>
+  <body/>
+</document>
+
+
+Syntax for attributes is:
+
+:document(author: Sergei Matusevich
+          encoding: UTF-8 language: en-us)
+  :title(class: header)
+
+<?xml version="1.0"?>
+<document author="Sergei Matusevich" encoding="UTF-8" language="en-us">
+  <title class="header"/>
+</document>
+
+Note that because we use parenthesis, attributes can span multiple
+lines, and the indentation does not matter.
+
+
+To escape special characters, we can use backslash or |""| quotes:
+
+:document(onload: |"onload();"|)
+  :title \:tag escaping
+
+<?xml version="1.0"?>
+<document onload="onload();">
+  <title>:tag escaping</title>
+</document>
+
+
+Note that |""| quotes can span multiple lines, and preserve
+indentation:
+
+:document
+  :script(type: text/javascript) |"
+    function onload() {
+      alert("Hello there");
+    } "|
+
+<?xml version="1.0"?>
+<document>
+  <script type="text/javascript">
+    function onload() {
+      alert("Hello there");
+    } </script>
+</document>
+
+
+ZML has special syntax for id and class attributes, common in (X)HTML:
+
+:document#sample-001
+  :table#sample-table-id.bigtable-class
+    :tr.bigtable-class.odd-row
+      :td cell 11
+      :td cell 12
+    :tr.bigtable-class.even-row
+      :td cell 21
+      :td cell 22
+
+<?xml version="1.0"?>
+<document id="sample-001">
+  <table id="sample-table-id" class="bigtable-class">
+    <tr class="odd-row bigtable-class">
+      <td>cell 11</td>
+      <td>cell 12</td>
+    </tr>
+    <tr class="even-row bigtable-class">
+      <td>cell 21</td>
+      <td>cell 22</td>
+    </tr>
+  </table>
+</document>
+
+Note that each :tr tag has *two* classes that got pasted into a single
+attribute value. Order of id and class attributes does not matter.
+
+
+If class or id (or both) are used, we can omit :tag name
+alltogether. ZML uses div tag in such case:
+
+:document
+  #header(onclick: |"alert('hello');"|) a header DIV
+  #body.grid-3
+    .title isn't that neat?
+    More text for the body
+  :div#footer a footer DIV
+
+<?xml version="1.0"?>
+<document>
+  <div id="header" onclick="alert('hello');">a header DIV</div>
+  <div id="body" class="grid-3">
+    <div class="title">isn't that neat?</div>
+    More text for the body
+  </div>
+  <div id="footer">a footer DIV</div>
+</document>
+
+We can freely mix shortcuts for div, class, and id with the regular
+ZML syntax.
+
+
+ZML can be extended with special tags that hook up to the user-defined
+code for custom syntax. Such tags start with the '*' character instead
+of ':'. Most useful tag is *html. Compare this:
+
+:html or is it?
+
+<?xml version="1.0"?>
+<html>or is it?</html>
+
+With this:
+
+*html or is it?
+
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta http-equiv="content-language" content="en-us" />
+    <meta name="MSSmartTagsPreventParsing" content="true" />
+  </head>
+  <body>or is it?</body>
+</html>
+
+That is, *html creates a lot of boilerplate HTML for us!
+
+
+It also gives special treatment to many attributes, e.g.
+
+*html(title: That's a document title
+      favicon: /img/favicon.ico
+      encoding: koi8-r language: ru)
+  Here goes the body
+
+<?xml version="1.0"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" language="ru" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=koi8-r" />
+    <meta http-equiv="content-language" content="ru" />
+    <meta name="MSSmartTagsPreventParsing" content="true" />
+    <title>That's a document title</title>
+    <link href="/img/favicon.ico" rel="icon" />
+    <link href="/img/favicon.ico" rel="shortcut icon" />
+  </head>
+  <body>Here goes the body</body>
+</html>
+
+Note the link and title tags, as well as the change in meta http-equiv
+parameters.
+
+
+Here's the full list of special attributes that *html currently
+supports:
+
+type
+encoding
+language
+description
+keywords
+copyright
+nosmarttag
+title
+favicon
+
+
+
+
