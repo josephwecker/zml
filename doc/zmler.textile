@@ -1,9 +1,14 @@
 
+h2. The Little ZMLer
+
 ZML is a small markup language that uses indentation to represent
 hierarchy of tags.
 
+h3.
+
 By default, ZML document translates into XML:
 
+<pre><code>
 :document
   :title My first ZML example
     has a pretty long title
@@ -14,7 +19,9 @@ By default, ZML document translates into XML:
     :tr
       :td cell 21
       :td cell 22
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <document>
   <title>My first ZML example has a pretty long title</title>
@@ -29,17 +36,23 @@ By default, ZML document translates into XML:
     </tr>
   </table>
 </document>
+</code></pre>
 
+
+h3.
 
 Note how it treats indentation to mix text and tags:
 
+<pre><code>
 :document
   :head First line of the HEAD tag.
     Second line of the HEAD - note the indentation.
   :body Obviously, that line belongs to BODY.
     This one is also part of the BODY.
   OOPS, this line is part of the DOCUMENT tag!
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <document>
   <head>
@@ -52,57 +65,81 @@ Note how it treats indentation to mix text and tags:
   </body>
   OOPS, this line is part of the DOCUMENT tag!
 </document>
+</code></pre>
 
+
+h3.
 
 ZML supports single- and multi-line comments:
 
+<pre><code>
 :document || Comment to the end of line
   :title This tag has comment |# - and a
          multiline one! #| in its body
   :body || Note this tag has an empty body!
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <document>
   <title>This tag has comment in its body</title>
   <body/>
 </document>
+</code></pre>
 
+
+h3.
 
 Syntax for attributes is:
 
+<pre><code>
 :document(author: Sergei Matusevich
           encoding: UTF-8 language: en-us)
   :title(class: header)
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <document author="Sergei Matusevich" encoding="UTF-8" language="en-us">
   <title class="header"/>
 </document>
+</code></pre>
 
 Note that because we use parenthesis, attributes can span multiple
 lines, and the indentation does not matter.
 
 
+h3.
+
 To escape special characters, we can use backslash or |""| quotes:
 
+<pre><code>
 :document(onload: |"onload();"|)
   :title \:tag escaping
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <document onload="onload();">
   <title>:tag escaping</title>
 </document>
+</code></pre>
 
+
+h3.
 
 Note that |""| quotes can span multiple lines, and preserve
 indentation:
 
+<pre><code>
 :document
   :script(type: text/javascript) |"
     function onload() {
       alert("Hello there");
     } "|
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <document>
   <script type="text/javascript">
@@ -110,10 +147,14 @@ indentation:
       alert("Hello there");
     } </script>
 </document>
+</code></pre>
 
+
+h3.
 
 ZML has special syntax for id and class attributes, common in (X)HTML:
 
+<pre><code>
 :document#sample-001
   :table#sample-table-id.bigtable-class
     :tr.bigtable-class.odd-row
@@ -122,7 +163,9 @@ ZML has special syntax for id and class attributes, common in (X)HTML:
     :tr.bigtable-class.even-row
       :td cell 21
       :td cell 22
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <document id="sample-001">
   <table id="sample-table-id" class="bigtable-class">
@@ -136,21 +179,27 @@ ZML has special syntax for id and class attributes, common in (X)HTML:
     </tr>
   </table>
 </document>
+</code></pre>
 
 Note that each :tr tag has *two* classes that got pasted into a single
 attribute value. Order of id and class attributes does not matter.
 
 
+h3.
+
 If class or id (or both) are used, we can omit :tag name
 alltogether. ZML uses div tag in such case:
 
+<pre><code>
 :document
   #header(onclick: |"alert('hello');"|) a header DIV
   #body.grid-3
     .title isn't that neat?
     More text for the body
   :div#footer a footer DIV
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <document>
   <div id="header" onclick="alert('hello');">a header DIV</div>
@@ -160,24 +209,34 @@ alltogether. ZML uses div tag in such case:
   </div>
   <div id="footer">a footer DIV</div>
 </document>
+</code></pre>
 
 We can freely mix shortcuts for div, class, and id with the regular
 ZML syntax.
 
 
+h3.
+
 ZML can be extended with special tags that hook up to the user-defined
 code for custom syntax. Such tags start with the '*' character instead
 of ':'. Most useful tag is *html. Compare this:
 
+<pre><code>
 :html or is it?
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <html>or is it?</html>
+</code></pre>
 
 With this:
 
+<pre><code>
 *html or is it?
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -188,17 +247,23 @@ With this:
   </head>
   <body>or is it?</body>
 </html>
+</code></pre>
 
 That is, *html creates a lot of boilerplate HTML for us!
 
 
+h3.
+
 It also gives special treatment to many attributes, e.g.
 
+<pre><code>
 *html(title: That's a document title
       favicon: /img/favicon.ico
       encoding: koi8-r language: ru)
   Here goes the body
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
@@ -213,29 +278,37 @@ It also gives special treatment to many attributes, e.g.
   </head>
   <body>Here goes the body</body>
 </html>
+</code></pre>
 
 Note the link and title tags, as well as the change in meta http-equiv
 parameters.
 
 
+h3.
+
 Here's the full list of special attributes that *html currently
 supports:
 
-type: HTML type. Can be one of:
+h4.
 
-html2,
-html3,
-strict,
-frameset,
-xhtml_strict,
-xhtml_frameset,
-transitional,
-xhtml_transitional
+* type: HTML type. Can be one of:
+
+| html2 |
+| html3 |
+| strict |
+| frameset |
+| xhtml_strict |
+| xhtml_frameset |
+| transitional |
+| xhtml_transitional |
 
 This attribute selects what HTML template to use, e.g.
 
+<pre><code>
 *html(type:html2) test
+</code></pre>
 
+<pre><code>
 <!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
 <html>
   <head>
@@ -245,9 +318,13 @@ This attribute selects what HTML template to use, e.g.
   </head>
   <body>test</body>
 </html>
+</code></pre>
 
+<pre><code>
 *html(type:xhtml_frameset) test
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
@@ -258,33 +335,42 @@ This attribute selects what HTML template to use, e.g.
   </head>
   <body>test</body>
 </html>
+</code></pre>
 
+h4.
 
-encoding: document encoding. UTF-8 by default.
+* encoding: document encoding. UTF-8 by default.
 
-language: content-language part of the http-equiv. Also sets the lang
-and xml:lang attributes of the html tag, if html type requires
-so. Default is en-us.
+* language: content-language part of the http-equiv. Also sets the lang
+  and xml:lang attributes of the html tag, if html type requires
+  so. Default is en-us.
 
 TODO: Check the html tag above - is that a bug?
 
-nosmarttag: true or false. Controls MSSmartTagsPreventParsing.
+h4.
 
-description
-keywords
-copyright
-title
-favicon
+* nosmarttag: true or false. Controls MSSmartTagsPreventParsing.
+
+h4.
+
+* description
+* keywords
+* copyright
+* title
+* favicon
 
 Various shortcuts. The following example uses them all:
 
+<pre><code>
 *html(description: document description
       keywords: zml zss markup erlang
       copyright: Joseph Wecker
       title: page title
       favicon: /img/favicon.ico)
   test
+</code></pre>
 
+<pre><code>
 <?xml version="1.0"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml"
@@ -305,5 +391,6 @@ Various shortcuts. The following example uses them all:
   </head>
   <body>test</body>
 </html>
+</code></pre>
 
 TODO: shouldn't we delete all these attributes from the html tag?
