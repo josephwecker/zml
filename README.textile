@@ -401,4 +401,3 @@ Various shortcuts. The following example uses them all:
 </html>
 </code></pre>
 
-TODO: shouldn't we delete all these attributes from the html tag?
