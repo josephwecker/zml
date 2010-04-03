@@ -123,7 +123,7 @@ new_metas({Name, Type, Def}, Acc, Attr) ->
 
 metatag(encoding, IsXml, [Val]) ->
   build_meta("http-equiv", "Content-Type",
-             ["text/html;", "charset=" ++ Val], IsXml);
+             ["text/html;", "charset=" ++ to_upper(Val)], IsXml);
 
 metatag(language, IsXml, Vals) ->
   build_meta("http-equiv", "Content-Language", Vals, IsXml);
