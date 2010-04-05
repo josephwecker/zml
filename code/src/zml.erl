@@ -30,7 +30,7 @@
   ]).
 
 -define(OPT_ENV(Desc),
-  {proplists:get_value(Desc), os:getenv(string:to_upper(atom_to_list(Desc)))}).
+  {proplists:get_value(Desc, Options), os:getenv(string:to_upper(atom_to_list(Desc)))}).
 
 compile_file(InFile) ->
   compile_file(InFile, []).
