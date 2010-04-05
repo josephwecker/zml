@@ -25,7 +25,8 @@
     pop_attr/3,
     replace_tag/3,
     update_tag/5,
-    get_search_paths/1
+    get_search_paths/1,
+    str/1
   ]).
 
 -define(OPT_ENV(Desc),
@@ -307,4 +308,3 @@ get_search_paths(Options) ->
     none -> [];
     Vs -> Vs
   end.
-

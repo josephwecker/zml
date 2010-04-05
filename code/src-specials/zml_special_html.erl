@@ -36,7 +36,7 @@ process_doctype(_ID, Attr, _Children, AST, _Options) ->
   case is_list(FirstLine) of
     true ->
       case (string:sub_word(FirstLine,1) == "<!DOCTYPE") of
-        true -> erlang:error("Please do not declare a DOCTYPE- use a " ++ 
+        true -> erlang:error("Please do not declare a DOCTYPE- use a " ++
             "'type' attribute on the *html tag instead.");
         false -> ok
       end;
@@ -103,7 +103,8 @@ process_metas(ID, Attr, Children, AST, _Options) ->
       {keywords,    Tp, none},
       {copyright,   Tp, none},
       {nosmarttag,  Tp, true},
-      {title,       Tp, none}]),
+      {title,       Tp, none},
+      {favicon,     Tp, none}]),
   {_,_,HAttr,HChildren} = zml:get_tag(Children, ["head"]),
   zml:update_tag(AST, [{"html",ID}, "head"], normal, HAttr, HChildren ++ Metas).
 
@@ -118,7 +119,6 @@ process_zss_and_images(ID, Attr, Children, AST, Options) ->
   %   - Render css inline and attach to AST
   zs_html_zss_images:process(ID, Attr, Children, AST, Options).
 
-
 process_cleanup(ID, Attr, Children, AST, _Options) ->
   CleanAttrs = lists:foldl(fun proplists:delete/2, Attr, ?SPECIAL_ATTRIBUTES),
   zml:update_tag(AST, {"html",ID}, special, CleanAttrs, Children).
@@ -128,38 +128,43 @@ new_metas({Name, Type, Def}, Acc, Attr) ->
   case zml:get_attr_vals(Name, Attr, Def) of
     ["none"] -> Acc;
     Vals ->
-      [metatag(Name, Type, Vals) | Acc]
+      metatag(Name, Type, Vals) ++ Acc
   end.
 
-metatag(encoding, $x, [Val]) ->
-  % Skipping application/xhtml+xml for now
-  %"<meta http-equiv=\"content-type\" content=\"application/xhtml+xml; " ++
-  "<meta http-equiv=\"content-type\" content=\"text/html; " ++
-  "charset="++to_upper(Val)++"\" />";
-metatag(encoding, _, [Val]) ->
-  "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" ++
-  to_lower(Val)++"\">";
-metatag(language, $x, [Val]) ->
-  "<meta http-equiv=\"content-language\" content=\""++to_lower(Val)++"\" />";
-metatag(language, _, [Val]) ->
-  "<meta http-equiv=\"Content-Language\" content=\""++to_lower(Val)++"\">";
-metatag(description, $x, Vals) ->
-  "<meta name=\"description\" content=\""++join(Vals," ")++"\" />";
-metatag(description, _, Vals) ->
-  "<meta name=\"description\" content=\""++join(Vals," ")++"\">";
-metatag(keywords, $x, Vals) ->
-  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\" />";
-metatag(keywords, _, Vals) ->
-  "<meta name=\"keywords\" content=\""++join(Vals, " ")++"\">";
-metatag(copyright, $x, Vals) ->
-  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\" />";
-metatag(copyright, _, Vals) ->
-  "<meta name=\"copyright\" content=\"Copyright (c) "++join(Vals," ")++"\">";
-metatag(nosmarttag, $x, _) ->
-  "<meta name=\"MSSmartTagsPreventParsing\" content=\"true\" />";
-metatag(nosmarttag, _, _) ->
-  "<meta name=\"MSSmartTagsPreventParsing\" content=\"TRUE\">";
-metatag(title, _, Vals) ->
-  zml:new_tag(title, [], Vals).
+metatag(encoding, IsXml, [Val]) ->
+  build_meta("http-equiv", "Content-Type",
+             ["text/html;", "charset=" ++ to_upper(Val)], IsXml);
 
+metatag(language, IsXml, Vals) ->
+  build_meta("http-equiv", "Content-Language", Vals, IsXml);
+
+metatag(copyright, IsXml, Vals) ->
+  build_meta(name, copyright, ["Copyright (c)" | Vals], IsXml, false);
+
+metatag(nosmarttag, IsXml, _) ->
+  build_meta(name, "MSSmartTagsPreventParsing", ["TRUE"], IsXml);
+
+metatag(title, _, Vals) -> [zml:new_tag(title, [], Vals)];
+
+metatag(favicon, _, Vals) ->
+  [zml:new_tag(link, [{"rel", ["icon"]}, {"href", Vals}], []),
+   zml:new_tag(link, [{"rel", ["shortcut icon"]}, {"href", Vals}], [])];
+
+metatag(Name, IsXml, Vals) -> build_meta(name, Name, Vals, IsXml).
+
+build_meta(Key, Name, Vals, IsXml) ->
+  build_meta(Key, Name, Vals, IsXml, IsXml).
+
+build_meta(Key, Name, Vals, IsXml, LowerVals) ->
+  {NewName, End} = case {Name, IsXml} of
+    {"MSSmartTagsPreventParsing", $x} -> {Name, "/>"};
+    {_, $x} -> {to_lower(zml:str(Name)), "/>"};
+    {_, _ } -> {zml:str(Name), ">" }
+  end,
+  NewVals = case LowerVals of
+    $x -> to_lower(join(Vals, " "));
+    _  -> join(Vals, " ")
+  end,
+  ["<meta " ++ zml:str(Key) ++ "=\"" ++ NewName ++
+    "\" content=\"" ++ NewVals ++ "\"" ++ End].
 
