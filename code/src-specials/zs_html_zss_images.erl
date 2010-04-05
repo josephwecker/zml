@@ -13,6 +13,7 @@
 
 process(_ID, Attr, _Children, AST, Options) ->
   DeclaredZSS = get_declared_zss(Attr, Options),
+  % DEBUG io:format("~n~p~n~n", [DeclaredZSS]),
   Processed = lists:map(fun(Styles) ->
         process_styles(Styles, AST, Options)
     end, DeclaredZSS),
@@ -27,24 +28,25 @@ get_declared_zss(Attr, Options) ->
     end, ?STYLESHEET_TAGS),
   % Look for a magic one as well
   Declared2 =
-    case proplists:get_value(source_filename, Options, none) of
-      none -> Declared;
+    case proplists:get_value(source_filename, Options) of
+      undefined -> Declared;
       SFN ->
         case find_magic_file(SFN, Options) of
           none -> Declared;
           MagicFile -> zml:append_attr(Declared, {"style", MagicFile})
         end
     end,
-  case zml:get_attr_vals(stylelib, Attr) of
+  % And full libraries
+  case zml:get_attr_vals(stylelib, Attr) ++ zml:get_attr_vals(stylelibs, Attr) of
     [] -> Declared2;
     Libs ->
       append_lib_styles(Options, Declared2, Libs)
   end.
 
-append_lib_styles(Opts, Dec, []) ->
+append_lib_styles(_Opts, Dec, []) ->
   Dec;
 append_lib_styles(Opts, Dec, [Lib | T]) ->
-  Dir = find_lib_dir(Lib, Opts),
+  {ok, Dir} = find_lib_dir(Lib, Opts),
   Dec2 = lists:foldl(fun({Type,_Tags}, Acc) ->
       FName = filename:join([Dir, Type ++ ".zss"]),
       case filelib:is_file(FName) of
@@ -54,11 +56,22 @@ append_lib_styles(Opts, Dec, [Lib | T]) ->
           Acc
       end
     end, Dec, ?STYLESHEET_TAGS),
-  append_lib_styles(Dec2, T).
+  append_lib_styles(Opts, Dec2, T).
 
 find_lib_dir(Wanted, Opts) ->
-  % TODO: look in each zml_zss_lib value as directory for Wanted directory-
-  % return first one found
+  case proplists:get_value(zml_zss_libs, Opts) of
+    undefined -> {error, "zml_zss_libs undefined"};
+    RawLibs ->
+      Libs = string:tokens(RawLibs, ";,"),
+      case lists:dropwhile(fun(E) -> dir_missing_wanted(E,Wanted) end, Libs) of
+        [] -> {error, "ZSS library not found"};
+        [Found | _] -> {ok, filename:join([Found, Wanted])}
+      end
+  end.
+
+dir_missing_wanted(TryBaseDir, Lookfor) ->
+  TryDir = filename:join([TryBaseDir, Lookfor]),
+  not filelib:is_dir(TryDir).
 
 % Give back: {Type, InlineCSS}
 process_styles({Type, Sheets}, AST, Options) ->
