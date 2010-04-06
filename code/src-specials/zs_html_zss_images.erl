@@ -13,7 +13,8 @@
 
 process(_ID, Attr, _Children, AST, Options) ->
   DeclaredZSS = get_declared_zss(Attr, Options),
-  % DEBUG io:format("~n~p~n~n", [DeclaredZSS]),
+  % DEBUG
+  io:format("~n~p~n~n", [DeclaredZSS]),
   Processed = lists:map(fun(Styles) ->
         process_styles(Styles, AST, Options)
     end, DeclaredZSS),
@@ -21,10 +22,12 @@ process(_ID, Attr, _Children, AST, Options) ->
 
 get_declared_zss(Attr, Options) ->
   % Explicitly declared
+  Search = zml:get_search_paths(Options),
   Declared = lists:map(fun({Type, _Tags}) ->
-        {Type, find_styles(
-          zml:get_attr_vals(Type, Attr) ++
-          zml:get_attr_vals(Type ++ "s", Attr))}
+        Given = zml:get_attr_vals(Type, Attr) ++
+                zml:get_attr_vals(Type ++ "s", Attr),
+        Found = [find_file(F, ".zss", Search) || F <- Given],
+        {Type, [Abs || {ok, Abs} <- Found]}
     end, ?STYLESHEET_TAGS),
   % Look for a magic one as well
   Declared2 =
@@ -42,13 +45,6 @@ get_declared_zss(Attr, Options) ->
     Libs ->
       append_lib_styles(Options, Declared2, Libs)
   end.
-
-find_styles([]) -> [];
-find_styles(L) ->
-  find_styles(L, []).
-find_styles([], Acc) ->
-  lists:reverse(Acc);
-find_styles([S | T], Acc) ->
 
 append_lib_styles(_Opts, Dec, []) ->
   Dec;
@@ -86,12 +82,8 @@ process_styles({Type, Sheets}, AST, Options) ->
 
 find_magic_file(SourceName, Options) ->
   BaseName = filename:rootname(filename:basename(SourceName)),
-  MagicZSSName = BaseName ++ ".zss",
-  SearchPaths = zml:get_search_paths(Options),
-  case file:path_open(SearchPaths, MagicZSSName, [read]) of
-    {ok, IOD, FullName} ->
-      file:close(IOD),
-      [FullName];
+  case find_file(BaseName, ".zss", zml:get_search_paths(Options)) of
+    {ok, FullName} -> [FullName];
     _ -> none
   end.
 
