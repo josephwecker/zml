@@ -21,7 +21,7 @@ run_handler(ID, _Attr, _Children, AST, Options) ->
     fun process_head_and_body/5,
     fun process_xhtml/5,
     fun process_metas/5,
-%    fun process_javascript/5,
+    fun process_javascript/5,
     fun process_zss_and_images/5,
     fun process_cleanup/5
   ],
@@ -108,15 +108,10 @@ process_metas(ID, Attr, _Children, AST, _Options) ->
   zml:append_children(AST, [{"html",ID},"head"], Metas).
 
 process_zss_and_images(ID, Attr, Children, AST, Options) ->
-  % TODO:
-  %   - Use source_filename's path + search_path + erlang search path for
-  %     finding externals (build into zml?)
-  %   - Figure out list of zss files
-  %   - Pull in zss ASTs
-  %   - Cull AST based on ZML AST
-  %   - (Future) build list of images from culled zss and do image processing
-  %   - Render css inline and attach to AST
   zs_html_zss_images:process(ID, Attr, Children, AST, Options).
+
+process_javascript(ID, Attr, Children, AST, Options) ->
+  zs_html_javascript:process(ID, Attr, Children, AST, Options).
 
 process_cleanup(ID, Attr, Children, AST, _Options) ->
   CleanAttrs = lists:foldl(fun proplists:delete/2, Attr, ?SPECIAL_ATTRIBUTES),
