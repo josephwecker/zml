@@ -25,6 +25,7 @@
     pop_attr/3,
     replace_tag/3,
     update_tag/5,
+    append_children/3,
     get_search_paths/1,
     str/1
   ]).
@@ -229,6 +230,10 @@ update_tag(AST, [F | _] = Search, Type, NewAttr, NewChildren) when
   replace_tag(AST, Search, new_tag(lists:last(Search), Type, NewAttr, NewChildren));
 update_tag(AST, Name, Type, NewAttr, NewChildren) ->
   replace_tag(AST, [Name], new_tag(Name, Type, NewAttr, NewChildren)).
+
+append_children(AST, Search, NewChildren) ->
+  {_,Type,Attr,Children} = get_tag(AST, Search),
+  update_tag(AST, Search, Type, Attr, Children ++ NewChildren).
 
 %% Similar to replace_tag, only is stops when it finds it and returns it
 %% instead of returning a rebuilt full AST.
