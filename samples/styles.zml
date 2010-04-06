@@ -1,0 +1,6 @@
+*html(stylelib: btz style: same-dir in-style-dir)
+    #test Here we do a test
+        #inside and we are inside of it
+        #more and we are too
+    :a(href: #) Some crazy link
+    .fancy Oh lovely
