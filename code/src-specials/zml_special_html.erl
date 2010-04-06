@@ -92,7 +92,7 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
       %[?ENC_TOP_X(Encoding) | AST]
   end.
 
-process_metas(ID, Attr, Children, AST, _Options) ->
+process_metas(ID, Attr, _Children, AST, _Options) ->
   [[Tp | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
 
   Metas = lists:foldr(fun(Input,Acc) -> new_metas(Input, Acc, Attr) end, [],
@@ -105,8 +105,7 @@ process_metas(ID, Attr, Children, AST, _Options) ->
       {nosmarttag,  Tp, true},
       {title,       Tp, none},
       {favicon,     Tp, none}]),
-  {_,_,HAttr,HChildren} = zml:get_tag(Children, ["head"]),
-  zml:update_tag(AST, [{"html",ID}, "head"], normal, HAttr, HChildren ++ Metas).
+  zml:append_children(AST, [{"html",ID},"head"], Metas).
 
 process_zss_and_images(ID, Attr, Children, AST, Options) ->
   % TODO:
