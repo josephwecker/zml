@@ -1,24 +1,21 @@
 %% TODO:
-%%   - Figure out list of zss files
-%%   - Pull in zss ASTs
-%%   - Cull AST based on ZML AST
 %%   - (Future) build list of images from culled zss and do image processing
-%%   - Render css inline and attach to AST
  
 -module(zs_html_zss_images).
 
 -export([process/5]).
 -include("zml_special_html.hrl").
 
-
-process(_ID, Attr, _Children, AST, Options) ->
+process(ID, Attr, _Children, AST, Options) ->
   DeclaredZSS = get_declared_zss(Attr, Options),
-  % DEBUG
-  Processed = lists:map(fun(Styles) ->
-        process_styles(Styles, AST, Options)
-    end, DeclaredZSS),
-  io:format("~n~p~n~n", [Processed]),
-  AST.
+  Processed = lists:filter(
+    fun is_tuple/1,
+    [process_styles(Styles, AST, Options) || Styles <- DeclaredZSS]),
+  Rendered = "\n" ++ lists:flatten(lists:map(fun({T, CSS}) ->
+          {Prepend, Append} = proplists:get_value(T, ?STYLESHEET_TAGS),
+          [Prepend, CSS, Append, "\n"]
+      end, Processed)),
+  zml:append_children(AST, [{"html",ID},"head"], [Rendered]).
 
 get_declared_zss(Attr, Options) ->
   % Explicitly declared
