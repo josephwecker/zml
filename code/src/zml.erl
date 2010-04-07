@@ -12,7 +12,7 @@
 
 % Utilities for special handlers:
 -export([
-    find_magic_file/3,
+    find_magic_file/2,
     find_file/3,
     tmp_filename/0,
     tmp_filename/1,
@@ -338,10 +338,13 @@ find_file(Base, Extension, SearchPaths) ->
       end
   end.
 
-find_magic_file(SourceName, FindExt, Options) ->
-  BaseName = filename:rootname(filename:basename(SourceName)),
-  case find_file(BaseName, FindExt, get_search_paths(Options)) of
-    {ok, FullName} -> FullName;
-    _ -> none
+find_magic_file(FindExt, Options) ->
+  case proplists:get_value(source_filename, Options) of
+    undefined -> none;
+    SFN ->
+      BaseName = filename:rootname(filename:basename(SFN)),
+      case find_file(BaseName, FindExt, get_search_paths(Options)) of
+        {ok, FullName} -> FullName;
+        _ -> none
+      end
   end.
-

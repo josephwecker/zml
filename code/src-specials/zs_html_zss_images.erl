@@ -28,13 +28,9 @@ get_declared_zss(Attr, Options) ->
     end, ?STYLESHEET_TAGS),
   % Look for a magic one as well
   Declared2 =
-    case proplists:get_value(source_filename, Options) of
-      undefined -> Declared;
-      SFN ->
-        case zml:find_magic_file(SFN, ".zss", Options) of
-          none -> Declared;
-          MagicFile -> zml:append_attr(Declared, {"style", [MagicFile]})
-        end
+    case zml:find_magic_file(".zss", Options) of
+      none -> Declared;
+      MagicFile -> zml:append_attr(Declared, {"style", [MagicFile]})
     end,
   % And full libraries
   case zml:get_attr_vals(stylelib, Attr) ++ zml:get_attr_vals(stylelibs, Attr) of
