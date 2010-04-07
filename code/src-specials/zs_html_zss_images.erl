@@ -23,7 +23,7 @@ get_declared_zss(Attr, Options) ->
   Declared = lists:map(fun({Type, _Tags}) ->
         Given = zml:get_attr_vals(Type, Attr) ++
                 zml:get_attr_vals(Type ++ "s", Attr),
-        Found = [find_file(F, ".zss", Search) || F <- Given],
+        Found = [zml:find_file(F, ".zss", Search) || F <- Given],
         {Type, [Abs || {ok, Abs} <- Found]}
     end, ?STYLESHEET_TAGS),
   % Look for a magic one as well
@@ -31,7 +31,7 @@ get_declared_zss(Attr, Options) ->
     case proplists:get_value(source_filename, Options) of
       undefined -> Declared;
       SFN ->
-        case find_magic_file(SFN, Options) of
+        case zml:find_magic_file(SFN, ".zss", Options) of
           none -> Declared;
           MagicFile -> zml:append_attr(Declared, {"style", [MagicFile]})
         end
@@ -80,13 +80,6 @@ process_styles({Type, Sheets}, AST, _Options) ->
       empty;
     ZSSTrees ->
       {Type, zss:output_css(zss_parser:combine_dups(lists:flatten(ZSSTrees)))}
-  end.
-
-find_magic_file(SourceName, Options) ->
-  BaseName = filename:rootname(filename:basename(SourceName)),
-  case find_file(BaseName, ".zss", zml:get_search_paths(Options)) of
-    {ok, FullName} -> FullName;
-    _ -> none
   end.
 
 remove_unused_css([], _AST, Acc) ->

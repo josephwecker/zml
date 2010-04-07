@@ -12,6 +12,7 @@
 
 % Utilities for special handlers:
 -export([
+    find_magic_file/3,
     find_file/3,
     tmp_filename/0,
     tmp_filename/1,
@@ -336,3 +337,11 @@ find_file(Base, Extension, SearchPaths) ->
         _ -> {error, "Could not find "++FName++" in any of the search paths."}
       end
   end.
+
+find_magic_file(SourceName, FindExt, Options) ->
+  BaseName = filename:rootname(filename:basename(SourceName)),
+  case find_file(BaseName, FindExt, get_search_paths(Options)) of
+    {ok, FullName} -> FullName;
+    _ -> none
+  end.
+
