@@ -89,33 +89,6 @@ find_magic_file(SourceName, Options) ->
     _ -> none
   end.
 
-% Uses optional magical file-extension fill and search paths to try and find an
-% actual file.
-find_file(Base, Extension, SearchPaths) ->
-  FName = case {filename:extension(Base), Extension} of
-      {_, []} -> Base;
-      {[], [$. | _]} -> Base ++ Extension;
-      {[], Extension} -> Base ++ "." ++ Extension;
-      {Extension, Extension} -> Base;
-      {[$. | Extension], Extension} -> Base;
-      {_, [$. | _]} -> Base ++ Extension;
-      _ -> Base ++ "." ++ Extension
-    end,
-  case filename:pathtype(FName) of
-    absolute ->
-      case filelib:is_file(FName) of
-        true -> {ok, FName};
-        false -> {error, "Could not find "++FName}
-      end;
-    relative ->
-      case file:path_open(SearchPaths, FName, [read]) of
-        {ok, IOD, FullName} ->
-          file:close(IOD),
-          {ok, FullName};
-        _ -> {error, "Could not find "++FName++" in any of the search paths."}
-      end
-  end.
-
 remove_unused_css([], _AST, Acc) ->
   lists:reverse(Acc);
 remove_unused_css([{Selectors, Atts} | T], AST, Acc) ->

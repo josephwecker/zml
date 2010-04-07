@@ -12,7 +12,7 @@
 
 % Utilities for special handlers:
 -export([
-    search_for_file/2,
+    find_file/3,
     tmp_filename/0,
     tmp_filename/1,
     pull_in_file/2,
@@ -154,10 +154,6 @@ out_attr({Name, Values}, Acc) ->
 
 
 %% -------------------- Utilities for special handlers -----------------------
-
-search_for_file(File, Path) ->
-  Res = os:cmd("find '" ++ Path ++ "' -name '" ++ File ++ "'"),
-  string:tokens(Res, "\n").
 
 tmp_filename() ->
   tmp_filename(".tmp_").
@@ -312,4 +308,31 @@ get_search_paths(Options) ->
   case proplists:get_value(path, Options, none) of
     none -> [];
     Vs -> Vs
+  end.
+
+% Uses optional magical file-extension fill and search paths to try and find an
+% actual file.
+find_file(Base, Extension, SearchPaths) ->
+  FName = case {filename:extension(Base), Extension} of
+      {_, []} -> Base;
+      {[], [$. | _]} -> Base ++ Extension;
+      {[], Extension} -> Base ++ "." ++ Extension;
+      {Extension, Extension} -> Base;
+      {[$. | Extension], Extension} -> Base;
+      {_, [$. | _]} -> Base ++ Extension;
+      _ -> Base ++ "." ++ Extension
+    end,
+  case filename:pathtype(FName) of
+    absolute ->
+      case filelib:is_file(FName) of
+        true -> {ok, FName};
+        false -> {error, "Could not find "++FName}
+      end;
+    relative ->
+      case file:path_open(SearchPaths, FName, [read]) of
+        {ok, IOD, FullName} ->
+          file:close(IOD),
+          {ok, FullName};
+        _ -> {error, "Could not find "++FName++" in any of the search paths."}
+      end
   end.
