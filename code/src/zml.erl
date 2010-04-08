@@ -115,6 +115,8 @@ run_specialized_handlers_inner([_H|T], Options, FullAST) ->
 
 translate_ast_item([], Acc) ->
   lists:reverse(Acc);
+translate_ast_item([newline | T], Acc) ->
+  translate_ast_item(T, ["\n" | Acc]);
 translate_ast_item([[$< | _] = String | [Next | _] = T], Acc)
 when is_list(Next) ->
   translate_ast_item(T, [String | Acc]);

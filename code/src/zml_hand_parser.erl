@@ -29,7 +29,7 @@ parse([{start_tag, _, Type} |
 parse([{string, _, Text} | T], CurrLvl, Options) ->
   parse(T, [Text | CurrLvl], Options);
 parse([{newline, _} | T], CurrLvl, Options) ->
-  parse(T, CurrLvl, Options).
+  parse(T, [newline | CurrLvl], Options).
 
 
 pull_attributes([{start_attrs,_} | T]) ->
@@ -72,7 +72,7 @@ pull_line_children(Toks) ->
 pull_line_children([],Acc) ->
   {[], lists:reverse(Acc)};
 pull_line_children([{newline,_}|T],Acc) ->
-  {T, lists:reverse(Acc)};
+  {T, lists:reverse([newline | Acc])};
 pull_line_children([{end_of_file,_}|T],Acc) ->
   {T, lists:reverse(Acc)};
 pull_line_children([{inline_delim,_}|T],Acc) ->
