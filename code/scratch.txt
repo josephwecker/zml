@@ -1,4 +1,4 @@
-[inline, processed_dir, external]
+[inline, local, external]
 
 {js_magic_file,         [_inline_, local, external]}
 {js_externals,          [inline, local, _external_]}
@@ -8,15 +8,15 @@
 {js_parallel_load,      true}
 {js_load_at_bottom,     true}
 
-{js_processed_out_dir,  "./scripts"}
-% Following require an output_directory and only work on "processed_dir"
+{js_script_dir,         "./scripts"}
+% Following require a script_dir and only work on "local"
 {js_condense,           false}
 {js_minify,             false}
 {js_optimize,           false}
 
 -------------
-* gather inlines vs. processed_dir vs. externals
-* processed_dir stuff processed
-* inlines, processed_dir output file(s), and externals combined according to
+* gather inlines vs. local vs. externals
+* local stuff processed and stored
+* inlines, local output file(s), and externals combined according to
   js_parallel_load and js_load_at_bottom
 
