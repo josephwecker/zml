@@ -26,14 +26,36 @@
 
 -define(XMLNS, "http://www.w3.org/1999/xhtml").
 
--define(JS_LOADER(LibSrc, Inner), [
-    "//<![CDATA[\n",
-    "var _zmlll=0,_zmljs=document.createElement('script');_zmljs.src='",
-    LibSrc,"';",
+% TODO: remove once the new one is proven to work
+%-define(JS_LOADER(LibSrc, Inner), [
+%    "var _zmlll=0,_zmljs=document.createElement('script');_zmljs.src='",
+%    LibSrc,"';",
+%    "var head=document.getElementsByTagName('head')[0];",
+%    "head.appendChild(_zmljs);_zmlw();function _zmlw(){",
+%    "_zmlll?_zmlc():setTimeout('_zmlw()',150)}function _zmlc(){",
+%    Inner,"};"]).
+
+-define(JS_LOAD_IWAIT(Exts, Inner), [
+    "var _zmlwv=0;",
+    ?JS_LOAD_NO_I(Exts),
+    "_zmlw();",
+    "function _zmlw(){",
+    "_zmlwv?_zmlc():setTimeout('_zmlw()',150)}",
+    "function _zmlc(){", Inner, "};"]).
+
+-define(JS_LOAD_NO_I(Exts), [
+    "var _zmljs=null;",
     "var head=document.getElementsByTagName('head')[0];",
-    "head.appendChild(_zmljs);_zmlw();function _zmlw(){",
-    "_zmlll?_zmlc():setTimeout('_zmlw()',150)}function _zmlc(){",
-    Inner,"};\n", "//]]>\n"]).
+    [?JS_CREATE(Src) || Src <- Exts]]).
+
+-define(JS_CREATE(Src), [
+    "_zmljs=document.createElement('script');",
+    "_zmljs.src='",Src,"';",
+    "head.appendChild(_zmljs);"]).
+
+-define(JS_START, "//<![CDATA[\n").
+-define(JS_END, "\n//]]>\n").
+
 
 -define(ENC_TOP_X(Enc),
   "<?xml version=\"1.0\" encoding=\"" ++ string:to_upper(Enc) ++ "\"?>\n").
