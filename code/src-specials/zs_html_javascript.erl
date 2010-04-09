@@ -35,17 +35,44 @@
 
 -export([process/5]).
 
+-define(JS_DEF(M,E,L),
+  [{js_magic_file, inline, M},
+   {js_externals, external, E},
+   {js_libs, inline, L}]).
+
 process(_ID, Attr, _Children, AST, Options) ->
   MagicJS = zml:find_magic_file(".js", Options),
   ExternalJS = zml:get_attr_vals(script, Attr) ++
     zml:get_attr_vals(scripts, Attr),
   LibJS = zml:get_attr_vals(scriptlib, Attr) ++
-    zml:gett_attr_vals(scriptlibs, Attr) ++
+    zml:get_attr_vals(scriptlibs, Attr) ++
     autojquery(MagicJS),
-  
-  Inline = get_all_inline(MagicJS, ExternalJS, LibJS, Options),
-  Local = process_locals(MagicJS, ExternalJS, LibJS, Options),
-  External = get_externals(MagicJS, ExternalJS, LibJS, Options),
+
+  InputDef = ?JS_DEF(MagicJS, ExternalJS, LibJS),
+
+  Input = [{K, proplists:get_value(K,Options,DV),In} || {K,DV,In} <- InputDef],
 
   
+  
+  Inlines =   [get_inline(K, In) || {K,V,In} <- Instr, V =:= inline, In =!= []],
+  Locals =    [get_local(K, In) || {K,V,In} <- Instr, V =:= local, In =!= []],
+  Externals = [get_external(K, In) || {K,V,In} <- Instr,V=:=external, In=!=[]],
+  
   AST.
+
+
+% Needs to give the actual javascript
+get_inline(js_magic_file, FN) ->
+  nyi;
+get_inline(js_externals, ExtNames) ->
+  nyi;
+get_inline(js_libs, Libs) ->
+  nyi.
+
+% Needs to get actual file-names of tmp copies
+get_local...
+
+% Needs to give the location of the externals
+get_external...
+
+
