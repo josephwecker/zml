@@ -51,7 +51,7 @@ append_lib_styles(Opts, Dec, [Lib | T]) ->
       FName = filename:join([Dir, Type ++ ".zss"]),
       case filelib:is_file(FName) of
         true ->
-          zml:append_attr(Acc, {Type, [FName]});
+          zml:prepend_attr(Acc, {Type, [FName]});
         false ->
           Acc
       end
@@ -79,7 +79,7 @@ process_styles({Type, Sheets}, AST, _Options) ->
     [] ->
       empty;
     ZSSTrees ->
-      {Type, zss:output_css(zss_parser:combine_dups(lists:flatten(ZSSTrees)))}
+      {Type, zss:output_css(lists:flatten(ZSSTrees))}
   end.
 
 find_magic_file(SourceName, Options) ->
@@ -117,7 +117,7 @@ find_file(Base, Extension, SearchPaths) ->
   end.
 
 remove_unused_css([], _AST, Acc) ->
-  lists:reverse(Acc);
+  zss_parser:combine_dups(lists:reverse(Acc));
 remove_unused_css([{Selectors, Atts} | T], AST, Acc) ->
   ActiveSelectors = lists:reverse(lists:foldl(
     fun(A,InAcc) ->

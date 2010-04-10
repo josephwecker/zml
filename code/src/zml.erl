@@ -20,6 +20,7 @@
     new_tag/4,
     get_tag/2,
     append_attr/2,
+    prepend_attr/2,
     get_attr_vals/2,
     get_attr_vals/3,
     pop_attr/3,
@@ -257,13 +258,18 @@ get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
       end
   end.
 
-append_attr([{K1,V1} | Attributes], {K2,V2}) when K1 =:= K2 ->
+append_attr([{K1,V1} | Attributes], {K1,V2}) ->
   [{K1, V1 ++ V2} | Attributes];
-
 append_attr([KV1 | Attributes], KV2) ->
   [KV1 | append_attr(Attributes, KV2)];
-
 append_attr([], KV2) ->
+  [KV2].
+
+prepend_attr([{K1,V1} | Attributes], {K1,V2}) ->
+  [{K1, V2 ++ V1} | Attributes];
+prepend_attr([KV1 | Attributes], KV2) ->
+  [KV1 | prepend_attr(Attributes, KV2)];
+prepend_attr([], KV2) ->
   [KV2].
 
 get_attr_vals(Find, Attr) ->

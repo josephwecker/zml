@@ -52,9 +52,7 @@
   ?STYLESHEET_TYPES ++ [SPATTA++"s" || SPATTA <- ?STYLESHEET_TYPES]).
 
 -define(STYLESHEET_TAGS,
-  [{"style",
-      {"<style type=\"text/css\">",
-        "</style>"}},
+  [
     {"screen-style",
       {"<style type=\"text/css\" media=\"screen, projection\">",
         "</style>"}},
@@ -69,5 +67,8 @@
         "</style><![endif]-->"}},
     {"ie-print-style",
       {"<!--[if IE]><style type=\"text/css\" media=\"print\">",
-        "</style><![endif]-->"}}]).
+        "</style><![endif]-->"}},
+    {"style",
+      {"<style type=\"text/css\">",
+        "</style>"}}]).
 
