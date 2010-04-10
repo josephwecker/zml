@@ -43,21 +43,19 @@
 
 process(ID, Attr, _Children, AST, Options) ->
   MagicJS = zml:find_magic_file(".js", Options),
-  ExternalJS = zml:get_attr_vals(script, Attr) ++
+  Externals = zml:get_attr_vals(script, Attr) ++
     zml:get_attr_vals(scripts, Attr),
   LibJS = zml:get_attr_vals(scriptlib, Attr) ++
     zml:get_attr_vals(scriptlibs, Attr) ++
     autojquery(MagicJS),
 
-  InputDef = ?JS_DEF(MagicJS, ExternalJS, LibJS),
+  InputDef = ?JS_DEF(MagicJS, Externals, LibJS),
   Input = [{K, proplists:get_value(K,Options,DV),In} || {K,DV,In} <- InputDef],
   Search = zml:get_search_paths(Options),
   
   Inlines =   [get_inline(K, In, Search) || {K,V,In} <- Input, V =:= inline, In=/= []],
 %  Locals =    [get_local(K, In) || {K,V,In} <- Instr, V =:= local, In =!= []],
   Locals = [],
-%  Externals = [get_external(K, In) || {K,V,In} <- Instr,V=:=external, In=!=[]],
-  Externals = [],
 
   ScriptSection =
     create_script_part(Inlines, Locals ++ Externals,
@@ -69,7 +67,7 @@ process(ID, Attr, _Children, AST, Options) ->
     end,
   case ScriptSection of
     none -> AST;
-    _ -> zml:append_children(AST, [{"html",ID}, AddTo], ScriptSection)
+    _ -> zml:append_children(AST, [{"html",ID}, AddTo], [ScriptSection])
   end.
 
 autojquery(_JSFile) ->
@@ -97,18 +95,24 @@ create_script_part([], [], _) ->
   none;
 create_script_part(Inline, [], _) ->
   % No need for special loading code
-  [zml:new_tag(script,
-    [{"type", ["text/javascript"]}],
-    [?JS_START, Inline, ?JS_END])];
-
+  script_tag(Inline);
 create_script_part([], External, false) ->
   % No need for inline or parallel- standard ol' script tags
-  [generic_script_tag(Src) || Src <- External];
-create_script_part([], _External, true) ->
+  [ext_script_tag(Src) || Src <- External];
+create_script_part([], External, true) ->
   % No need for delaying and loading inline, but load in parallel
-  % TODO: You are here!
+  script_tag(?JS_LOAD_NO_I(External));
+create_script_part(Inline, External, false) ->
+  % standard script tags plus inline
+  [ext_script_tag(Src) || Src <- External] ++
+  [script_tag(Inline)];
+create_script_part(Inline, External, true) ->
+  % Finally, the holy grail. Parallel loads w/ inline waiting
+  script_tag(?JS_LOAD_IWAIT(External, Inline)).
 
-  [].
-
-generic_script_tag(Src) ->
+ext_script_tag(Src) ->
   zml:new_tag(script, [{"type", ["text/javascript"]}, {"src", [Src]}], [""]).
+script_tag(Children) ->
+  zml:new_tag(script, [{"type", ["text/javascript"]}],
+    %[lists:flatten([?JS_START, Children, ?JS_END])]).
+    [?JS_START, Children, ?JS_END]).
