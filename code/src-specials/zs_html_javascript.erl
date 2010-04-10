@@ -53,7 +53,7 @@ process(ID, Attr, _Children, AST, Options) ->
   Input = [{K, proplists:get_value(K,Options,DV),In} || {K,DV,In} <- InputDef],
   Search = zml:get_search_paths(Options),
   
-  Inlines =   [get_inline(K, In, Search) || {K,V,In} <- Instr, V =:= inline, In=/= []],
+  Inlines =   [get_inline(K, In, Search) || {K,V,In} <- Input, V =:= inline, In=/= []],
 %  Locals =    [get_local(K, In) || {K,V,In} <- Instr, V =:= local, In =!= []],
   Locals = [],
 %  Externals = [get_external(K, In) || {K,V,In} <- Instr,V=:=external, In=!=[]],
@@ -72,15 +72,18 @@ process(ID, Attr, _Children, AST, Options) ->
     _ -> zml:append_children(AST, [{"html",ID}, AddTo], ScriptSection)
   end.
 
+autojquery(_JSFile) ->
+  [].
+
 % Needs to give the actual javascript
 get_inline(js_magic_file, FN, _) ->
   {ok, Res} = file:read_file(FN),
   Res;
 get_inline(js_externals, ExtNames, Search) ->
   % TODO: warnings on error instead of ignoring
-  SearchRes = [zml:find_file(N) || N <- ExtNames],
-  [file:read_file(FN) || {ok, FN} <- SearchRes].
-get_inline(js_libs, Libs) ->
+  SearchRes = [zml:find_file(N, Search) || N <- ExtNames],
+  [file:read_file(FN) || {ok, FN} <- SearchRes];
+get_inline(js_libs, _Libs, _Search) ->
   % TODO: implement
   [].
 
@@ -100,10 +103,11 @@ create_script_part(Inline, [], _) ->
 
 create_script_part([], External, false) ->
   % No need for inline or parallel- standard ol' script tags
-  [generic_script_tag(Src) || Scr <- External];
-create_script_part([], External, true) ->
+  [generic_script_tag(Src) || Src <- External];
+create_script_part([], _External, true) ->
   % No need for delaying and loading inline, but load in parallel
   % TODO: You are here!
+
   [].
 
 generic_script_tag(Src) ->
