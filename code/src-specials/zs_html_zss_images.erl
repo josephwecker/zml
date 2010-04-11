@@ -23,18 +23,14 @@ get_declared_zss(Attr, Options) ->
   Declared = lists:map(fun({Type, _Tags}) ->
         Given = zml:get_attr_vals(Type, Attr) ++
                 zml:get_attr_vals(Type ++ "s", Attr),
-        Found = [find_file(F, ".zss", Search) || F <- Given],
+        Found = [zml:find_file(F, ".zss", Search) || F <- Given],
         {Type, [Abs || {ok, Abs} <- Found]}
     end, ?STYLESHEET_TAGS),
   % Look for a magic one as well
   Declared2 =
-    case proplists:get_value(source_filename, Options) of
-      undefined -> Declared;
-      SFN ->
-        case find_magic_file(SFN, Options) of
-          none -> Declared;
-          MagicFile -> zml:append_attr(Declared, {"style", [MagicFile]})
-        end
+    case zml:find_magic_file(".zss", Options) of
+      none -> Declared;
+      MagicFile -> zml:append_attr(Declared, {"style", [MagicFile]})
     end,
   % And full libraries
   case zml:get_attr_vals(stylelib, Attr) ++ zml:get_attr_vals(stylelibs, Attr) of
@@ -80,40 +76,6 @@ process_styles({Type, Sheets}, AST, _Options) ->
       empty;
     ZSSTrees ->
       {Type, zss:output_css(lists:flatten(ZSSTrees))}
-  end.
-
-find_magic_file(SourceName, Options) ->
-  BaseName = filename:rootname(filename:basename(SourceName)),
-  case find_file(BaseName, ".zss", zml:get_search_paths(Options)) of
-    {ok, FullName} -> FullName;
-    _ -> none
-  end.
-
-% Uses optional magical file-extension fill and search paths to try and find an
-% actual file.
-find_file(Base, Extension, SearchPaths) ->
-  FName = case {filename:extension(Base), Extension} of
-      {_, []} -> Base;
-      {[], [$. | _]} -> Base ++ Extension;
-      {[], Extension} -> Base ++ "." ++ Extension;
-      {Extension, Extension} -> Base;
-      {[$. | Extension], Extension} -> Base;
-      {_, [$. | _]} -> Base ++ Extension;
-      _ -> Base ++ "." ++ Extension
-    end,
-  case filename:pathtype(FName) of
-    absolute ->
-      case filelib:is_file(FName) of
-        true -> {ok, FName};
-        false -> {error, "Could not find "++FName}
-      end;
-    relative ->
-      case file:path_open(SearchPaths, FName, [read]) of
-        {ok, IOD, FullName} ->
-          file:close(IOD),
-          {ok, FullName};
-        _ -> {error, "Could not find "++FName++" in any of the search paths."}
-      end
   end.
 
 remove_unused_css([], _AST, Acc) ->
