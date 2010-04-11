@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+# Determine actual script location
+SCRIPT_PATH="${BASH_SOURCE[0]}";
+if([ -h "${SCRIPT_PATH}" ]) then
+  while([ -h "${SCRIPT_PATH}" ]) do SCRIPT_PATH=`readlink "${SCRIPT_PATH}"`; done
+fi
+pushd . > /dev/null
+cd `dirname ${SCRIPT_PATH}` > /dev/null
+SCRIPT_PATH=`pwd`;
+popd  > /dev/null
+
+pushd . > /dev/null
+cd "$SCRIPT_PATH/../code/"
+./build -q
+popd > /dev/null
+
+erl -pa "$SCRIPT_PATH/../code/ebin" -noshell -run zml compile_files $@ -run erlang halt
