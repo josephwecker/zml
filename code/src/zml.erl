@@ -4,6 +4,8 @@
 -export([
     compile_file/1,
     compile_file/2,
+    compile_files/0,
+    compile_files/1,
     compile_stream/1,
     compile_stream/2,
     compile_string/1,
@@ -33,6 +35,14 @@
 
 -define(OPT_ENV(Desc),
   {proplists:get_value(Desc, Options), os:getenv(string:to_upper(atom_to_list(Desc)))}).
+
+compile_files() ->
+  compile_files([]).
+compile_files(FLS) ->
+  case FLS of
+    [] -> io:format("~s~n", [zml:compile_stream(standard_io)]);
+    _ -> [io:format("~s~n", [zml:compile_file(F)]) || F <- FLS]
+  end.
 
 compile_file(InFile) ->
   compile_file(InFile, []).
