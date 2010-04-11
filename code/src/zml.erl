@@ -217,10 +217,10 @@ new_tag(Name, Type, Attr, Children) ->
 %% children.
 replace_tag(AST, Search, NewTag) ->
   replace_tag(AST, lists:reverse(Search), NewTag, [], []).
+
 replace_tag([], _, _, _, Acc) ->
   lists:reverse(Acc);
-replace_tag([H|T], Search, NewTag, CurrPath, Acc) when is_list(H) ->
-  replace_tag(T, Search, NewTag, CurrPath, [H | Acc]);
+
 replace_tag([{Name,Tp,Att,Children} | T], Search, NewTag, CurrPath, Acc) ->
   EqPath = lists:sublist([Name | CurrPath], length(Search)),
   case EqPath == Search of
@@ -232,7 +232,11 @@ replace_tag([{Name,Tp,Att,Children} | T], Search, NewTag, CurrPath, Acc) ->
       NewChildren = replace_tag(Children,Search,NewTag, [Name | CurrPath],[]),
       replace_tag(T, Search, NewTag, CurrPath,
         [{Name,Tp,Att,NewChildren} | Acc])
-  end.
+  end;
+
+replace_tag([H|T], Search, NewTag, CurrPath, Acc) ->
+  replace_tag(T, Search, NewTag, CurrPath, [H | Acc]).
+
 
 %% Shortcut for basically changing the attributes / children of a specific tag.
 update_tag(AST, [F | _] = Search, Type, NewAttr, NewChildren) when
