@@ -1,4 +1,4 @@
-*html(scripts: jstest_lib.js)
+*html(scripts: jstest_lib.js js/another.js)
   :head
   :body
     :h4 Testing the js
