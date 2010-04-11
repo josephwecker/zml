@@ -8,7 +8,7 @@
 -export([run_handler/5]).
 
 
-run_handler(ID, Attr, Children, AST, Options) ->
+run_handler(ID, Attr, Children, AST, _Options) ->
   {[AttrTR, AttrTD], AttrTable} = extract_attrs(["tr_", "td_"], Attr),
   Table = tr(Children, AttrTR, AttrTD, []),
   zml:update_tag(AST, {"table", ID}, special, AttrTable, Table).
@@ -49,6 +49,9 @@ tr(["|" | T], AttrTR, AttrTD, Acc) ->
   {Tds, Rest} = td(T, AttrTD, [], []),
   tr(Rest, AttrTR, AttrTD, [zml:new_tag(tr, AttrTR, Tds) | Acc]);
 
+tr([[$| | H] | T], AttrTR, AttrTD, Acc) ->
+  tr(["|", H | T], AttrTR, AttrTD, Acc);
+
 tr([H | _], _AttrTR, _AttrTD, _Acc) -> erlang:error(
   "Table line must start with '|', got '" ++ H ++ "' instead.").
 
@@ -64,6 +67,14 @@ td([newline | _], _, _, _) -> erlang:error("Table line must end with '|'.");
 td([], _Attrs, [], Tds) -> {lists:reverse(Tds), []};
 
 td([], _, _, _) -> erlang:error("Table line must end with '|'.");
+
+td([H | T], Attrs, Acc, Tds) when is_list(H) ->
+  case lists:splitwith(fun(Ch) -> Ch /= $| end, H) of
+    {[], [$| | T2]} -> td(["|", T2 | T], Attrs, Acc, Tds);
+    {H2, [$|]}      -> td(["|" | T], Attrs, [H2 | Acc], Tds);
+    {H2, [$| | T2]} -> td(["|", T2 | T], Attrs, [H2 | Acc], Tds);
+    {H2, []}        -> td(T, Attrs, [H2 | Acc], Tds)
+  end;
 
 td([H | T], Attrs, Acc, Tds) -> td(T, Attrs, [H | Acc], Tds).
 
