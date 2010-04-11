@@ -161,4 +161,3 @@ build_meta(Key, Name, Vals, IsXml, LowerVals) ->
   end,
   ["<meta " ++ zml:str(Key) ++ "=\"" ++ NewName ++
     "\" content=\"" ++ NewVals ++ "\"" ++ End].
-
