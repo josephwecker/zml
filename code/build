@@ -10,6 +10,8 @@ from fabricate import default_builder
 if len(sys.argv) > 1 and sys.argv[1] == '-q':
     default_builder.quiet = True
 
+default_builder.depsname = curr_dir + '.deps'
+
 def erlc(infile):
     run('erlc','-smp','-W','-I',curr_dir+'include/','-o',
 			curr_dir+'ebin/',curr_dir+'src/'+infile+'.erl')
