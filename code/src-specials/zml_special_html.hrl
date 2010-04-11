@@ -26,14 +26,28 @@
 
 -define(XMLNS, "http://www.w3.org/1999/xhtml").
 
--define(JS_LOADER(LibSrc, Inner), [
-    "//<![CDATA[\n",
-    "var _zmlll=0,_zmljs=document.createElement('script');_zmljs.src='",
-    LibSrc,"';",
+-define(JS_LOAD_IWAIT(Exts, Inner), [
+    "var _zmlx=",integer_to_list(length(Exts)),";",
+    ?JS_LOAD_NO_I(Exts),
+    "_zmlw();",
+    "function _zmlw(){",
+    "_zmlx?setTimeout('_zmlw()',150):_zmlc()}",
+    "function _zmlc(){\n", Inner, "};"]).
+
+-define(JS_LOAD_NO_I(Exts), [
+    "var _zmljs=null;",
     "var head=document.getElementsByTagName('head')[0];",
-    "head.appendChild(_zmljs);_zmlw();function _zmlw(){",
-    "_zmlll?_zmlc():setTimeout('_zmlw()',150)}function _zmlc(){",
-    Inner,"};\n", "//]]>\n"]).
+    [?JS_CREATE(Src) || Src <- Exts]]).
+
+-define(JS_CREATE(Src), [
+    "_zmljs=document.createElement('script');",
+    "_zmljs.src='",Src,"';",
+    "_zmljs.setAttribute('onload','_zmlx-=1;');",
+    "head.appendChild(_zmljs);"]).
+
+-define(JS_START, "//<![CDATA[\n").
+-define(JS_END, "\n//]]>\n").
+
 
 -define(ENC_TOP_X(Enc),
   "<?xml version=\"1.0\" encoding=\"" ++ string:to_upper(Enc) ++ "\"?>\n").
@@ -52,9 +66,7 @@
   ?STYLESHEET_TYPES ++ [SPATTA++"s" || SPATTA <- ?STYLESHEET_TYPES]).
 
 -define(STYLESHEET_TAGS,
-  [{"style",
-      {"<style type=\"text/css\">",
-        "</style>"}},
+  [
     {"screen-style",
       {"<style type=\"text/css\" media=\"screen, projection\">",
         "</style>"}},
@@ -69,5 +81,8 @@
         "</style><![endif]-->"}},
     {"ie-print-style",
       {"<!--[if IE]><style type=\"text/css\" media=\"print\">",
-        "</style><![endif]-->"}}]).
+        "</style><![endif]-->"}},
+    {"style",
+      {"<style type=\"text/css\">",
+        "</style>"}}]).
 
