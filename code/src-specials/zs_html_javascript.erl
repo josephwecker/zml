@@ -53,7 +53,8 @@ process(ID, Attr, _Children, AST, Options) ->
   Input = [{K, proplists:get_value(K,Options,DV),In} || {K,DV,In} <- InputDef],
   Search = zml:get_search_paths(Options),
   
-  Inlines =   [get_inline(K, In, Search) || {K,V,In} <- Input, V =:= inline, In=/= []],
+  Inlines =   [get_inline(K, In, Search) ||
+    {K,V,In} <- Input, V =:= inline, In=/= none],
 %  Locals =    [get_local(K, In) || {K,V,In} <- Instr, V =:= local, In =!= []],
   Locals = [],
 
