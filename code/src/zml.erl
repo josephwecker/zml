@@ -252,10 +252,9 @@ append_children(AST, Search, NewChildren) ->
 %% instead of returning a rebuilt full AST.
 get_tag(AST, Search) ->
   get_tag(AST, lists:reverse(Search), []).
-get_tag([], _, _) ->
-  undefined;
-get_tag([H|T], Search, CurrPath) when is_list(H) ->
-  get_tag(T, Search, CurrPath);
+
+get_tag([], _, _) -> undefined;
+
 get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
   EqPath = lists:sublist([Name | CurrPath], length(Search)),
   case EqPath == Search of
@@ -268,7 +267,10 @@ get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
         FoundTag ->
           FoundTag
       end
-  end.
+  end;
+
+get_tag([_|T], Search, CurrPath) -> get_tag(T, Search, CurrPath).
+
 
 append_attr([{K1,V1} | Attributes], {K1,V2}) ->
   [{K1, V1 ++ V2} | Attributes];
