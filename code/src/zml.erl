@@ -109,18 +109,17 @@ other_options(Options) ->
 
 run_specialized_handlers(AST, Options) ->
   run_specialized_handlers_inner(AST, Options, AST).
-run_specialized_handlers_inner([], _, NewAST) ->
-  NewAST;
-run_specialized_handlers_inner([{{Name,ID}, special, Attr, Children} | T],
+
+run_specialized_handlers_inner([], _, NewAST) -> NewAST;
+
+run_specialized_handlers_inner(
+    [{{Name, _ID}, special, _Attr, Children} = Node | T],
     Options, FullAST) ->
   HandlerModule = list_to_atom("zml_special_" ++ string:to_lower(Name)),
-  case code:ensure_loaded(HandlerModule) of
-    {module, _} ->
-      NewAST = HandlerModule:run_handler(ID, Attr, Children, FullAST, Options),
-      run_specialized_handlers_inner(T, Options, NewAST);
-    _ ->
-      erlang:error(["No code found to handle special tag type:",Name])
-  end;
+  {module, _} = code:ensure_loaded(HandlerModule),
+  NewAST = HandlerModule:run_handler(Node, FullAST, Options),
+  run_specialized_handlers_inner(T, Options, NewAST);
+
 run_specialized_handlers_inner([_H|T], Options, FullAST) ->
   run_specialized_handlers_inner(T, Options, FullAST).
 

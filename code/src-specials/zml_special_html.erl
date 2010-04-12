@@ -5,7 +5,7 @@
 
 -module(zml_special_html).
 
--export([run_handler/5]).
+-export([run_handler/3]).
 
 -include("zml_special_html.hrl").
 -import(string, [to_lower/1, to_upper/1, join/2]).
@@ -15,7 +15,7 @@
 % for example, a sub-function removes some attributes from the special handler,
 % it will be reflected in both the AST and the ID/Attr/Children on the next
 % call.
-run_handler(ID, _Attr, _Children, AST, Options) ->
+run_handler({{"html", ID}, special, _Attr, _Children}, AST, Options) ->
   Transformations = [
     fun process_doctype/5,
     fun process_head_and_body/5,
