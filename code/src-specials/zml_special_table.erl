@@ -5,13 +5,13 @@
 
 -module(zml_special_table).
 
--export([run_handler/3]).
+-export([process_node/2]).
 
 
-run_handler({{"table", ID}, special, Attr, Children}, AST, _Options) ->
+process_node({{"table", ID}, special, Attr, Children}, _Options) ->
   {[AttrTR, AttrTD], AttrTable} = extract_attrs(["tr_", "td_"], Attr),
-  Table = tr(Children, AttrTR, AttrTD, []),
-  zml:update_tag(AST, {"table", ID}, special, AttrTable, Table).
+  TableRows = tr(Children, AttrTR, AttrTD, []),
+  {{"table", ID}, special, AttrTable, TableRows}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

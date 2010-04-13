@@ -35,7 +35,8 @@
   ]).
 
 -define(OPT_ENV(Desc),
-  {proplists:get_value(Desc, Options), os:getenv(string:to_upper(atom_to_list(Desc)))}).
+        {proplists:get_value(Desc, Options),
+         os:getenv(string:to_upper(atom_to_list(Desc)))}).
 
 compile_files() ->
   compile_files([]).
@@ -107,17 +108,21 @@ other_options(Options) ->
 %  file:make_dir(DirDyn),
 %  {DirMain, DirTmp, DirJS, DirCSS, DirImg, DirDyn}.
 
+
 run_specialized_handlers(AST, Options) ->
   run_specialized_handlers_inner(AST, Options, AST).
 
 run_specialized_handlers_inner([], _, NewAST) -> NewAST;
 
 run_specialized_handlers_inner(
-    [{{Name, _ID}, special, _Attr, Children} = Node | T],
+    [{{Name, _ID}, special, _Attr, _Children} = Node | T],
     Options, FullAST) ->
-  HandlerModule = list_to_atom("zml_special_" ++ string:to_lower(Name)),
-  {module, _} = code:ensure_loaded(HandlerModule),
-  NewAST = HandlerModule:run_handler(Node, FullAST, Options),
+  ModuleName = list_to_atom("zml_special_" ++ string:to_lower(Name)),
+  {module, Module} = code:ensure_loaded(ModuleName),
+  NewAST = case erlang:function_exported(Module, process_tree, 3) of
+    true -> Module:process_tree(Node, FullAST, Options);
+    _ -> FullAST
+  end,
   run_specialized_handlers_inner(T, Options, NewAST);
 
 run_specialized_handlers_inner([_H|T], Options, FullAST) ->
