@@ -29,6 +29,7 @@ run('mkdir','-p',curr_dir+'ebin')
 erlc('zml')
 erlc('zml_hand_parser')
 erlc('zml_tokenizer')
+erlc('zml_render')
 erlc_glob('../src-specials/zml_special*.erl')
 erlc_glob('../src-specials/zs_*.erl')
 

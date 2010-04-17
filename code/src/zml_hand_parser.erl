@@ -93,8 +93,11 @@ pull_line_children([{inline_delim,_}|T], Acc, _Options) ->
   {T, lists:reverse(Acc)};
 pull_line_children([{string, _, Text} | T], Acc, Options) ->
   pull_line_children(T, [Text | Acc], Options);
-pull_line_children([{start_tag, _, Type} |
-    [{string, _, TagText} | T]], Acc, Options) ->
+pull_line_children(
+    [{start_var,_}, {string,_,Var} | T], Acc, Options) ->
+  pull_line_children(T, [{var, Var} | Acc], Options);
+pull_line_children(
+    [{start_tag,_,Type}, {string,_,TagText} | T], Acc, Options) ->
   {T2, Attr} = pull_attributes(T),
   {T3, LChildren} = pull_line_children(T2, Options),
   Tag = tricky_attributes(TagText, Type, Attr, LChildren, Options),

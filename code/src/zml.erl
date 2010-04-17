@@ -38,16 +38,16 @@
         {proplists:get_value(Desc, Options),
          os:getenv(string:to_upper(atom_to_list(Desc)))}).
 
-compile_files() ->
-  compile_files([]).
+compile_files() -> compile_files([]).
+
 compile_files(FLS) ->
   case FLS of
     [] -> io:format("~s~n", [zml:compile_stream(standard_io)]);
     _ -> [io:format("~s~n", [zml:compile_file(F)]) || F <- FLS]
   end.
 
-compile_file(InFile) ->
-  compile_file(InFile, []).
+compile_file(InFile) -> compile_file(InFile, []).
+
 compile_file(InFile, Options) ->
   SourceFName = filename:absname(InFile),
   Options2 =
@@ -57,13 +57,13 @@ compile_file(InFile, Options) ->
     end,
   do_compile(fun zml_tokenizer:tokenize_file/1, InFile, Options2).
 
-compile_stream(Stream) ->
-  compile_stream(Stream, []).
+compile_stream(Stream) -> compile_stream(Stream, []).
+
 compile_stream(Stream, Options) ->
   do_compile(fun zml_tokenizer:tokenize_stream/1, Stream, Options).
 
-compile_string(Str) ->
-  compile_string(Str, []).
+compile_string(Str) -> compile_string(Str, []).
+
 compile_string(Str, Options) ->
   do_compile(fun zml_tokenizer:tokenize_string/1, Str, Options).
 
@@ -72,7 +72,9 @@ do_compile(Tokenizer, Input, Options) ->
   Options2 = other_options(Options),
   AST = zml_hand_parser:parse(Tokens, Options2),
   AST2 = run_specialized_handlers(AST, Options2),
-  translate_ast_item(AST2, []).
+  Template = translate_ast_item(AST2, []),
+  % FIXME: populates template with fake data!
+  zml_render:render(Template).
 
 other_options(Options) ->
   case ?OPT_ENV(zml_zss_libs) of
