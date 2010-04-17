@@ -16,7 +16,7 @@ parse([{end_of_file,_}], CurrLvl, Options) ->
 parse([{dedent,_}|{end_of_file,_}], CurrLvl, Options) ->
   parse([], CurrLvl, Options);
 
-parse([{dedent,_}|T], CurrLvl, Options) ->
+parse([{dedent,_} | T], CurrLvl, Options) ->
   {T, parse([], CurrLvl, Options)};
 
 parse([{start_code, _} | T], CurrLvl, Options) ->
@@ -26,8 +26,11 @@ parse([{start_code, _} | T], CurrLvl, Options) ->
   CodeTag = {InnerCode, code, [], LChildren ++ Children},
   parse(T4, [CodeTag | CurrLvl], Options);
 
-parse([{start_tag, _, Type} |
-    [{string, _, TagText} | T]], CurrLvl, Options) ->
+parse([{start_var, _}, {string, _, Var} | T], CurrLvl, Options) ->
+  parse(T, [{var, Var} | CurrLvl], Options);
+
+parse([{start_tag, _, Type},
+       {string, _, TagText} | T], CurrLvl, Options) ->
   {T2, Attr} = pull_attributes(T),
   {T3, LChildren} = pull_line_children(T2, Options),
   {T4, Children} = pull_children(T3),

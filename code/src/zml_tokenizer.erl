@@ -68,6 +68,8 @@
 -define(T_CODE_ST, $[).
 -define(T_CODE_EN, $]).
 
+-define(T_VAR_ST, $$).
+
 tokenize_file(Filename) when is_list(Filename) ->
   {ok, File} = file:open(Filename, [read]),
   tokenize_stream(File).
@@ -150,7 +152,7 @@ parse_line(Dents, CStack, Line, InAttr) ->
       {CStack, [], InAttr};
     _ ->
       % Newline appended if we're not still in the middle of attributes
-      AlteredPLine = 
+      AlteredPLine =
         case InAttr2 of
           true -> ParsedLine;
           false -> [{newline, get(line_num)} | ParsedLine]
@@ -265,13 +267,16 @@ parse_inner([?T_TAG_ID_ST | T], _, [], AllTAcc, false) ->
   parse_inner(T, ?T_TAG_ID_ST, [],
     [{start_tag, get(line_num), id} | AllTAcc], false);
 
+parse_inner([?T_VAR_ST | T], _, [], AllTAcc, false) ->
+  parse_inner(T, ?T_VAR_ST, [],
+    [{start_var, get(line_num)} | AllTAcc], false);
+
 parse_inner([?T_ATTR_DELIM | T], _, CurrTAcc, AllTAcc, true) ->
   parse_inner(T, ?T_ATTR_DELIM, [],
     ?FLUSH({attr_delim, get(line_num)}), true);
 
 parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) ->
   parse_inner(T, H, [H | CurrTAcc], AllTAcc, InAttr).
-
 
 
 pull_in_string(Line, InnerFun) ->
