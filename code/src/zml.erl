@@ -146,7 +146,8 @@ translate_ast_item([String | T], Acc) when is_list(String) ->
 translate_ast_item([{{Name,_ID},Type,Attributes,Children} | T], Acc) ->
   translate_ast_item([{Name, Type, Attributes, Children} | T], Acc);
 translate_ast_item([{Code,code,[],Children} | T], Acc) ->
-  ToAppend = {code, Code, translate_ast_item(Children, [])},
+  ToAppend = {with, translate_ast_code(Code),
+              translate_ast_item(Children, [])},
   translate_ast_item(T, [ToAppend | Acc]);
 translate_ast_item([{Name,_Type,Attributes,[]} | T], Acc) ->
   ToAppend = ["<", Name, translate_attributes(Attributes), "/>"],
@@ -159,18 +160,22 @@ translate_ast_item([{Name,_Type,Attributes,Children} | T], Acc) ->
     "</", Name, ">"],
   translate_ast_item(T, [ToAppend | Acc]).
 
-translate_attributes([]) ->
-  "";
+
+translate_attributes([]) -> "";
 translate_attributes(Atts) ->
   lists:foldl(fun out_attr/2, [], Atts).
+
 out_attr({Name, Values}, Acc) ->
   [" ", Name, "=\"", string:join(Values, " "), "\"" | Acc].
 
+% TODO: move into tokenizer/parser?
+translate_ast_code([Code]) ->
+  ["with" | Vars] = string:tokens(Code, " "),
+  Vars.
 
 compact_ast([], Acc) -> Acc;
 compact_ast([H|T], Acc) when is_tuple(H) -> compact_ast(T, [H|Acc]);
 compact_ast([H|T], Acc) -> compact_ast(T, append_ast_elem(H, Acc)).
-
 
 append_ast_elem([], Acc) -> Acc;
 
