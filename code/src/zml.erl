@@ -129,10 +129,8 @@ run_specialized_handlers_inner([_H|T], Options, FullAST) ->
   run_specialized_handlers_inner(T, Options, FullAST).
 
 
-translate_ast_item([], Acc) ->
-  lists:reverse(Acc);
-translate_ast_item([newline | T], Acc) ->
-  translate_ast_item(T, ["\n" | Acc]);
+translate_ast_item([], Acc) -> compact_ast(Acc, []);
+translate_ast_item([newline | T], Acc) -> translate_ast_item(T, Acc);
 translate_ast_item([[$< | _] = String | [Next | _] = T], Acc)
 when is_list(Next) ->
   translate_ast_item(T, [String | Acc]);
@@ -145,15 +143,10 @@ translate_ast_item([String | T], Acc) when is_list(String) ->
 translate_ast_item([{{Name,_ID},Type,Attributes,Children} | T], Acc) ->
   translate_ast_item([{Name, Type, Attributes, Children} | T], Acc);
 translate_ast_item([{Code,code,[],Children} | T], Acc) ->
-  ToAppend = ["!!CODE!!",
-    string:join(Code, " "),
-    "!!",
-    translate_ast_item(Children, []),
-    "!!END!!"],
+  ToAppend = {code, Code, translate_ast_item(Children, [])},
   translate_ast_item(T, [ToAppend | Acc]);
 translate_ast_item([{Name,_Type,Attributes,[]} | T], Acc) ->
-  ToAppend = ["<", Name,
-    translate_attributes(Attributes), "/>"],
+  ToAppend = ["<", Name, translate_attributes(Attributes), "/>"],
   translate_ast_item(T, [ToAppend | Acc]);
 translate_ast_item([{Name,_Type,Attributes,Children} | T], Acc) ->
   ToAppend = [
@@ -170,6 +163,23 @@ translate_attributes(Atts) ->
 out_attr({Name, Values}, Acc) ->
   [" ", Name, "=\"", string:join(Values, " "), "\"" | Acc].
 
+
+compact_ast([], Acc) -> Acc;
+compact_ast([H|T], Acc) when is_tuple(H) -> compact_ast(T, [H|Acc]);
+compact_ast([H|T], Acc) -> compact_ast(T, append_ast_elem(H, Acc)).
+
+
+append_ast_elem([], Acc) -> Acc;
+
+append_ast_elem([Ch1|_] = Elem, [[Ch2|_] = H | Acc])
+    when is_integer(Ch1) andalso is_integer(Ch2) -> [Elem ++ H | Acc];
+
+append_ast_elem([Ch1|_] = Elem, Acc) when is_integer(Ch1) -> [Elem | Acc];
+
+append_ast_elem([H|T], Acc) when is_list(H) ->
+  append_ast_elem(H, append_ast_elem(T, Acc));
+
+append_ast_elem(Elem, Acc) -> [Elem | Acc].
 
 %% -------------------- Utilities for special handlers -----------------------
 
