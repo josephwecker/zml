@@ -179,6 +179,8 @@ append_ast_elem([Ch1|_] = Elem, Acc) when is_integer(Ch1) -> [Elem | Acc];
 append_ast_elem([H|T], Acc) when is_list(H) ->
   append_ast_elem(H, append_ast_elem(T, Acc));
 
+append_ast_elem([_|_] = Elem, Acc) -> Elem ++ Acc;
+
 append_ast_elem(Elem, Acc) -> [Elem | Acc].
 
 %% -------------------- Utilities for special handlers -----------------------
