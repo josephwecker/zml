@@ -3,34 +3,43 @@
 
 -export([render/1, render/2]).
 
-% TODO: think of a better interface
--define(RND_VAR_NAMES, fake).
+render(Template) -> render(Template, [], fake, []).
 
-% TODO: implement fake storage that returns names of variables
-% and data sets instead of the actual data?
-render(Template) -> render(Template, [], ?RND_VAR_NAMES).
+render(Template, Data) -> render(Template, [], Data, []).
 
-render(Template, Data) -> render(Template, [], Data).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+render([], Acc, _Data, _Context) -> lists:reverse(Acc);
+
+render([[Ch|_] = Str | T], Acc, Data, Context) when is_integer(Ch) ->
+  render(T, [Str | Acc], Data, Context);
+
+render([{var, Var} | T], Acc, Data, Context) ->
+  render(T, [var(Data, [Var | Context]) | Acc], Data, Context);
+
+render([{with, [Name], Children} | T], Acc, Data, Context) ->
+  Ctx = [Name | Context],
+  Block = lists:flatmap(fun(Rec) ->
+      render(Children, [], Rec, Ctx)
+    end, data(Data, Ctx)),
+  render(T, [Block | Acc], Data, Context);
+
+render([H | T], Acc, Data, Context) when is_list(H) ->
+  render(T, [render(H, [], Data, Context) | Acc], Data, Context);
+
+render([H | T], Acc, Data, Context) ->
+  render(T, [H | Acc], Data, Context).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+var(fake, [H|T]) ->
+  [$$ | lists:foldl(fun(X,A) -> X ++ [$.|A] end, H, T)];
+
+var(Props, [H]) -> proplists:get_value(H, Props);
+var(Props, [H|T]) -> var(proplists:get_value(H, Props, []), T).
 
 
-render([], Acc, _Data) -> lists:reverse(Acc);
+data(fake, _Ctx) -> [fake];
 
-render([[Ch|_] = Str | T], Acc, Data) when is_integer(Ch) ->
-  render(T, [Str | Acc], Data);
-
-render([{var, Var} | T], Acc, Data) ->
-  render(T, [var(Var, Data) | Acc], Data);
-
-render([{with, _Sets, Children} | T], Acc, Data) ->
-  % FIXME: no looping over data for now!
-  Block = render(Children, [], Data),
-  render(T, [Block | Acc], Data);
-
-render([H | T], Acc, Data) when is_list(H) ->
-  render(T, [render(H, [], Data) | Acc], Data);
-
-render([H | T], Acc, Data) -> render(T, [H | Acc], Data).
-
-
-var(Var, fake) -> [$$ | Var].
+data(Props, Ctx) -> var(Props, Ctx).
 

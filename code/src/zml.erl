@@ -73,8 +73,8 @@ do_compile(Tokenizer, Input, Options) ->
   AST = zml_hand_parser:parse(Tokens, Options2),
   AST2 = run_specialized_handlers(AST, Options2),
   Template = translate_ast_item(AST2, []),
-  % FIXME: populates template with fake data!
-  zml_render:render(Template).
+  zml_render:render(Template,
+    proplists:get_value(data, Options2, fake)).
 
 other_options(Options) ->
   case ?OPT_ENV(zml_zss_libs) of
