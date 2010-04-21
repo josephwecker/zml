@@ -18,10 +18,8 @@ render([{var, Var} | T], Acc, Data) ->
   render(T, [var(Data, Var) | Acc], Data);
 
 render([{with, [Name], Children} | T], Acc, Data) ->
-  Block = lists:flatmap(fun(Rec) ->
-      io:format("DATA: ~p~n", [Rec]),
-      render(Children, [], Rec)
-    end, data(Data, Name)),
+  Block = lists:flatmap(
+    fun(Rec) -> render(Children, [], Rec) end, data(Data, Name)),
   render(T, [Block | Acc], Data);
 
 render([H | T], Acc, Data) when is_list(H) ->
