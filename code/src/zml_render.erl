@@ -3,43 +3,38 @@
 
 -export([render/1, render/2]).
 
-render(Template) -> render(Template, [], fake, []).
+render(Template) -> render(Template, [], fake).
 
-render(Template, Data) -> render(Template, [], Data, []).
+render(Template, Data) -> render(Template, [], Data).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-render([], Acc, _Data, _Context) -> lists:reverse(Acc);
+render([], Acc, _Data) -> lists:reverse(Acc);
 
-render([[Ch|_] = Str | T], Acc, Data, Context) when is_integer(Ch) ->
-  render(T, [Str | Acc], Data, Context);
+render([[Ch|_] = Str | T], Acc, Data) when is_integer(Ch) ->
+  render(T, [Str | Acc], Data);
 
-render([{var, Var} | T], Acc, Data, Context) ->
-  render(T, [var(Data, [Var | Context]) | Acc], Data, Context);
+render([{var, Var} | T], Acc, Data) ->
+  render(T, [var(Data, Var) | Acc], Data);
 
-render([{with, [Name], Children} | T], Acc, Data, Context) ->
-  Ctx = [Name | Context],
+render([{with, [Name], Children} | T], Acc, Data) ->
   Block = lists:flatmap(fun(Rec) ->
-      render(Children, [], Rec, Ctx)
-    end, data(Data, Ctx)),
-  render(T, [Block | Acc], Data, Context);
+      io:format("DATA: ~p~n", [Rec]),
+      render(Children, [], Rec)
+    end, data(Data, Name)),
+  render(T, [Block | Acc], Data);
 
-render([H | T], Acc, Data, Context) when is_list(H) ->
-  render(T, [render(H, [], Data, Context) | Acc], Data, Context);
+render([H | T], Acc, Data) when is_list(H) ->
+  render(T, [render(H, [], Data) | Acc], Data);
 
-render([H | T], Acc, Data, Context) ->
-  render(T, [H | Acc], Data, Context).
+render([H | T], Acc, Data) ->
+  render(T, [H | Acc], Data).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-var(fake, [H|T]) ->
-  [$$ | lists:foldl(fun(X,A) -> X ++ [$.|A] end, H, T)];
+var(fake, Var) -> [$$ | Var];
+var(Props, Var) -> proplists:get_value(Var, Props, var(fake, Var)).
 
-var(Props, [H]) -> proplists:get_value(H, Props);
-var(Props, [H|T]) -> var(proplists:get_value(H, Props, []), T).
-
-
-data(fake, _Ctx) -> [fake];
-
-data(Props, Ctx) -> var(Props, Ctx).
+data(fake, _Name) -> [fake];
+data(Props, Name) -> var(Props, Name).
 
