@@ -132,15 +132,25 @@ run_specialized_handlers_inner([_H|T], Options, FullAST) ->
 translate_ast_item([], Acc) ->
   lists:reverse(Acc);
 translate_ast_item([newline | T], Acc) ->
-  translate_ast_item(T, ["\n" | Acc]);
+  translate_ast_item(T, Acc);
 translate_ast_item([[$< | _] = String | [Next | _] = T], Acc)
 when is_list(Next) ->
   translate_ast_item(T, [String | Acc]);
 translate_ast_item([String | [Next | _] = T], Acc)
-when is_list(String) and is_list(Next) ->
-  translate_ast_item(T, [" " | [String | Acc]]);
+when is_list(String), Next =/= newline ->
+  translate_ast_item(T, [" ", String | Acc]);
+translate_ast_item([String, newline, Next | T], Acc)
+when is_list(String), is_list(Next) ->
+  translate_ast_item(T, [Next, " ", String | Acc]);
 translate_ast_item([String | T], Acc) when is_list(String) ->
   translate_ast_item(T, [String | Acc]);
+translate_ast_item([{_Name,_Type,_Attributes,[_|_] = Children} = Tag, Str | T], Acc)
+when is_list(Str) ->
+  Delim = case lists:last(Children) of
+    newline -> "";
+    _ -> " " % whitespace
+  end,
+  translate_ast_item(T, [Str, Delim, translate_ast_item([Tag], []) | Acc]);
 % In case a special one still remains, remove ID and pretend it's normal
 translate_ast_item([{{Name,_ID},Type,Attributes,Children} | T], Acc) ->
   translate_ast_item([{Name, Type, Attributes, Children} | T], Acc);
