@@ -125,9 +125,13 @@ new_metas({Name, Type, Def}, Acc, Attr) ->
       metatag(Name, Type, Vals) ++ Acc
   end.
 
+metatag(encoding, $x, [Val]) ->
+  build_meta("http-equiv", "Content-Type",
+             ["text/html;", "charset=" ++ to_upper(Val)], $x, false);
+
 metatag(encoding, IsXml, [Val]) ->
   build_meta("http-equiv", "Content-Type",
-             ["text/html;", "charset=" ++ to_upper(Val)], IsXml);
+             ["text/html;", "charset=" ++ Val], IsXml, $x);
 
 metatag(language, IsXml, Vals) ->
   build_meta("http-equiv", "Content-Language", Vals, IsXml);
