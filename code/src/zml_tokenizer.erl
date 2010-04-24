@@ -40,6 +40,10 @@
     _ -> [{string, get(line_num), lists:reverse(CurrTAcc)} | AllTAcc]
   end).
 
+-define(IS_WHITESPACE(H),
+  (H >= $\x{0009} andalso H =< $\x{000D})
+    orelse H == $\x{0020} orelse H == $\x{00A0}).
+
 -define(T_ATTR_ST, $().
 -define(T_ATTR_EN, $)).
 -define(T_ESC, $\\).
@@ -132,9 +136,7 @@ parse_lines(Next, IndentStack, RTokens, InAttr) ->
 %% (Calculated with unicode characters- that's why it looks funny)
 get_dent(Line) ->
   get_dent(Line, 0).
-get_dent([H|T],N) when
-    ((H >= $\x{0009}) and (H =< $\x{000D}))
-    or (H == $\x{0020}) or (H == $\x{00A0}) ->
+get_dent([H|T],N) when ?IS_WHITESPACE(H) ->
   get_dent(T,N+1);
 get_dent(Rest,N) ->
   {N, Rest}.
@@ -239,9 +241,8 @@ parse_inner([?T_CODE_ST | T], _, CurrTAcc, AllTAcc, false) ->
       [{start_code, StartLNum}]]]), false);
 
 % Whitespace.  Flush token.
-parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) when
-    ((H >= $\x{0009}) and (H =< $\x{000D}))
-    or (H == $\x{0020}) or (H == $\x{00A0}) ->
+parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr)
+when ?IS_WHITESPACE(H) ->
   parse_inner(T, H, [], ?SFLUSH, InAttr);
 
 % Inline tag delimiter
@@ -265,13 +266,13 @@ parse_inner([?T_TAG_ID_ST | T], _, [], AllTAcc, false) ->
   parse_inner(T, ?T_TAG_ID_ST, [],
     [{start_tag, get(line_num), id} | AllTAcc], false);
 
-parse_inner([?T_ATTR_DELIM | T], _, CurrTAcc, AllTAcc, true) ->
+parse_inner([?T_ATTR_DELIM, H | T], _, CurrTAcc, AllTAcc, true)
+when ?IS_WHITESPACE(H) orelse H == ?T_ATTR_EN ->
   parse_inner(T, ?T_ATTR_DELIM, [],
     ?FLUSH({attr_delim, get(line_num)}), true);
 
 parse_inner([H | T], _Last, CurrTAcc, AllTAcc, InAttr) ->
   parse_inner(T, H, [H | CurrTAcc], AllTAcc, InAttr).
-
 
 
 pull_in_string(Line, InnerFun) ->
