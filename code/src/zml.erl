@@ -139,9 +139,9 @@ when is_list(Next) ->
 translate_ast_item([String | [Next | _] = T], Acc)
 when is_list(String), Next =/= newline ->
   translate_ast_item(T, [" ", String | Acc]);
-translate_ast_item([String, newline, Next | T], Acc)
+translate_ast_item([String, newline | [Next| _] = T], Acc)
 when is_list(String), is_list(Next) ->
-  translate_ast_item(T, [Next, " ", String | Acc]);
+  translate_ast_item(T, [" ", String | Acc]);
 translate_ast_item([String | T], Acc) when is_list(String) ->
   translate_ast_item(T, [String | Acc]);
 translate_ast_item([{_Name,_Type,_Attributes,[_|_] = Children} = Tag, Str | T], Acc)
