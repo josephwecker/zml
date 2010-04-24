@@ -133,7 +133,7 @@ run_specialized_handlers_inner([_H|T], Options, FullAST) ->
 
 translate_ast_item([], Acc) -> compact_ast(Acc, []);
 translate_ast_item([newline | T], Acc) ->
-  translate_ast_item(["\n" | T], Acc);
+  translate_ast_item(T, Acc);
 translate_ast_item([{var,_} = Var | T], Acc) ->
   translate_ast_item(T, [Var | Acc]);
 translate_ast_item([[$< | _] = String | [Next | _] = T], Acc)
