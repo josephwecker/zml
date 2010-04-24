@@ -131,7 +131,7 @@ metatag(encoding, $x, [Val]) ->
 
 metatag(encoding, IsXml, [Val]) ->
   build_meta("http-equiv", "Content-Type",
-             ["text/html;", "charset=" ++ Val], IsXml, true);
+             ["text/html;", "charset=" ++ Val], IsXml, $x);
 
 metatag(language, IsXml, Vals) ->
   build_meta("http-equiv", "Content-Language", Vals, IsXml);
