@@ -361,7 +361,7 @@ h4. encoding and language
 lang and xml:lang attributes of the html tag, if html type requires
 so. Default is en-us.
 
-h4. other special attributes
+h4. other special attributes for *html
 
 * nosmarttag: true or false. Controls MSSmartTagsPreventParsing.
 
@@ -399,5 +399,98 @@ Various shortcuts. The following example uses them all:
   </head>
   <body>test</body>
 </html>
+</code></pre>
+
+
+h3. *table markup
+
+Special tag *table implements a simple markup language for tables. It
+looks like this:
+
+<pre><code>
+*table
+  | a | b |
+  | c | d |
+</code></pre>
+
+This code translates into:
+
+<pre><code>
+<?xml version="1.0"?>
+<table>
+  <tr>
+    <td>a</td>
+    <td>b</td>
+  </tr>
+  <tr>
+    <td>c</td>
+    <td>d</td>
+  </tr>
+</table>
+</code></pre>
+
+Each row of the table must begin and end with the '|' character. Note
+that all '|' delimiters must be surrounded by spaces, e.g.
+
+<pre><code>
+*table | a|b |  || 1x1 table!
+</code></pre>
+
+has only one column:
+
+<pre><code>
+<?xml version="1.0"?>
+<table>
+  <tr>
+    <td>a|b</td>
+  </tr>
+</table>
+</code></pre>
+
+Note that it is OK to start table immediately after the *table tag, on
+the same line. Comments and quoted strings are also supported.
+
+h4. inline tags inside *table
+
+It is perfectly fine to have other tags inside the *table markup. '|'
+characters inside such tags are just regular characters, and are not
+interpreted as column separators, e.g.
+
+<pre><code>
+*table | :strong some | text; |
+</code></pre>
+
+translates into:
+
+<pre><code>
+<?xml version="1.0"?>
+<table>
+  <tr>
+    <td>
+      <strong>some | text</strong>
+    </td>
+  </tr>
+</table>
+</code></pre>
+
+h4. tr and td attributes
+
+To specify attributes for tr and td tags, prefix them with "tr_" and
+"td_", respectively, and define them in the *table tag:
+
+<pre><code>
+*table#bigtable(tr_class: row td_class: cell border: 0) | a | b |
+</code></pre>
+
+translates into:
+
+<pre><code>
+<?xml version="1.0"?>
+<table id="bigtable" border="0">
+  <tr class="row">
+    <td class="cell">a</td>
+    <td class="cell">b</td>
+  </tr>
+</table>
 </code></pre>
 

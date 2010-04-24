@@ -4,6 +4,8 @@
 -export([
     compile_file/1,
     compile_file/2,
+    compile_files/0,
+    compile_files/1,
     compile_stream/1,
     compile_stream/2,
     compile_string/1,
@@ -12,7 +14,8 @@
 
 % Utilities for special handlers:
 -export([
-    search_for_file/2,
+    find_magic_file/2,
+    find_file/3,
     tmp_filename/0,
     tmp_filename/1,
     pull_in_file/2,
@@ -20,6 +23,7 @@
     new_tag/4,
     get_tag/2,
     append_attr/2,
+    prepend_attr/2,
     get_attr_vals/2,
     get_attr_vals/3,
     pop_attr/3,
@@ -31,7 +35,16 @@
   ]).
 
 -define(OPT_ENV(Desc),
-  {proplists:get_value(Desc, Options), os:getenv(string:to_upper(atom_to_list(Desc)))}).
+        {proplists:get_value(Desc, Options),
+         os:getenv(string:to_upper(atom_to_list(Desc)))}).
+
+compile_files() ->
+  compile_files([]).
+compile_files(FLS) ->
+  case FLS of
+    [] -> io:format("~s~n", [zml:compile_stream(standard_io)]);
+    _ -> [io:format("~s~n", [zml:compile_file(F)]) || F <- FLS]
+  end.
 
 compile_file(InFile) ->
   compile_file(InFile, []).
@@ -95,26 +108,31 @@ other_options(Options) ->
 %  file:make_dir(DirDyn),
 %  {DirMain, DirTmp, DirJS, DirCSS, DirImg, DirDyn}.
 
+
 run_specialized_handlers(AST, Options) ->
   run_specialized_handlers_inner(AST, Options, AST).
-run_specialized_handlers_inner([], _, NewAST) ->
-  NewAST;
-run_specialized_handlers_inner([{{Name,ID}, special, Attr, Children} | T],
+
+run_specialized_handlers_inner([], _, NewAST) -> NewAST;
+
+run_specialized_handlers_inner(
+    [{{Name, _ID}, special, _Attr, _Children} = Node | T],
     Options, FullAST) ->
-  HandlerModule = list_to_atom("zml_special_" ++ string:to_lower(Name)),
-  case code:ensure_loaded(HandlerModule) of
-    {module, _} ->
-      NewAST = HandlerModule:run_handler(ID, Attr, Children, FullAST, Options),
-      run_specialized_handlers_inner(T, Options, NewAST);
-    _ ->
-      erlang:error(["No code found to handle special tag type:",Name])
-  end;
+  ModuleName = list_to_atom("zml_special_" ++ string:to_lower(Name)),
+  {module, Module} = code:ensure_loaded(ModuleName),
+  NewAST = case erlang:function_exported(Module, process_tree, 3) of
+    true -> Module:process_tree(Node, FullAST, Options);
+    _ -> FullAST
+  end,
+  run_specialized_handlers_inner(T, Options, NewAST);
+
 run_specialized_handlers_inner([_H|T], Options, FullAST) ->
   run_specialized_handlers_inner(T, Options, FullAST).
 
 
 translate_ast_item([], Acc) ->
   lists:reverse(Acc);
+translate_ast_item([newline | T], Acc) ->
+  translate_ast_item(T, ["\n" | Acc]);
 translate_ast_item([[$< | _] = String | [Next | _] = T], Acc)
 when is_list(Next) ->
   translate_ast_item(T, [String | Acc]);
@@ -154,10 +172,6 @@ out_attr({Name, Values}, Acc) ->
 
 
 %% -------------------- Utilities for special handlers -----------------------
-
-search_for_file(File, Path) ->
-  Res = os:cmd("find '" ++ Path ++ "' -name '" ++ File ++ "'"),
-  string:tokens(Res, "\n").
 
 tmp_filename() ->
   tmp_filename(".tmp_").
@@ -207,10 +221,10 @@ new_tag(Name, Type, Attr, Children) ->
 %% children.
 replace_tag(AST, Search, NewTag) ->
   replace_tag(AST, lists:reverse(Search), NewTag, [], []).
+
 replace_tag([], _, _, _, Acc) ->
   lists:reverse(Acc);
-replace_tag([H|T], Search, NewTag, CurrPath, Acc) when is_list(H) ->
-  replace_tag(T, Search, NewTag, CurrPath, [H | Acc]);
+
 replace_tag([{Name,Tp,Att,Children} | T], Search, NewTag, CurrPath, Acc) ->
   EqPath = lists:sublist([Name | CurrPath], length(Search)),
   case EqPath == Search of
@@ -222,7 +236,11 @@ replace_tag([{Name,Tp,Att,Children} | T], Search, NewTag, CurrPath, Acc) ->
       NewChildren = replace_tag(Children,Search,NewTag, [Name | CurrPath],[]),
       replace_tag(T, Search, NewTag, CurrPath,
         [{Name,Tp,Att,NewChildren} | Acc])
-  end.
+  end;
+
+replace_tag([H|T], Search, NewTag, CurrPath, Acc) ->
+  replace_tag(T, Search, NewTag, CurrPath, [H | Acc]).
+
 
 %% Shortcut for basically changing the attributes / children of a specific tag.
 update_tag(AST, [F | _] = Search, Type, NewAttr, NewChildren) when
@@ -239,10 +257,9 @@ append_children(AST, Search, NewChildren) ->
 %% instead of returning a rebuilt full AST.
 get_tag(AST, Search) ->
   get_tag(AST, lists:reverse(Search), []).
-get_tag([], _, _) ->
-  undefined;
-get_tag([H|T], Search, CurrPath) when is_list(H) ->
-  get_tag(T, Search, CurrPath);
+
+get_tag([], _, _) -> undefined;
+
 get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
   EqPath = lists:sublist([Name | CurrPath], length(Search)),
   case EqPath == Search of
@@ -255,15 +272,23 @@ get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
         FoundTag ->
           FoundTag
       end
-  end.
+  end;
 
-append_attr([{K1,V1} | Attributes], {K2,V2}) when K1 =:= K2 ->
+get_tag([_|T], Search, CurrPath) -> get_tag(T, Search, CurrPath).
+
+
+append_attr([{K1,V1} | Attributes], {K1,V2}) ->
   [{K1, V1 ++ V2} | Attributes];
-
 append_attr([KV1 | Attributes], KV2) ->
   [KV1 | append_attr(Attributes, KV2)];
-
 append_attr([], KV2) ->
+  [KV2].
+
+prepend_attr([{K1,V1} | Attributes], {K1,V2}) ->
+  [{K1, V2 ++ V1} | Attributes];
+prepend_attr([KV1 | Attributes], KV2) ->
+  [KV1 | prepend_attr(Attributes, KV2)];
+prepend_attr([], KV2) ->
   [KV2].
 
 get_attr_vals(Find, Attr) ->
@@ -312,4 +337,42 @@ get_search_paths(Options) ->
   case proplists:get_value(path, Options, none) of
     none -> [];
     Vs -> Vs
+  end.
+
+% Uses optional magical file-extension fill and search paths to try and find an
+% actual file.
+find_file(Base, Extension, SearchPaths) ->
+  FName = case {filename:extension(Base), Extension} of
+      {_, []} -> Base;
+      {[], [$. | _]} -> Base ++ Extension;
+      {[], Extension} -> Base ++ "." ++ Extension;
+      {Extension, Extension} -> Base;
+      {[$. | Extension], Extension} -> Base;
+      {_, [$. | _]} -> Base ++ Extension;
+      _ -> Base ++ "." ++ Extension
+    end,
+  case filename:pathtype(FName) of
+    absolute ->
+      case filelib:is_file(FName) of
+        true -> {ok, FName};
+        false -> {error, "Could not find "++FName}
+      end;
+    relative ->
+      case file:path_open(SearchPaths, FName, [read]) of
+        {ok, IOD, FullName} ->
+          file:close(IOD),
+          {ok, FullName};
+        _ -> {error, "Could not find "++FName++" in any of the search paths."}
+      end
+  end.
+
+find_magic_file(FindExt, Options) ->
+  case proplists:get_value(source_filename, Options) of
+    undefined -> none;
+    SFN ->
+      BaseName = filename:rootname(filename:basename(SFN)),
+      case find_file(BaseName, FindExt, get_search_paths(Options)) of
+        {ok, FullName} -> FullName;
+        _ -> none
+      end
   end.
