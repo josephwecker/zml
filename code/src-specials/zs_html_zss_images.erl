@@ -115,12 +115,12 @@ ast_has_selector(AST, Sel) ->
       true
   end.
 
-scan_ast([], _) ->
-  true;
-scan_ast(_, []) ->
-  false;
-scan_ast(Elems, [Txt | T]) when is_list(Txt) ->
-  scan_ast(Elems, T);
+scan_ast([], _) -> true;
+scan_ast(_, []) -> false;
+
+scan_ast(Elems, [newline | T])               -> scan_ast(Elems, T);
+scan_ast(Elems, [Txt | T]) when is_list(Txt) -> scan_ast(Elems, T);
+
 scan_ast([E | T] = Elems, [{NEl, _, NAtt, NChildren}  | TAST]) ->
   case elements_match(E, NEl, NAtt) of
     true ->

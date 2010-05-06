@@ -17,7 +17,6 @@
 % call.
 process_tree({{"html", ID}, special, _Attr, _Children}, AST, Options) ->
   Transformations = [
-    fun remove_newline_hack/5,
     fun process_doctype/5,
     fun process_head_and_body/5,
     fun process_xhtml/5,
@@ -31,28 +30,6 @@ process_tree({{"html", ID}, special, _Attr, _Children}, AST, Options) ->
       {_, _, NewAttr, NewChildren} = zml:get_tag(NewAST, [{"html",ID}]),
       Transformer(ID, NewAttr, NewChildren, NewAST, Options)
     end, AST, Transformations).
-
-
-remove_newline_hack(_ID, _Attr, _Children, AST, _Options) ->
-  remove_newline(AST, []).
-
-
-remove_newline([], Acc) -> Acc;
-
-remove_newline([newline | T], Acc) -> remove_newline(T, Acc);
-
-remove_newline([[Ch | _] = Str | T], Acc) when is_integer(Ch) ->
-  remove_newline(T, [Str | Acc]);
-
-remove_newline([H | T], Acc) when is_list(H) ->
-  remove_newline(T, [remove_newline(H, []) | Acc]);
-
-remove_newline([{Name, Type, Attributes, Children} | T], Acc) ->
-  remove_newline(T, [{Name, Type, Attributes,
-                      remove_newline(Children, [])} | Acc]);
-
-remove_newline([H | T], Acc) -> remove_newline(T, [H | Acc]).
-
 
 process_doctype(_ID, Attr, _Children, AST, _Options) ->
   [FirstLine | _] = AST,
