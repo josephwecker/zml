@@ -176,6 +176,9 @@ autoclose([], _, Acc) -> lists:reverse(Acc);
 autoclose([{Tag, Type, Attr, []} | T], IsXml, Acc) ->
   autoclose(T, IsXml, [{Tag, Type, Attr, close_tag(IsXml, Tag)} | Acc]);
 
+autoclose([{Tag, Type, Attr, [newline]} | T], IsXml, Acc) ->
+  autoclose(T, IsXml, [{Tag, Type, Attr, close_tag(IsXml, Tag)} | Acc]);
+
 autoclose([{Tag, Type, Attr, Children} | T], IsXml, Acc) ->
   autoclose(T, IsXml,
     [{Tag, Type, Attr, autoclose(Children, IsXml, [])} | Acc]);
