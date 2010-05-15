@@ -1,4 +1,9 @@
 
+Current work and issues can be found at
+"PivotalTracker":https://www.pivotaltracker.com/projects/65667
+
+Feel free to ping us if you want to be added to the pivotaltracker account.
+
 h2. The Little ZMLer
 
 ZML is a small markup language that uses indentation to represent
