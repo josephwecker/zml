@@ -23,7 +23,7 @@ tokenize([H | T] = Lines, Indent, Rec, Tok, Acc) ->
      Rec =:= non_recursive ->
        tokenize(T, Indent, Rec, Tok, [Ln | Acc]);
      true ->
-       {NewRec, NewTok, RestLn} = get_tokenizer(Rec, Ln),
+       {NewRec, NewTok, RestLn} = get_tokenizer(Ln),
        case NewTok of
          no_tokenizer ->
            tokenize(T, Indent, Rec, Tok, [RestLn | Acc]);
@@ -42,10 +42,5 @@ get_dent(Ln, Dent) -> {Dent, Ln}.
 
 apply_tokenizer(no_tokenizer, Acc) -> lists:reverse(Acc).
 
-
-get_tokenizer(non_recursive, Ln) ->
-  {non_recursive, no_tokenizer, Ln};
-
-get_tokenizer(recursive, Ln) ->
-  {recursive, no_tokenizer, Ln}.
+get_tokenizer(Ln) -> {recursive, no_tokenizer, Ln}.
 
