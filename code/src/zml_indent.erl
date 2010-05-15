@@ -39,8 +39,28 @@ get_dent(Ln) -> get_dent(Ln, 0).
 get_dent([H|T], Dent) when ?IS_WHITESPACE(H) -> get_dent(T, Dent + 1);
 get_dent(Ln, Dent) -> {Dent, Ln}.
 
+is_alnum(Ch) when Ch >= $0 andalso Ch =< $9 -> true;
+is_alnum(Ch) when Ch >= $a andalso Ch =< $z -> true;
+is_alnum(Ch) when Ch >= $A andalso Ch =< $Z -> true;
+is_alnum($_) -> true;
+is_alnum($-) -> true;
+is_alnum(_ ) -> false.
 
-apply_tokenizer(no_tokenizer, Acc) -> lists:reverse(Acc).
+parse_id(Ln) -> lists:splitwith(fun is_alnum/1, Ln).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+apply_tokenizer(no_tokenizer, Acc) -> lists:reverse(Acc);
+
+apply_tokenizer({tag, Tag, Attr}, Acc) ->
+  {tag, Tag, Attr, lists:reverse(Acc)}.
+
+
+get_tokenizer([$:|T] = Str) ->
+  case parse_id(T) of
+    {[],  _ } -> {recursive, no_tokenizer,   Str};
+    {Tag, Ln} -> {recursive, {tag, Tag, []}, Ln }
+  end;
 
 get_tokenizer(Ln) -> {recursive, no_tokenizer, Ln}.
 
