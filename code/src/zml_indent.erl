@@ -80,12 +80,13 @@ get_tokenizer([H|T] = Ln) when ?IS_SPECIAL(H) ->
   case parse_id(T) of
     {[], _   } -> {recursive, no_tokenizer, Ln};
     {Id, Rest} ->
-      case is_recursive(H, Id) of
-        recursive ->
+      {IsRec, HasAttrs} = is_recursive(H, Id),
+      case HasAttrs of
+        has_class_attrs ->
           {Type, Tag, Attr} = get_tag(H, Id),
           {NewAttr, RestLn} = parse_attrs(Rest, Attr),
-          {recursive, {Type, Tag, NewAttr}, RestLn};
-        non_recursive -> {non_recursive, get_tag(H, Id), Rest}
+          {IsRec, {Type, Tag, NewAttr}, RestLn};
+        _ -> {IsRec, get_tag(H, Id), Rest}
       end
   end;
 
@@ -99,20 +100,23 @@ get_tag(Ch, Id) when ?IS_ATTR(Ch) -> {tag, "div", [id2attr(Ch, Id)]}.
 
 is_recursive($*, Tag) ->
   case call_special(Tag, is_recursive, []) of
-    function_not_found -> recursive;
+    function_not_found -> {recursive, has_class_attrs};
     IsRec -> IsRec
   end;
 
-is_recursive(_, _) -> recursive.
+is_recursive(_, _) -> {recursive, has_class_attrs}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% TODO: move to the zml_util module
 call_special(Tag, Func, Args) ->
   ModuleName = list_to_atom("zml_special_" ++ string:to_lower(Tag)),
-  {module, Module} = code:ensure_loaded(ModuleName),
-  case erlang:function_exported(Module, Func, length(Args)) of
-    true -> apply(Module, Func, Args);
-    _    -> function_not_found
+  case code:ensure_loaded(ModuleName) of
+    {module, Module} ->
+      case erlang:function_exported(Module, Func, length(Args)) of
+        true -> apply(Module, Func, Args);
+        _    -> function_not_found
+      end;
+    {error, _Err} -> function_not_found
   end.
 
