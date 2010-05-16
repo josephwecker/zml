@@ -60,6 +60,8 @@ apply_tokenizer(no_tokenizer, Acc) -> lists:reverse(Acc);
 apply_tokenizer({tag, Tag, Attr}, Acc) ->
   {tag, Tag, Attr, lists:reverse(Acc)};
 
+apply_tokenizer({special_tag, "comment", _Attr}, _Acc) -> [];
+
 apply_tokenizer({special_tag, Tag, Attr}, Acc) ->
   {special_tag, Tag, Attr, lists:reverse(Acc)}.
 
