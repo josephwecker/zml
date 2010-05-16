@@ -7,6 +7,11 @@
   (H >= $\x{0009} andalso H =< $\x{000D})
     orelse H == $\x{0020} orelse H == $\x{00A0}).
 
+-define(IS_SPECIAL(H), H == $:
+                orelse H == $*
+                orelse H == $#
+                orelse H == $.).
+
 
 tokenize_string(Str) ->
   Lines = string:tokens(Str, "\n"),
@@ -53,14 +58,24 @@ parse_id(Ln) -> lists:splitwith(fun is_alnum/1, Ln).
 apply_tokenizer(no_tokenizer, Acc) -> lists:reverse(Acc);
 
 apply_tokenizer({tag, Tag, Attr}, Acc) ->
-  {tag, Tag, Attr, lists:reverse(Acc)}.
+  {tag, Tag, Attr, lists:reverse(Acc)};
 
+apply_tokenizer({special_tag, Tag, Attr}, Acc) ->
+  {special_tag, Tag, Attr, lists:reverse(Acc)}.
 
-get_tokenizer([$:|T] = Str) ->
+get_tokenizer([H|T] = Ln) when ?IS_SPECIAL(H) ->
   case parse_id(T) of
-    {[],  _ } -> {recursive, no_tokenizer,   Str};
-    {Tag, Ln} -> {recursive, {tag, Tag, []}, Ln }
+    {[],  _  } -> {recursive, no_tokenizer, Ln};
+    {Id, Rest} -> {is_recursive(H, Id), get_tag(H, Id), Rest}
   end;
 
 get_tokenizer(Ln) -> {recursive, no_tokenizer, Ln}.
+
+get_tag($:, Id) -> {tag,         Id,    []};
+get_tag($*, Id) -> {special_tag, Id,    []};
+get_tag($#, Id) -> {tag,         "div", [{"class", Id}]};
+get_tag($., Id) -> {tag,         "div", [{"id",    Id}]}.
+
+is_recursive($*, "comment") -> non_recursive;
+is_recursive(_, _) -> recursive.
 
