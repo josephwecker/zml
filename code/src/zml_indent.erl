@@ -47,19 +47,19 @@ is_alnum(_ ) -> false.
 
 parse_id(Ln) -> lists:splitwith(fun is_alnum/1, Ln).
 
-parse_attrs([], Attr) -> {lists:reverse(Attr), []};
+parse_attrs([], Attr) -> {Attr, []};
 
 parse_attrs([H|T] = Ln, Attr) when ?IS_ATTR(H) ->
   case parse_id(T) of
-    {[], _   } -> {lists:reverse(Attr), Ln};
-    {Id, Rest} -> parse_attrs(Rest, [id2attr(H, Id) | Attr])
+    {[], _   } -> {Attr, Ln};
+    {Id, Rest} -> parse_attrs(Rest, zml:append_attr(Attr, id2attr(H, Id)))
   end;
 
-parse_attrs(Ln, Attr) -> {lists:reverse(Attr), Ln}.
+parse_attrs(Ln, Attr) -> {Attr, Ln}.
 
 
-id2attr($#, Id) -> {"id",    Id};
-id2attr($., Id) -> {"class", Id}.
+id2attr($#, Id) -> {"id",    [Id]};
+id2attr($., Id) -> {"class", [Id]}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -69,7 +69,7 @@ apply_tokenizer({tag, Tag, Attr}, Acc) ->
   {tag, Tag, Attr, lists:reverse(Acc)};
 
 apply_tokenizer({special_tag, Tag, Attr}, Acc) ->
-  case call_special(Tag, tokenize, [Tag, Attr, Acc]) of
+  case zml:call_special(Tag, tokenize, [Tag, Attr, Acc]) of
     function_not_found -> {special_tag, Tag, Attr, lists:reverse(Acc)};
     Node -> Node
   end.
@@ -99,24 +99,10 @@ get_tag($*, Id) -> {special_tag, Id, []};
 get_tag(Ch, Id) when ?IS_ATTR(Ch) -> {tag, "div", [id2attr(Ch, Id)]}.
 
 is_recursive($*, Tag) ->
-  case call_special(Tag, is_recursive, []) of
+  case zml:call_special(Tag, is_recursive, []) of
     function_not_found -> {recursive, has_class_attrs};
     IsRec -> IsRec
   end;
 
 is_recursive(_, _) -> {recursive, has_class_attrs}.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% TODO: move to the zml_util module
-call_special(Tag, Func, Args) ->
-  ModuleName = list_to_atom("zml_special_" ++ string:to_lower(Tag)),
-  case code:ensure_loaded(ModuleName) of
-    {module, Module} ->
-      case erlang:function_exported(Module, Func, length(Args)) of
-        true -> apply(Module, Func, Args);
-        _    -> function_not_found
-      end;
-    {error, _Err} -> function_not_found
-  end.
 

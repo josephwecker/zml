@@ -31,7 +31,8 @@
     update_tag/5,
     append_children/3,
     get_search_paths/1,
-    str/1
+    str/1,
+    call_special/3
   ]).
 
 -define(OPT_ENV(Desc),
@@ -408,3 +409,15 @@ find_magic_file(FindExt, Options) ->
         _ -> none
       end
   end.
+
+call_special(Tag, Func, Args) ->
+  ModuleName = list_to_atom("zml_special_" ++ string:to_lower(Tag)),
+  case code:ensure_loaded(ModuleName) of
+    {module, Module} ->
+      case erlang:function_exported(Module, Func, length(Args)) of
+        true -> apply(Module, Func, Args);
+        _    -> function_not_found
+      end;
+    {error, _Err} -> function_not_found
+  end.
+
