@@ -19,21 +19,24 @@ tokenize_string(Str) ->
 
 tokenize([], _Indent, _Rec, Tok, Acc) -> {apply_tokenizer(Tok, Acc), []};
 
-tokenize([H | T] = Lines, Indent, Rec, Tok, Acc) ->
-  {NewDent, Ln} = get_dent(H),
-  case Ln of
-    [] -> tokenize(T, Indent, Rec, Tok, [Ln | Acc]);
-    _  ->
-      if NewDent =< Indent -> {apply_tokenizer(Tok, Acc), Lines};
-         Rec =:= non_recursive -> tokenize(T, Indent, Rec, Tok, [Ln | Acc]);
-         true ->
-          {NewRec, NewTok, RestLn} = get_tokenizer(Ln),
-          case NewTok of
-            no_tokenizer -> tokenize(T, Indent, Rec, Tok, [RestLn | Acc]);
-            _ -> {L,R} = tokenize(T, NewDent, NewRec, NewTok, [RestLn]),
-                 tokenize(R, Indent, Rec, Tok, [L | Acc])
-          end
-      end
+tokenize([H|_] = Lines, Indent, Rec, Tok, Acc) ->
+  tokenize(get_dent(H), Lines, Indent, Rec, Tok, Acc).
+
+tokenize({_, []}, [_|T], Indent, Rec, Tok, Acc) ->
+  tokenize(T, Indent, Rec, Tok, ["" | Acc]);
+
+tokenize({NewDent, _}, Lines, Indent, _Rec, Tok, Acc)
+  when NewDent =< Indent -> {apply_tokenizer(Tok, Acc), Lines};
+
+tokenize({_, Ln}, [_|T], Indent, non_recursive, Tok, Acc) ->
+  tokenize(T, Indent, non_recursive, Tok, [Ln | Acc]);
+
+tokenize({NewDent, Ln}, [_|T], Indent, Rec, Tok, Acc) ->
+  {NewRec, NewTok, RestLn} = get_tokenizer(Ln),
+  case NewTok of
+    no_tokenizer -> tokenize(T, Indent, Rec, Tok, [RestLn | Acc]);
+    _ -> {L,R} = tokenize(T, NewDent, NewRec, NewTok, [RestLn]),
+         tokenize(R, Indent, Rec, Tok, [L | Acc])
   end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
