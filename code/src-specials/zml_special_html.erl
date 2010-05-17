@@ -23,6 +23,7 @@ process_tree({{"html", ID}, special, _Attr, _Children}, AST, Options) ->
     fun process_metas/5,
     fun process_javascript/5,
     fun process_zss_and_images/5,
+    fun process_autoclose/5,
     fun process_cleanup/5
   ],
   lists:foldl(
@@ -94,7 +95,6 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
 
 process_metas(ID, Attr, _Children, AST, _Options) ->
   [[Tp | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
-
   Metas = lists:foldr(fun(Input,Acc) -> new_metas(Input, Acc, Attr) end, [],
     [
       {encoding,    Tp, ?ENCODING_DEFAULT},
@@ -154,15 +154,47 @@ build_meta(Key, Name, Vals, IsXml) ->
   build_meta(Key, Name, Vals, IsXml, IsXml).
 
 build_meta(Key, Name, Vals, IsXml, LowerVals) ->
-  {NewName, End} = case {Name, IsXml} of
-    {"MSSmartTagsPreventParsing", $x} -> {Name, "/>"};
-    {_, $x} -> {to_lower(zml:str(Name)), "/>"};
-    {_, _ } -> {zml:str(Name), ">" }
+  NewName = case {Name, IsXml} of
+    {"MSSmartTagsPreventParsing", $x} -> Name;
+    {_, $x} -> to_lower(zml:str(Name));
+    {_, _ } -> zml:str(Name)
   end,
   NewVals = case LowerVals of
     $x -> to_lower(join(Vals, " "));
     _  -> join(Vals, " ")
   end,
-  ["<meta " ++ zml:str(Key) ++ "=\"" ++ NewName ++
-    "\" content=\"" ++ NewVals ++ "\"" ++ End].
+  [zml:new_tag(meta,
+    [{"content", [NewVals]}, {zml:str(Key), [NewName]}], [])].
+
+
+process_autoclose(_ID, Attr, _Children, AST, _Options) ->
+  [[TypeFC | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
+  autoclose(AST, TypeFC == $x, []).
+
+autoclose([], _, Acc) -> lists:reverse(Acc);
+
+autoclose([{Tag, Type, Attr, []} | T], IsXml, Acc) ->
+  autoclose(T, IsXml, [{Tag, Type, Attr, close_tag(IsXml, Tag)} | Acc]);
+
+autoclose([{Tag, Type, Attr, [newline]} | T], IsXml, Acc) ->
+  autoclose(T, IsXml, [{Tag, Type, Attr, close_tag(IsXml, Tag)} | Acc]);
+
+autoclose([{Tag, Type, Attr, Children} | T], IsXml, Acc) ->
+  autoclose(T, IsXml,
+    [{Tag, Type, Attr, autoclose(Children, IsXml, [])} | Acc]);
+
+autoclose([H | T], IsXml, Acc) -> autoclose(T, IsXml, [H | Acc]).
+
+close_tag(true, "meta" ) -> [];
+close_tag(true, "img"  ) -> [];
+close_tag(true, "link" ) -> [];
+close_tag(true, "br"   ) -> [];
+close_tag(true, "hr"   ) -> [];
+close_tag(true, "input") -> [];
+close_tag(true, "area" ) -> [];
+close_tag(true, "param") -> [];
+close_tag(true, "col"  ) -> [];
+close_tag(true, "base" ) -> [];
+
+close_tag(_, _) -> [""].
 
