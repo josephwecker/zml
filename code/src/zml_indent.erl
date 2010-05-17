@@ -11,7 +11,7 @@
 -define(IS_SPECIAL(H), H == $: orelse H == $* orelse ?IS_ATTR(H)).
 
 tokenize_string(Str) ->
-  Lines = string:tokens(Str, "\n"),
+  Lines = string:tokens(Str, "\n"), % FIXME: removes empty lines
   {Res, []} = tokenize(Lines, -1, recursive, no_tokenizer, []),
   Res.
 
@@ -21,15 +21,19 @@ tokenize([], _Indent, _Rec, Tok, Acc) -> {apply_tokenizer(Tok, Acc), []};
 
 tokenize([H | T] = Lines, Indent, Rec, Tok, Acc) ->
   {NewDent, Ln} = get_dent(H),
-  if NewDent =< Indent -> {apply_tokenizer(Tok, Acc), Lines};
-     Rec =:= non_recursive -> tokenize(T, Indent, Rec, Tok, [Ln | Acc]);
-     true ->
-       {NewRec, NewTok, RestLn} = get_tokenizer(Ln),
-       case NewTok of
-         no_tokenizer -> tokenize(T, Indent, Rec, Tok, [RestLn | Acc]);
-         _ -> {L,R} = tokenize(T, NewDent, NewRec, NewTok, [RestLn]),
-              tokenize(R, Indent, Rec, Tok, [L | Acc])
-       end
+  case Ln of
+    [] -> tokenize(T, Indent, Rec, Tok, [Ln | Acc]);
+    _  ->
+      if NewDent =< Indent -> {apply_tokenizer(Tok, Acc), Lines};
+         Rec =:= non_recursive -> tokenize(T, Indent, Rec, Tok, [Ln | Acc]);
+         true ->
+          {NewRec, NewTok, RestLn} = get_tokenizer(Ln),
+          case NewTok of
+            no_tokenizer -> tokenize(T, Indent, Rec, Tok, [RestLn | Acc]);
+            _ -> {L,R} = tokenize(T, NewDent, NewRec, NewTok, [RestLn]),
+                 tokenize(R, Indent, Rec, Tok, [L | Acc])
+          end
+      end
   end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
