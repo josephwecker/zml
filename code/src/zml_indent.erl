@@ -12,22 +12,53 @@
 
 tokenize_string(Str) ->
   Lines = string:tokens(Str, "\n"),
-  {Res, []} = tokenize(Lines, 0, recursive, no_tokenizer, []),
+  {Res, []} = tokenize(Lines, -1, recursive, no_tokenizer, []),
   Res.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tokenize([], _Indent, _Rec, Tok, Acc) -> {apply_tokenizer(Tok, Acc), []};
+tokenize(Lines, Indent, Acc) ->
+  io:format("  CALL: tokenize_seq(~p, ~p, ~p)~n",
+            [Indent, Lines, Acc]),
+  Res = tokenize_(Lines, Indent, Acc),
+  io:format("RETURN: tokenize_seq(~p, ~p, ~p)~n        = ~p~n",
+            [Indent, Lines, Acc, Res]),
+  Res.
 
-tokenize([H | T] = Lines, Indent, Rec, Tok, Acc) ->
+tokenize_([], _Indent, Acc) -> {lists:reverse(Acc), []};
+
+tokenize_([H|T] = Lines, Indent, Acc) ->
   {NewDent, Ln} = get_dent(H),
-  if NewDent < Indent -> {apply_tokenizer(Tok, Acc), Lines};
+  case NewDent < Indent of
+    true -> {lists:reverse(Acc), Lines};
+    _ -> {NewRec, NewTok, RestLn} = get_tokenizer(Ln),
+         case NewTok of
+           no_tokenizer -> tokenize(T, Indent, [RestLn | Acc]);
+           _ -> {L,R} = tokenize(T, NewDent, NewRec, NewTok, [RestLn]),
+                tokenize(R, Indent, [L | Acc])
+         end
+  end.
+
+
+tokenize(Lines, Indent, Rec, Tok, Acc) ->
+  io:format("  CALL: tokenize(~p, ~p, ~p, ~p, ~p)~n",
+            [Indent, Lines, Rec, Tok, Acc]),
+  Res = tokenize_(Lines, Indent, Rec, Tok, Acc),
+  io:format("RETURN: tokenize(~p, ~p, ~p, ~p, ~p)~n        = ~p~n",
+            [Indent, Lines, Rec, Tok, Acc, Res]),
+  Res.
+
+tokenize_([], _Indent, _Rec, Tok, Acc) -> {apply_tokenizer(Tok, Acc), []};
+
+tokenize_([H | T] = Lines, Indent, Rec, Tok, Acc) ->
+  {NewDent, Ln} = get_dent(H),
+  if NewDent =< Indent -> {apply_tokenizer(Tok, Acc), Lines};
      Rec =:= non_recursive -> tokenize(T, Indent, Rec, Tok, [Ln | Acc]);
      true ->
        {NewRec, NewTok, RestLn} = get_tokenizer(Ln),
        case NewTok of
          no_tokenizer -> tokenize(T, Indent, Rec, Tok, [RestLn | Acc]);
-         _ -> {L, R} = tokenize(T, NewDent, NewRec, NewTok, [RestLn]),
+         _ -> {L,R} = tokenize(T, NewDent, NewRec, NewTok, [RestLn]),
               tokenize(R, Indent, Rec, Tok, [L | Acc])
        end
   end.
