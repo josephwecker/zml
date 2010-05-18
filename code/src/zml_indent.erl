@@ -7,8 +7,8 @@
   (H >= $\x{0009} andalso H =< $\x{000D})
     orelse H == $\x{0020} orelse H == $\x{00A0}).
 
--define(IS_ATTR(H),    H == $# orelse H == $.).
--define(IS_SPECIAL(H), H == $: orelse H == $* orelse ?IS_ATTR(H)).
+-define(IS_ATTR(H), H == $# orelse H == $.).
+-define(IS_TAG(H),  H == $: orelse H == $* orelse ?IS_ATTR(H)).
 
 tokenize_string(Str) ->
   Lines = string:tokens(Str, "\n"), % FIXME: removes empty lines
@@ -83,7 +83,7 @@ apply_tokenizer({tag, Tag, Attr}, Acc) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_tokenizer([H|T] = Ln) when ?IS_SPECIAL(H) ->
+get_tokenizer([H|T] = Ln) when ?IS_TAG(H) ->
   case parse_id(T) of
     {[], _   } -> {recursive, no_tokenizer, Ln};
     {Id, Rest} ->
@@ -96,6 +96,9 @@ get_tokenizer([H|T] = Ln) when ?IS_SPECIAL(H) ->
         _ -> {IsRec, get_tag(H, Id), Rest}
       end
   end;
+
+get_tokenizer([$\\ | [H|_] = Ln]) when ?IS_TAG(H) ->
+  {recursive, no_tokenizer, Ln};
 
 get_tokenizer(Ln) -> {recursive, no_tokenizer, Ln}.
 
