@@ -72,14 +72,14 @@ id2attr($., Id) -> {"class", [Id]}.
 
 apply_tokenizer(no_tokenizer, Acc) -> lists:reverse(Acc);
 
-apply_tokenizer({tag, Tag, Attr}, Acc) ->
-  {tag, Tag, Attr, lists:reverse(Acc)};
-
-apply_tokenizer({special_tag, Tag, Attr}, Acc) ->
+apply_tokenizer({tag, {special, Tag} = Spc, Attr}, Acc) ->
   case zml:call_special(Tag, tokenize, [Tag, Attr, Acc]) of
-    function_not_found -> {special_tag, Tag, Attr, lists:reverse(Acc)};
+    function_not_found -> {tag, Spc, Attr, lists:reverse(Acc)};
     Node -> Node
-  end.
+  end;
+
+apply_tokenizer({tag, Tag, Attr}, Acc) ->
+  {tag, Tag, Attr, lists:reverse(Acc)}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -101,8 +101,8 @@ get_tokenizer(Ln) -> {recursive, no_tokenizer, Ln}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_tag($:, Id) -> {tag,         Id, []};
-get_tag($*, Id) -> {special_tag, Id, []};
+get_tag($:, Id) -> {tag,           Id,  []};
+get_tag($*, Id) -> {tag, {special, Id}, []};
 get_tag(Ch, Id) when ?IS_ATTR(Ch) -> {tag, "div", [id2attr(Ch, Id)]}.
 
 is_recursive($*, Tag) ->
