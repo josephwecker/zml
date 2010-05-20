@@ -28,13 +28,16 @@ tokenize_tag([[$|, $" | Ln] | T], text, AccL, AccR) ->
 tokenize_tag([[$", $| | Ln] | T], quote, AccL, AccR) ->
   tokenize_tag([Ln | T], text, [], add_tag(quote, AccL, AccR));
 
+tokenize_tag([[$\\, $", $| | Ln] | T], quote, AccL, AccR) ->
+  tokenize_tag([Ln | T], quote, [$|, $" | AccL], AccR);
+
 tokenize_tag([], quote, AccL, AccR) ->
   tokenize_tag([], text, AccL ++ "\"|", AccR);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tokenize_tag([[$\\, Ch | Ln] | T], State, AccL, AccR) ->
-  tokenize_tag([Ln | T], State, [Ch | AccL], AccR);
+tokenize_tag([[$\\, Ch | Ln] | T], text, AccL, AccR) ->
+  tokenize_tag([Ln | T], text, [Ch | AccL], AccR);
 
 tokenize_tag([[Ch | Ln] | T], State, AccL, AccR) ->
   tokenize_tag([Ln | T], State, [Ch | AccL], AccR);
@@ -44,7 +47,7 @@ tokenize_tag([[] | T], State, AccL, AccR) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-add_tag( quote, AccL, AccR) -> [{text, lists:reverse(AccL)} | AccR];
+add_tag( quote, AccL, AccR) -> [{quote, lists:reverse(AccL)} | AccR];
 add_tag(_State, [],   AccR) -> AccR;
 add_tag( State, AccL, AccR) -> [{State, lists:reverse(AccL)} | AccR].
 
