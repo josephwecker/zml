@@ -2,6 +2,7 @@
 -module(zml_tag).
 -compile(export_all).
 
+-define(IS_QUOTE(Ch), Ch == $" orelse Ch == $' orelse Ch == $`).
 
 tokenize_tag(Lines) -> tokenize_tag(Lines, text, [], []).
 
@@ -25,17 +26,17 @@ tokenize_tag([], comment, AccL, AccR) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tokenize_tag([[$|, $" | Ln] | T], text, AccL, AccR) ->
-  tokenize_tag([Ln | T], quote, [], add_tag(text, AccL, AccR));
+tokenize_tag([[$|, Ch | Ln] | T], text, AccL, AccR) when ?IS_QUOTE(Ch) ->
+  tokenize_tag([Ln | T], {quote, Ch}, [], add_tag(text, AccL, AccR));
   
-tokenize_tag([[$", $| | Ln] | T], quote, AccL, AccR) ->
+tokenize_tag([[Ch, $| | Ln] | T], {quote, Q}, AccL, AccR) when Ch == Q ->
   tokenize_tag([Ln | T], text, [], add_tag(quote, AccL, AccR));
 
-tokenize_tag([[$\\, $", $| | Ln] | T], quote, AccL, AccR) ->
-  tokenize_tag([Ln | T], quote, [$|, $" | AccL], AccR);
+tokenize_tag([[$\\, Ch, $| | Ln] | T], {quote, Q}, AccL, AccR) when Ch == Q ->
+  tokenize_tag([Ln | T], {quote, Q}, [$|, Ch | AccL], AccR);
 
-tokenize_tag([], quote, AccL, AccR) ->
-  tokenize_tag([], text, AccL ++ "\"|", AccR);
+tokenize_tag([], {quote, Q}, AccL, AccR) ->
+  tokenize_tag([], text, AccL ++ [Q, $|], AccR);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
