@@ -11,6 +11,9 @@ tokenize_tag([], text, AccL, AccR) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+tokenize_tag([[$|, $| | _] | T], text, AccL, AccR) ->
+  tokenize_tag(T, text, [], add_tag(text, AccL, AccR));
+
 tokenize_tag([[$|, $# | Ln] | T], text, AccL, AccR) ->
   tokenize_tag([Ln | T], comment, [], add_tag(text, AccL, AccR));
 
