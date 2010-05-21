@@ -45,7 +45,7 @@ tokenize_tag([[Ch | Ln] | T], text, AccL, AccR) when ?IS_WHITESPACE(Ch) ->
   tokenize_tag([Ln | T], text, [], add_text(text, AccL, AccR));
 
 tokenize_tag([[] | T], text, AccL, AccR) ->
-  tokenize_tag(T, text, [], add_text(text, AccL, AccR));
+  tokenize_tag(T, text, [], [newline | add_text(text, AccL, AccR)]);
 
 tokenize_tag([[Ch | Ln] | T], State, AccL, AccR) ->
   tokenize_tag([Ln | T], State, [Ch | AccL], AccR);
