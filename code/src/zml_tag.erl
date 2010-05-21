@@ -24,11 +24,11 @@ tokenize_tag([], comment, AccL, AccR) ->
 tokenize_tag([[$|, Ch | Ln] | T], text, AccL, AccR) when ?IS_QUOTE(Ch) ->
   tokenize_tag([Ln | T], {quote, Ch}, [], add_text(text, AccL, AccR));
 
-tokenize_tag([[Ch, $| | Ln] | T], {quote, Q}, AccL, AccR) when Ch == Q ->
+tokenize_tag([[Q, $| | Ln] | T], {quote, Q}, AccL, AccR) ->
   tokenize_tag([Ln | T], text, [], add_text(quote, AccL, AccR));
 
-tokenize_tag([[$\\, Ch, $| | Ln] | T], {quote, Q}, AccL, AccR) when Ch == Q ->
-  tokenize_tag([Ln | T], {quote, Q}, [$|, Ch | AccL], AccR);
+tokenize_tag([[$\\, Q, $| | Ln] | T], {quote, Q}, AccL, AccR) ->
+  tokenize_tag([Ln | T], {quote, Q}, [$|, Q | AccL], AccR);
 
 tokenize_tag([], {quote, Q}, AccL, AccR) ->
   tokenize_tag([], text, AccL ++ [Q, $|], AccR);
@@ -58,4 +58,11 @@ tokenize_tag([], text, AccL, AccR) ->
 add_text( quote, AccL, AccR) -> [lists:reverse(AccL) | AccR];
 add_text(_State, [],   AccR) -> AccR;
 add_text(_State, AccL, AccR) -> [lists:reverse(AccL) | AccR].
+
+close_bracket($() -> $);
+close_bracket($[) -> $];
+close_bracket(${) -> $}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
