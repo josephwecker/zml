@@ -13,17 +13,6 @@ tokenize_tag(Lines, Attr) ->
 tokenize_tag([[$|, $| | _] | T], text, AccL, AccR) ->
   tokenize_tag(T, text, [], add_text(text, AccL, AccR));
 
-tokenize_tag([[$|, $# | Ln] | T], text, AccL, AccR) ->
-  tokenize_tag([Ln | T], comment, [], add_text(text, AccL, AccR));
-
-tokenize_tag([[$#, $| | Ln] | T], comment, _AccL, AccR) ->
-  tokenize_tag([Ln | T], text, [], AccR);
-
-tokenize_tag([], comment, AccL, AccR) ->
-  tokenize_tag([], text, AccL ++ "#|", AccR);
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 tokenize_tag([[$|, Ch | Ln] | T], text, AccL, AccR) when ?IS_QUOTE(Ch) ->
   tokenize_tag([Ln | T], {quote, Ch}, [], add_text(text, AccL, AccR));
 
@@ -49,6 +38,9 @@ tokenize_tag([[Ch | Ln] | T], text, AccL, AccR) when ?IS_WHITESPACE(Ch) ->
 
 tokenize_tag([[] | T], text, AccL, AccR) ->
   tokenize_tag(T, text, [], [newline | add_text(text, AccL, AccR)]);
+
+tokenize_tag([Tag | T], text, AccL, AccR) when is_tuple(Tag) ->
+  tokenize_tag(T, text, [], [Tag | add_text(text, AccL, AccR)]);
 
 tokenize_tag([[Ch | Ln] | T], State, AccL, AccR) ->
   tokenize_tag([Ln | T], State, [Ch | AccL], AccR);
