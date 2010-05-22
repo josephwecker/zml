@@ -3,7 +3,10 @@
 -compile(export_all).
 -include("zml_tokenizer.hrl").
 
-tokenize_tag(Lines) -> tokenize_tag(Lines, text, [], []).
+% tokenize_tag(Lines) -> tokenize_tag(Lines, text, [], []).
+
+tokenize_tag(Lines, Attr) ->
+  parse_attr(tokenize_tag(Lines, text, [], []), Attr).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

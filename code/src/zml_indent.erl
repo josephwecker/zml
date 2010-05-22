@@ -68,12 +68,15 @@ apply_tokenizer(no_tokenizer, Acc) -> lists:reverse(Acc);
 
 apply_tokenizer({tag, {special, Tag} = Spc, Attr}, Acc) ->
   case zml:call_special(Tag, tokenize, [Tag, Attr, Acc]) of
-    function_not_found -> {tag, Spc, Attr, lists:reverse(Acc)};
+    function_not_found ->
+      {tag, Tag, NewAttr, Res} = apply_tokenizer({tag, Tag, Attr}, Acc),
+      {tag, Spc, NewAttr, Res};
     Node -> Node
   end;
 
 apply_tokenizer({tag, Tag, Attr}, Acc) ->
-  {tag, Tag, Attr, lists:reverse(Acc)}.
+  {NewAttr, Rest} = zml_tag:tokenize_tag(lists:reverse(Acc), Attr),
+  {tag, Tag, NewAttr, Rest}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
