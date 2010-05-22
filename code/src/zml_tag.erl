@@ -26,7 +26,7 @@ tokenize_tag([], {quote, Q}, AccL, AccR) ->
   tokenize_tag([], text, AccL ++ [Q, $|], AccR);
 
 tokenize_tag([[] | T], {quote,_} = State, AccL, AccR) ->
-  tokenize_tag(T, State, [$\n | AccL], AccR);
+  tokenize_tag(T, State, [32 | AccL], AccR);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -100,6 +100,7 @@ parse_attr([[Close | W] | T], {attr,_,_} = State, {_, Close, 0}, Attr) ->
 parse_attr([[Close | W] | T], {attr, Id, Val}, {Open, Close, L}, Attr) ->
   parse_attr([W | T], {attr, Id, [Close | Val]}, {Open, Close, L-1}, Attr);
 
+% FIXME: suboptimal! do not call parse_id() for every character!
 parse_attr([[Ch | W] = Word | T], {attr, Id, Val} = State, Br, Attr) ->
   case zml_indent:parse_id(Word) of
     {NewId, ":"} ->
