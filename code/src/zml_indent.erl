@@ -45,6 +45,7 @@ is_alnum($_) -> true;
 is_alnum($-) -> true;
 is_alnum(_ ) -> false.
 
+% TODO: move to zml_util? zml_tag uses this function, too.
 parse_id(Ln) -> lists:splitwith(fun is_alnum/1, Ln).
 
 parse_attrs([], Attr) -> {Attr, []};
