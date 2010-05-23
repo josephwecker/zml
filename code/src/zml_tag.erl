@@ -61,6 +61,9 @@ close_bracket(${) -> $}.
 add_attr({attr, Id, Val}, Attr) ->
   zml:append_attr(Attr, {Id, [lists:reverse(Val)]}).
 
+append_rev([H|T], Acc) -> append_rev(T, [H|Acc]);
+append_rev([],    Acc) -> Acc.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 parse_attr([[Ch | W] | T] = Lines, Attr) when ?IS_BR_OPEN(Ch) ->
@@ -100,11 +103,12 @@ parse_attr([[Close | W] | T], {attr,_,_} = State, {_, Close, 0}, Attr) ->
 parse_attr([[Close | W] | T], {attr, Id, Val}, {Open, Close, L}, Attr) ->
   parse_attr([W | T], {attr, Id, [Close | Val]}, {Open, Close, L-1}, Attr);
 
-% FIXME: suboptimal! do not call parse_id() for every character!
 parse_attr([[Ch | W] = Word | T], {attr, Id, Val} = State, Br, Attr) ->
   case zml_indent:parse_id(Word) of
     {NewId, ":"} ->
       parse_attr(T, {attr, NewId, []}, Br, add_attr(State, Attr));
+    {[_|_] = L, R} ->
+      parse_attr([R | T], {attr, Id, append_rev(L, Val)}, Br, Attr);
     _ -> parse_attr([W | T], {attr, Id, [Ch | Val]}, Br, Attr)
   end.
 
