@@ -19,7 +19,7 @@ tokenize_tag([[$|, Q | Ln] | T], Level, AccL, AccR) when ?IS_QUOTE(Q) ->
   tokenize_tag(R, Level, L, AccR);
 
 tokenize_tag([[$\\, Ch | Ln] | T], Level, AccL, AccR)
-    when ?IS_WHITESPACE(Ch) orelse ?IS_TAG(Ch)
+    when ?IS_TAG(Ch) % orelse ?IS_WHITESPACE(Ch)
          orelse Ch == $| orelse Ch == $; ->
   tokenize_tag([Ln | T], Level, [Ch | AccL], AccR);
 
@@ -36,8 +36,8 @@ tokenize_tag([[Ch | W] = Ln | T], Level, AccL, AccR) when ?IS_TAG(Ch) ->
         [{Type, Tag, NewAttr, Body} | add_text(AccL, AccR)])
   end;
 
-tokenize_tag([[Ch | Ln] | T], Level, AccL, AccR) when ?IS_WHITESPACE(Ch) ->
-  tokenize_tag([Ln | T], Level, [], add_text(AccL, AccR));
+% tokenize_tag([[Ch | Ln] | T], Level, AccL, AccR) when ?IS_WHITESPACE(Ch) ->
+%   tokenize_tag([Ln | T], Level, [], add_text(AccL, AccR));
 
 tokenize_tag([[] | T], 0, AccL, AccR) ->
   tokenize_tag(T, 0, [], [newline | add_text(AccL, AccR)]);
