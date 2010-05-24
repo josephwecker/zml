@@ -15,6 +15,7 @@ tokenize([], _Indent, _Rec, Tok, Acc) -> {apply_tokenizer(Tok, Acc), []};
 tokenize([H|_] = Lines, Indent, Rec, Tok, Acc) ->
   tokenize(get_dent(H), Lines, Indent, Rec, Tok, Acc).
 
+
 tokenize({_, []}, [_|T], Indent, Rec, Tok, Acc) ->
   tokenize(T, Indent, Rec, Tok, ["" | Acc]);
 
@@ -96,6 +97,8 @@ get_tokenizer([H|T] = Ln) when ?IS_TAG(H) ->
 
 get_tokenizer([$\\ | [H|_] = Ln]) when ?IS_TAG(H) ->
   {recursive, no_tokenizer, Ln};
+
+get_tokenizer([$|, $| | _]) -> {recursive, no_tokenizer, []};
 
 get_tokenizer(Ln) -> {recursive, no_tokenizer, Ln}.
 
