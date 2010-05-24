@@ -57,10 +57,10 @@ close_bracket($[) -> $];
 close_bracket(${) -> $}.
 
 add_attr({attr, Id, [32 | Val]}, Attr) ->
-  zml:append_attr(Attr, {Id, [lists:reverse(Val)]}).
+  zml:append_attr(Attr, {Id, [lists:reverse(Val)]});
 
-% add_attr({attr, Id, Val}, Attr) ->
-%   zml:append_attr(Attr, {Id, [lists:reverse(Val)]}).
+add_attr({attr, Id, Val}, Attr) ->
+  zml:append_attr(Attr, {Id, [lists:reverse(Val)]}).
 
 append_rev([H|T], Acc) -> append_rev(T, [H|Acc]);
 append_rev([],    Acc) -> Acc.
@@ -85,7 +85,7 @@ parse_attr([[]      | T], id, Br, Attr) -> parse_attr(T, id, Br, Attr);
 
 parse_attr([W | T], id, Br, Attr) ->
   case zml_indent:parse_id(W) of
-    {Id, ":"} -> parse_attr(T, {attr, Id, []}, Br, Attr);
+    {[_|_] = Id, ":"} -> parse_attr(T, {attr, Id, []}, Br, Attr);
     _ -> fail
   end;
 
@@ -109,7 +109,7 @@ parse_attr([[$\\, Close | W] | T], {attr, Id, Val}, {_,Close,_} = Br, Attr) ->
 
 parse_attr([[Ch | W] = Word | T], {attr, Id, Val} = State, Br, Attr) ->
   case zml_indent:parse_id(Word) of
-    {NewId, ":"} ->
+    {[_|_] = NewId, ":"} ->
       parse_attr(T, {attr, NewId, []}, Br, add_attr(State, Attr));
     {NewId, "\\:"} ->
       parse_attr(T, {attr, Id, [$: | append_rev(NewId, Val)]}, Br, Attr);
