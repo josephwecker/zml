@@ -79,8 +79,8 @@ apply_tokenizer({tag, {special, Tag} = Spc, Attr}, Acc) ->
   end;
 
 apply_tokenizer({tag, Tag, Attr}, Acc) ->
-  {NewAttr, Rest} = zml_tag:tokenize_tag(lists:reverse(Acc), Attr),
-  {tag, Tag, NewAttr, Rest}.
+  {NewAttr, Body, []} = zml_tag:tokenize_tag(lists:reverse(Acc), Attr, 0),
+  {tag, Tag, NewAttr, Body}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

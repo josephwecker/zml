@@ -4,36 +4,55 @@
 -include("zml_tokenizer.hrl").
 
 
-tokenize_tag(Lines, Attr) ->
+tokenize_tag(Lines, Attr, Level) ->
   {NewAttr, R} = parse_attr(Lines, Attr),
-  {NewAttr, tokenize_tag(R, [], [])}.
+  {Body, Rest} = tokenize_tag(R, Level, [], []),
+  {NewAttr, Body, Rest}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tokenize_tag([[$|, $| | _] | T], AccL, AccR) ->
-  tokenize_tag(T, [], add_text(AccL, AccR));
+tokenize_tag([[$|, $| | _] | T], Level, AccL, AccR) ->
+  tokenize_tag(T, [], Level, add_text(AccL, AccR));
 
-tokenize_tag([[$|, Q | Ln] | T], AccL, AccR) when ?IS_QUOTE(Q) ->
+tokenize_tag([[$|, Q | Ln] | T], Level, AccL, AccR) when ?IS_QUOTE(Q) ->
   {L,R} = parse_quote([Ln | T], Q, AccL),
-  tokenize_tag(R, L, AccR);
+  tokenize_tag(R, Level, L, AccR);
 
-tokenize_tag([[$\\, Ch | Ln] | T], AccL, AccR)
-    when ?IS_WHITESPACE(Ch) orelse Ch == $| ->
-  tokenize_tag([Ln | T], [Ch | AccL], AccR);
+tokenize_tag([[$\\, Ch | Ln] | T], Level, AccL, AccR)
+    when ?IS_WHITESPACE(Ch) orelse ?IS_TAG(Ch)
+         orelse Ch == $| orelse Ch == $; ->
+  tokenize_tag([Ln | T], Level, [Ch | AccL], AccR);
 
-tokenize_tag([[Ch | Ln] | T], AccL, AccR) when ?IS_WHITESPACE(Ch) ->
-  tokenize_tag([Ln | T], [], add_text(AccL, AccR));
+tokenize_tag([[$; | Ln] | T], Level, AccL, AccR) when Level > 0 ->
+  {lists:reverse(add_text(AccL, AccR)), [Ln | T]};
 
-tokenize_tag([[] | T], AccL, AccR) ->
-  tokenize_tag(T, [], [newline | add_text(AccL, AccR)]);
+tokenize_tag([[Ch | W] = Ln | T], Level, AccL, AccR) when ?IS_TAG(Ch) ->
+  {_Rec, Tok, RestLn} = zml_indent:get_tokenizer(Ln),
+  case Tok of
+    no_tokenizer -> tokenize_tag([W | T], Level, [Ch | AccL], AccR);
+    {Type, Tag, Attr} ->
+      {NewAttr, Body, Rest} = tokenize_tag([RestLn], Attr, Level + 1),
+      tokenize_tag([Rest | T], Level, [],
+        [{Type, Tag, NewAttr, Body} | add_text(AccL, AccR)])
+  end;
 
-tokenize_tag([Tag | T], AccL, AccR) when is_tuple(Tag) ->
-  tokenize_tag(T, [], [Tag | add_text(AccL, AccR)]);
+tokenize_tag([[Ch | Ln] | T], Level, AccL, AccR) when ?IS_WHITESPACE(Ch) ->
+  tokenize_tag([Ln | T], Level, [], add_text(AccL, AccR));
 
-tokenize_tag([[Ch | Ln] | T], AccL, AccR) ->
-  tokenize_tag([Ln | T], [Ch | AccL], AccR);
+tokenize_tag([[] | T], 0, AccL, AccR) ->
+  tokenize_tag(T, 0, [], [newline | add_text(AccL, AccR)]);
 
-tokenize_tag([], AccL, AccR) -> lists:reverse(add_text(AccL, AccR)).
+tokenize_tag([[] | T], Level, AccL, AccR) ->
+  tokenize_tag(T, Level, [], add_text(AccL, AccR));
+
+tokenize_tag([Tag | T], Level, AccL, AccR) when is_tuple(Tag) ->
+  tokenize_tag(T, Level, [], [Tag | add_text(AccL, AccR)]);
+
+tokenize_tag([[Ch | Ln] | T], Level, AccL, AccR) ->
+  tokenize_tag([Ln | T], Level, [Ch | AccL], AccR);
+
+tokenize_tag([], _Level, AccL, AccR) ->
+  {lists:reverse(add_text(AccL, AccR)), []}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
