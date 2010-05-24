@@ -32,7 +32,7 @@ tokenize_tag([[Ch | W] = Ln | T], Level, AccL, AccR) when ?IS_TAG(Ch) ->
     no_tokenizer -> tokenize_tag([W | T], Level, [Ch | AccL], AccR);
     {Type, Tag, Attr} ->
       {NewAttr, Body, Rest} = tokenize_tag([RestLn], Attr, Level + 1),
-      tokenize_tag([Rest | T], Level, [],
+      tokenize_tag(Rest ++ T, Level, [],
         [{Type, Tag, NewAttr, Body} | add_text(AccL, AccR)])
   end;
 
