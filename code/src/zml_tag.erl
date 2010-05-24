@@ -19,9 +19,6 @@ tokenize_tag([[$|, Ch | Ln] | T], text, AccL, AccR) when ?IS_QUOTE(Ch) ->
 tokenize_tag([[Q, $| | Ln] | T], {quote, Q}, AccL, AccR) ->
   tokenize_tag([Ln | T], text, [], add_text(quote, AccL, AccR));
 
-tokenize_tag([[$\\, Q, $| | Ln] | T], {quote, Q}, AccL, AccR) ->
-  tokenize_tag([Ln | T], {quote, Q}, [$|, Q | AccL], AccR);
-
 tokenize_tag([], {quote, Q}, AccL, AccR) ->
   tokenize_tag([], text, AccL ++ [Q, $|], AccR);
 
@@ -30,7 +27,8 @@ tokenize_tag([[] | T], {quote,_} = State, AccL, AccR) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tokenize_tag([[$\\, Ch | Ln] | T], text, AccL, AccR) ->
+tokenize_tag([[$\\, Ch | Ln] | T], text, AccL, AccR)
+    when ?IS_WHITESPACE(Ch) orelse Ch == $| ->
   tokenize_tag([Ln | T], text, [Ch | AccL], AccR);
 
 tokenize_tag([[Ch | Ln] | T], text, AccL, AccR) when ?IS_WHITESPACE(Ch) ->
@@ -58,8 +56,11 @@ close_bracket($() -> $);
 close_bracket($[) -> $];
 close_bracket(${) -> $}.
 
-add_attr({attr, Id, Val}, Attr) ->
+add_attr({attr, Id, [32 | Val]}, Attr) ->
   zml:append_attr(Attr, {Id, [lists:reverse(Val)]}).
+
+% add_attr({attr, Id, Val}, Attr) ->
+%   zml:append_attr(Attr, {Id, [lists:reverse(Val)]}).
 
 append_rev([H|T], Acc) -> append_rev(T, [H|Acc]);
 append_rev([],    Acc) -> Acc.
@@ -103,12 +104,17 @@ parse_attr([[Close | W] | T], {attr,_,_} = State, {_, Close, 0}, Attr) ->
 parse_attr([[Close | W] | T], {attr, Id, Val}, {Open, Close, L}, Attr) ->
   parse_attr([W | T], {attr, Id, [Close | Val]}, {Open, Close, L-1}, Attr);
 
+parse_attr([[$\\, Close | W] | T], {attr, Id, Val}, {_,Close,_} = Br, Attr) ->
+  parse_attr([W | T], {attr, Id, [Close | Val]}, Br, Attr);
+
 parse_attr([[Ch | W] = Word | T], {attr, Id, Val} = State, Br, Attr) ->
   case zml_indent:parse_id(Word) of
     {NewId, ":"} ->
       parse_attr(T, {attr, NewId, []}, Br, add_attr(State, Attr));
-    {[_|_] = L, R} ->
-      parse_attr([R | T], {attr, Id, append_rev(L, Val)}, Br, Attr);
+    {NewId, "\\:"} ->
+      parse_attr(T, {attr, Id, [$: | append_rev(NewId, Val)]}, Br, Attr);
+    {[_|_] = NewId, R} ->
+      parse_attr([R | T], {attr, Id, append_rev(NewId, Val)}, Br, Attr);
     _ -> parse_attr([W | T], {attr, Id, [Ch | Val]}, Br, Attr)
   end.
 
