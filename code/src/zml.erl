@@ -66,7 +66,15 @@ compile_stream(Stream, Options) ->
 compile_string(Str) -> compile_string(Str, []).
 
 compile_string(Str, Options) ->
-  do_compile(fun zml_tokenizer:tokenize_string/1, Str, Options).
+  Options2 = other_options(Options),
+  AST = zml_indent:tokenize_string(Str),
+  AST2 = run_specialized_handlers(AST, Options2),
+  Template = translate_ast_item(AST2, []),
+  zml_render:render(Template,
+    proplists:get_value(data, Options2, fake)).
+
+% compile_string(Str, Options) ->
+%   do_compile(fun zml_tokenizer:tokenize_string/1, Str, Options).
 
 do_compile(Tokenizer, Input, Options) ->
   Tokens = Tokenizer(Input),
