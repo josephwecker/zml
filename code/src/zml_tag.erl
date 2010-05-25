@@ -26,10 +26,9 @@ tokenize_tag([[$; | Ln] | T], Level, AccL, AccR) when Level > 0 ->
   {lists:reverse(add_text(AccL, AccR)), [Ln | T]};
 
 tokenize_tag([[Ch | W] = Ln | T], Level, AccL, AccR) when ?IS_TAG(Ch) ->
-  {_Rec, Tok, RestLn} = zml_indent:get_tokenizer(Ln),
-  case Tok of
-    no_tokenizer -> tokenize_tag([W | T], Level, [Ch | AccL], AccR);
-    {Type, Tag, Attr} ->
+  case zml_indent:get_tokenizer(Ln) of
+    {_,no_tokenizer,_} -> tokenize_tag([W | T], Level, [Ch | AccL], AccR);
+    {_Rec, {Type, Tag, Attr}, RestLn} ->
       {NewAttr, Body, Rest} = tokenize_tag([RestLn], Attr, Level + 1),
       tokenize_tag(Rest ++ T, Level, [],
         [{Type, Tag, NewAttr, Body} | add_text(AccL, AccR)])
