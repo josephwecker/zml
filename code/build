@@ -27,8 +27,10 @@ run('mkdir','-p',curr_dir+'include')
 run('mkdir','-p',curr_dir+'ebin')
 
 erlc('zml')
-erlc('zml_hand_parser')
-erlc('zml_tokenizer')
+erlc('zml_hand_parser') # TODO: remove later
+erlc('zml_tokenizer')   # TODO: remove later
+erlc('zml_indent')
+erlc('zml_tag')
 erlc('zml_render')
 erlc_glob('../src-specials/zml_special*.erl')
 erlc_glob('../src-specials/zs_*.erl')

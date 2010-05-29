@@ -56,18 +56,32 @@ compile_file(InFile, Options) ->
       none -> [{source_filename, SourceFName} | Options];
       _ -> Options
     end,
-  do_compile(fun zml_tokenizer:tokenize_file/1, InFile, Options2).
+  {ok, Bin} = file:read_file(InFile),
+  compile_string(binary_to_list(Bin), Options2).
+
+%% compile_file(InFile, Options) ->
+%%   SourceFName = filename:absname(InFile),
+%%   Options2 =
+%%     case proplists:lookup(source_filename, Options) of
+%%       none -> [{source_filename, SourceFName} | Options];
+%%       _ -> Options
+%%     end,
+%%   do_compile(fun zml_tokenizer:tokenize_file/1, InFile, Options2).
 
 compile_stream(Stream) -> compile_stream(Stream, []).
 
 compile_stream(Stream, Options) ->
-  do_compile(fun zml_tokenizer:tokenize_stream/1, Stream, Options).
+  Str = io:get_chars(Stream, "", 1024000),
+  compile_string(Str, Options).
+
+%% compile_stream(Stream, Options) ->
+%%   do_compile(fun zml_tokenizer:tokenize_stream/1, Stream, Options).
 
 compile_string(Str) -> compile_string(Str, []).
 
 compile_string(Str, Options) ->
   Options2 = other_options(Options),
-  AST = zml_indent:tokenize_string(Str),
+  AST = zml_indent:tokenize_string(Str), % TODO: pass options here
   AST2 = run_specialized_handlers(AST, Options2),
   Template = translate_ast_item(AST2, []),
   zml_render:render(Template,
@@ -76,14 +90,14 @@ compile_string(Str, Options) ->
 % compile_string(Str, Options) ->
 %   do_compile(fun zml_tokenizer:tokenize_string/1, Str, Options).
 
-do_compile(Tokenizer, Input, Options) ->
-  Tokens = Tokenizer(Input),
-  Options2 = other_options(Options),
-  AST = zml_hand_parser:parse(Tokens, Options2),
-  AST2 = run_specialized_handlers(AST, Options2),
-  Template = translate_ast_item(AST2, []),
-  zml_render:render(Template,
-    proplists:get_value(data, Options2, fake)).
+%% do_compile(Tokenizer, Input, Options) ->
+%%   Tokens = Tokenizer(Input),
+%%   Options2 = other_options(Options),
+%%   AST = zml_hand_parser:parse(Tokens, Options2),
+%%   AST2 = run_specialized_handlers(AST, Options2),
+%%   Template = translate_ast_item(AST2, []),
+%%   zml_render:render(Template,
+%%     proplists:get_value(data, Options2, fake)).
 
 other_options(Options) ->
   case ?OPT_ENV(zml_zss_libs) of
