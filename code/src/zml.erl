@@ -59,23 +59,11 @@ compile_file(InFile, Options) ->
   {ok, Bin} = file:read_file(InFile),
   compile_string(binary_to_list(Bin), Options2).
 
-%% compile_file(InFile, Options) ->
-%%   SourceFName = filename:absname(InFile),
-%%   Options2 =
-%%     case proplists:lookup(source_filename, Options) of
-%%       none -> [{source_filename, SourceFName} | Options];
-%%       _ -> Options
-%%     end,
-%%   do_compile(fun zml_tokenizer:tokenize_file/1, InFile, Options2).
-
 compile_stream(Stream) -> compile_stream(Stream, []).
 
 compile_stream(Stream, Options) ->
   Str = io:get_chars(Stream, "", 1024000),
   compile_string(Str, Options).
-
-%% compile_stream(Stream, Options) ->
-%%   do_compile(fun zml_tokenizer:tokenize_stream/1, Stream, Options).
 
 compile_string(Str) -> compile_string(Str, []).
 
@@ -86,18 +74,6 @@ compile_string(Str, Options) ->
   Template = translate_ast_item(AST2, []),
   zml_render:render(Template,
     proplists:get_value(data, Options2, fake)).
-
-% compile_string(Str, Options) ->
-%   do_compile(fun zml_tokenizer:tokenize_string/1, Str, Options).
-
-%% do_compile(Tokenizer, Input, Options) ->
-%%   Tokens = Tokenizer(Input),
-%%   Options2 = other_options(Options),
-%%   AST = zml_hand_parser:parse(Tokens, Options2),
-%%   AST2 = run_specialized_handlers(AST, Options2),
-%%   Template = translate_ast_item(AST2, []),
-%%   zml_render:render(Template,
-%%     proplists:get_value(data, Options2, fake)).
 
 other_options(Options) ->
   case ?OPT_ENV(zml_zss_libs) of
@@ -154,29 +130,11 @@ run_specialized_handlers_inner([_H|T], Options, FullAST) ->
   run_specialized_handlers_inner(T, Options, FullAST).
 
 
-translate_ast_item([], Acc) -> compact_ast(Acc, []);
+translate_ast_item([], Acc) -> lists:reverse(Acc);
 translate_ast_item([newline | T], Acc) ->
   translate_ast_item(T, Acc);
 translate_ast_item([{var,_} = Var | T], Acc) ->
   translate_ast_item(T, [Var | Acc]);
-translate_ast_item([[$< | _] = String | [Next | _] = T], Acc)
-when is_list(Next) ->
-  translate_ast_item(T, [String | Acc]);
-translate_ast_item([String | [Next | _] = T], Acc)
-when is_list(String), Next =/= newline ->
-  translate_ast_item(T, [" ", String | Acc]);
-translate_ast_item([String, newline | [Next| _] = T], Acc)
-when is_list(String), is_list(Next) ->
-  translate_ast_item(T, [" ", String | Acc]);
-translate_ast_item([String | T], Acc) when is_list(String) ->
-  translate_ast_item(T, [String | Acc]);
-translate_ast_item([{_Name,_Type,_Attributes,[_|_] = Children} = Tag, Str | T], Acc)
-when is_list(Str) ->
-  Delim = case lists:last(Children) of
-    newline -> "";
-    _ -> " " % whitespace
-  end,
-  translate_ast_item(T, [Str, Delim, translate_ast_item([Tag], []) | Acc]);
 % In case a special one still remains, remove ID and pretend it's normal
 translate_ast_item([{{Name,_ID},Type,Attributes,Children} | T], Acc) ->
   translate_ast_item([{Name, Type, Attributes, Children} | T], Acc);
@@ -193,7 +151,9 @@ translate_ast_item([{Name,_Type,Attributes,Children} | T], Acc) ->
     translate_attributes(Attributes), ">",
     translate_ast_item(Children, []),
     "</", Name, ">"],
-  translate_ast_item(T, [ToAppend | Acc]).
+  translate_ast_item(T, [ToAppend | Acc]);
+translate_ast_item([Str | T], Acc) ->
+  translate_ast_item(T, [Str | Acc]).
 
 
 translate_attributes([]) -> "";
@@ -207,24 +167,6 @@ out_attr({Name, Values}, Acc) ->
 translate_ast_code([Code]) ->
   ["with" | Vars] = string:tokens(Code, " "),
   Vars.
-
-compact_ast([], Acc) -> Acc;
-compact_ast([H|T], Acc) when is_tuple(H) -> compact_ast(T, [H|Acc]);
-compact_ast([H|T], Acc) -> compact_ast(T, append_ast_elem(H, Acc)).
-
-append_ast_elem([], Acc) -> Acc;
-
-append_ast_elem([Ch1|_] = Elem, [[Ch2|_] = H | Acc])
-    when is_integer(Ch1) andalso is_integer(Ch2) -> [Elem ++ H | Acc];
-
-append_ast_elem([Ch1|_] = Elem, Acc) when is_integer(Ch1) -> [Elem | Acc];
-
-append_ast_elem([H|T], Acc) when is_list(H) ->
-  append_ast_elem(H, append_ast_elem(T, Acc));
-
-append_ast_elem([_|_] = Elem, Acc) -> Elem ++ Acc;
-
-append_ast_elem(Elem, Acc) -> [Elem | Acc].
 
 %% -------------------- Utilities for special handlers -----------------------
 
