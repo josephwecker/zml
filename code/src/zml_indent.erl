@@ -71,7 +71,7 @@ id2attr($., Id) -> {"class", [Id]}.
 apply_tokenizer(no_tokenizer, Acc) -> lists:reverse(Acc);
 
 apply_tokenizer({tag, {special, Tag} = _Spc, Attr}, Acc) ->
-  Node = case zml:call_special(Tag, tokenize, [Tag, Attr, Acc]) of
+  Toks = case zml:call_special(Tag, tokenize, [Tag, Attr, Acc]) of
     function_not_found ->
       {Tag, normal, NewAttr, Res} = apply_tokenizer({tag, Tag, Attr}, Acc),
       {{Tag, 0}, special, NewAttr, Res};
@@ -79,7 +79,7 @@ apply_tokenizer({tag, {special, Tag} = _Spc, Attr}, Acc) ->
     % {tag, Spc, NewAttr, Res};
     Node -> Node
   end,
-  zml:call_special(Tag, process_node, [Node, []], Node);
+  zml:call_special(Tag, process_node, [Toks, []], Toks);
 
 apply_tokenizer({tag, Tag, Attr}, Acc) ->
   {NewAttr, Body, []} = zml_tag:tokenize_tag(lists:reverse(Acc), Attr, 0),
