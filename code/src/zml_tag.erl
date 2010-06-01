@@ -12,7 +12,7 @@ tokenize_tag(Lines, Attr, Level) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tokenize_tag([[$|, $| | _] | T], Level, AccL, AccR) ->
-  tokenize_tag(T, [], Level, add_text(AccL, AccR));
+  tokenize_tag(T, Level, [], add_text(AccL, AccR));
 
 tokenize_tag([[$|, Q | Ln] | T], Level, AccL, AccR) when ?IS_QUOTE(Q) ->
   {L,R} = parse_quote([Ln | T], Q, AccL),

@@ -52,10 +52,12 @@ tr([[$\\, $| | W] | T], AttrTR, AttrTD, [AccL | AccR]) ->
 
 tr([[$| | W] | T], AttrTR, AttrTD, [AccL | AccR]) ->
   {Tds, Rest} = td([W | T], AttrTD, [[]], []),
-  tr(Rest, AttrTR, AttrTD, [[zml:new_tag(tr, AttrTR, Tds) | AccL] | AccR]);
+  tr(Rest, AttrTR, AttrTD,
+    [[], zml:new_tag(tr, AttrTR, Tds), lists:reverse(AccL) | AccR]);
 
-tr([H | _], _AttrTR, _AttrTD, _Acc) -> erlang:error(
-  "Table line must start with '|', got '" ++ H ++ "' instead.").
+tr([[_ | W] | T], AttrTR, AttrTD, Acc) -> tr([W | T], AttrTR, AttrTD, Acc);
+
+tr([W | T], AttrTR, AttrTD, Acc) when is_tuple(W) -> tr(T, AttrTR, AttrTD, Acc).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -68,14 +70,12 @@ td([[$\\, $| | W] | T], Attrs, [AccL | AccR], Tds) ->
 
 td([[] | T], Attrs, Acc, Tds) -> td(T, Attrs, Acc, Tds);
 
-td([newline | T], _Attrs, [[]], Tds) -> {lists:reverse(Tds), T};
-
-td([newline | _], _, _, _) -> erlang:error("Table line must end with '|'.");
-
-td([], _Attrs, [[]], Tds) -> {lists:reverse(Tds), []};
-
-td([], _, _, _) -> erlang:error("Table line must end with '|'.");
+td([newline | T], _Attrs, _Acc, Tds) -> {lists:reverse(Tds), T };
+td([],            _Attrs, _Acc, Tds) -> {lists:reverse(Tds), []};
 
 td([[Ch | W] | T], Attrs, [AccL | AccR], Tds) ->
-  td([W | T], Attrs, [[Ch | AccL] | AccR], Tds).
+  td([W | T], Attrs, [[Ch | AccL] | AccR], Tds);
+
+td([W | T], Attrs, [AccL | AccR], Tds) when is_tuple(W) ->
+  td(T, Attrs, [[], W, lists:reverse(AccL) | AccR], Tds).
 
