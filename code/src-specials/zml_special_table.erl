@@ -10,7 +10,6 @@
 
 process_node({{"table", ID}, special, Attr, Children}, _Options) ->
   {[AttrTR, AttrTD], AttrTable} = extract_attrs(["tr_", "td_"], Attr),
-  io:format("table:process_node:: ~p~n", [Children]),
   TableRows = tr(Children, AttrTR, AttrTD, [[]]),
   {{"table", ID}, special, AttrTable, TableRows}.
 
