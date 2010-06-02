@@ -133,7 +133,7 @@ run_specialized_handlers_inner([_H|T], Options, FullAST) ->
 
 translate_ast_item([], Acc) -> lists:reverse(Acc);
 translate_ast_item([newline | T], Acc) ->
-  translate_ast_item(T, Acc);
+  translate_ast_item(T, ["\n" | Acc]);
 translate_ast_item([{var,_} = Var | T], Acc) ->
   translate_ast_item(T, [Var | Acc]);
 % In case a special one still remains, remove ID and pretend it's normal
