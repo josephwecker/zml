@@ -61,8 +61,8 @@ Note how it treats indentation to mix text and tags:
 <?xml version="1.0"?>
 <document>
   <head>
-    First line of the HEAD tag. Second line
-    of the HEAD - note the indentation.
+    First line of the HEAD tag.
+    Second line of the HEAD - note the indentation.
   </head>
   <body>
     Obviously, that line belongs to BODY.
@@ -85,28 +85,25 @@ Inline tags must have a closing semicolon in the same line:
 <pre><code>
 <?xml version="1.0"?>
 <document>
-  <title>Here's a<strong>big fat</strong>title</title>
+  <title>Here's a <strong>big fat</strong> title</title>
 </document>
 </code></pre>
 
 
 h3. comments
 
-ZML supports single- and multi-line comments:
+ZML supports single-line comments and special *comment tags:
 
 <pre><code>
 :document || Comment to the end of line
-  :title This tag has comment |# - and a
-         multiline one! #| in its body
+  *comment first line of the comment
+    second line of the comment
   :body || Note this tag has an empty body!
 </code></pre>
 
 <pre><code>
 <?xml version="1.0"?>
-<document>
-  <title>This tag has comment in its body</title>
-  <body/>
-</document>
+<document><body/></document>
 </code></pre>
 
 
@@ -128,12 +125,14 @@ Syntax for attributes is:
 </code></pre>
 
 Note that because we use parenthesis, attributes can span multiple
-lines, and the indentation does not matter.
+lines. Multiline attributes must be indented, just like the body of
+the tag.
 
 
 h3. escaping special characters
 
-To escape special characters, we can use backslash or |""| quotes:
+To escape special characters, we can use backslash or any of the |""|,
+|''|, or |``| quotes:
 
 <pre><code>
 :document(onload: |"onload();"|)
@@ -150,8 +149,9 @@ To escape special characters, we can use backslash or |""| quotes:
 
 h3. multiline quotes
 
-Note that |""| quotes can span multiple lines, and preserve
-indentation:
+Note that |""| quotes can span multiple lines, but it still must be
+indented relatively to the enclosing tag:
+
 
 <pre><code>
 :document
