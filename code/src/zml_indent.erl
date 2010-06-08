@@ -80,14 +80,14 @@ apply_tokenizer({tag, {special, Tag} = _Spc, Attr}, Acc) ->
   zml:call_special(Tag, process_node, [Toks, []], Toks);
 
 apply_tokenizer({tag, Tag, Attr}, Acc) ->
-  {NewAttr, Body, []} = zml_tag:tokenize_tag(lists:reverse(Acc), Attr, 0),
+  {NewAttr, Body, []} = zml_tag:inline_tags(lists:reverse(Acc), Attr, 0),
   {Tag, normal, NewAttr, Body}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 get_tokenizer([[Ch | W] | T] = Lines) when ?IS_TAG(Ch) ->
   case parse_id(W) of
-    {[], _   } -> {recursive, no_tokenizer, Lines};
+    {[], _} -> {recursive, no_tokenizer, Lines};
     {Id, RestLn} ->
       {IsRec, HasAttrs, HasClassAttrs} = is_recursive(Ch, Id),
       {{NewType, NewTag, ClassAttr} = Tok, Rest} = case HasClassAttrs of

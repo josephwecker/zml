@@ -4,51 +4,51 @@
 -include("zml_tokenizer.hrl").
 
 
-tokenize_tag(Lines, Attr, Level) ->
-  {Body, Rest} = tokenize_tag(Lines, Level, [], []),
+inline_tags(Lines, Attr, Level) ->
+  {Body, Rest} = inline_tags(Lines, Level, [], []),
   {Attr, Body, Rest}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tokenize_tag([[$|, $| | _] | T], Level, AccL, AccR) ->
-  tokenize_tag(T, Level, [], add_text(AccL, AccR));
+inline_tags([[$|, $| | _] | T], Level, AccL, AccR) ->
+  inline_tags(T, Level, [], add_text(AccL, AccR));
 
-tokenize_tag([[$|, Q | Ln] | T], Level, AccL, AccR) when ?IS_QUOTE(Q) ->
+inline_tags([[$|, Q | Ln] | T], Level, AccL, AccR) when ?IS_QUOTE(Q) ->
   {L,R} = parse_quote([Ln | T], Q, AccL),
-  tokenize_tag(R, Level, L, AccR);
+  inline_tags(R, Level, L, AccR);
 
-tokenize_tag([[$\\, Ch | Ln] | T], Level, AccL, AccR)
+inline_tags([[$\\, Ch | Ln] | T], Level, AccL, AccR)
     when ?IS_TAG(Ch) orelse Ch == $| orelse Ch == $; ->
-  tokenize_tag([Ln | T], Level, [Ch | AccL], AccR);
+  inline_tags([Ln | T], Level, [Ch | AccL], AccR);
 
-tokenize_tag([[$; | Ln] | T], Level, AccL, AccR) when Level > 0 ->
+inline_tags([[$; | Ln] | T], Level, AccL, AccR) when Level > 0 ->
   {lists:reverse(add_text(AccL, AccR)), [Ln | T]};
 
-tokenize_tag([[Ch | W] | T] = Lines, Level, AccL, AccR) when ?IS_TAG(Ch) ->
+inline_tags([[Ch | W] | T] = Lines, Level, AccL, AccR) when ?IS_TAG(Ch) ->
   case zml_indent:get_tokenizer(Lines) of
-    {_,no_tokenizer,_} -> tokenize_tag([W | T], Level, [Ch | AccL], AccR);
+    {_,no_tokenizer,_} -> inline_tags([W | T], Level, [Ch | AccL], AccR);
     {_Rec, {Type, Tag, Attr}, Rest} ->
-      {NewAttr, Body, NewRest} = tokenize_tag(Rest, Attr, Level + 1),
-      tokenize_tag(NewRest, Level, [],
+      {NewAttr, Body, NewRest} = inline_tags(Rest, Attr, Level + 1),
+      inline_tags(NewRest, Level, [],
         [case {Type, Tag} of
            {tag, {special, Id}} -> {{Id, 0}, special, NewAttr, Body};
            {tag,           Id } -> { Id,     normal,  NewAttr, Body}
          end | add_text(AccL, AccR)])
   end;
 
-tokenize_tag([[] | T], 0, AccL, AccR) ->
-  tokenize_tag(T, 0, [], [newline | add_text(AccL, AccR)]);
+inline_tags([[] | T], 0, AccL, AccR) ->
+  inline_tags(T, 0, [], [newline | add_text(AccL, AccR)]);
 
-tokenize_tag([[] | T], Level, AccL, AccR) ->
-  tokenize_tag(T, Level, [], add_text(AccL, AccR));
+inline_tags([[] | T], Level, AccL, AccR) ->
+  inline_tags(T, Level, [], add_text(AccL, AccR));
 
-tokenize_tag([Tag | T], Level, AccL, AccR) when is_tuple(Tag) ->
-  tokenize_tag(T, Level, [], [Tag | add_text(AccL, AccR)]);
+inline_tags([Tag | T], Level, AccL, AccR) when is_tuple(Tag) ->
+  inline_tags(T, Level, [], [Tag | add_text(AccL, AccR)]);
 
-tokenize_tag([[Ch | Ln] | T], Level, AccL, AccR) ->
-  tokenize_tag([Ln | T], Level, [Ch | AccL], AccR);
+inline_tags([[Ch | Ln] | T], Level, AccL, AccR) ->
+  inline_tags([Ln | T], Level, [Ch | AccL], AccR);
 
-tokenize_tag([], _Level, AccL, AccR) ->
+inline_tags([], _Level, AccL, AccR) ->
   {lists:reverse(add_text(AccL, AccR)), []}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
