@@ -5,9 +5,8 @@
 
 
 tokenize_tag(Lines, Attr, Level) ->
-  {NewAttr, R} = parse_attr(Lines, Attr),
-  {Body, Rest} = tokenize_tag(R, Level, [], []),
-  {NewAttr, Body, Rest}.
+  {Body, Rest} = tokenize_tag(Lines, Level, [], []),
+  {Attr, Body, Rest}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

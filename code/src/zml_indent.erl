@@ -29,10 +29,10 @@ tokenize({_, Ln}, [_|T], Indent, non_recursive, Tok, Acc) ->
   tokenize(T, Indent, non_recursive, Tok, [Ln | Acc]);
 
 tokenize({NewDent, Ln}, [_|T], Indent, Rec, Tok, Acc) ->
-  {NewRec, NewTok, Rest} = get_tokenizer([Ln | T]),
+  {NewRec, NewTok, [NewLn | Rest]} = get_tokenizer([Ln | T]),
   case NewTok of
-    no_tokenizer -> tokenize(Rest, Indent, Rec, Tok, Acc);
-    _ -> {L,R} = tokenize(Rest, NewDent, NewRec, NewTok, []),
+    no_tokenizer -> tokenize(Rest, Indent, Rec, Tok, [NewLn | Acc]);
+    _ -> {L,R} = tokenize(Rest, NewDent, NewRec, NewTok, [NewLn]),
          tokenize(R, Indent, Rec, Tok, [L | Acc])
   end.
 
@@ -52,15 +52,15 @@ is_alnum(_ ) -> false.
 % TODO: move to zml_util? zml_tag uses this function, too.
 parse_id(Ln) -> lists:splitwith(fun is_alnum/1, Ln).
 
-parse_attrs([], Attr) -> {Attr, []};
 
-parse_attrs([H|T] = Ln, Attr) when ?IS_ATTR(H) ->
+parse_class_attrs([H|T] = Ln, Attr) when ?IS_ATTR(H) ->
   case parse_id(T) of
     {[], _   } -> {Attr, Ln};
-    {Id, Rest} -> parse_attrs(Rest, zml:append_attr(Attr, id2attr(H, Id)))
+    {Id, Rest} -> parse_class_attrs(Rest,
+                    zml:append_attr(Attr, id2attr(H, Id)))
   end;
 
-parse_attrs(Ln, Attr) -> {Attr, Ln}.
+parse_class_attrs(Ln, Attr) -> {Attr, Ln}.
 
 
 id2attr($#, Id) -> {"id",    [Id]};
@@ -88,21 +88,31 @@ apply_tokenizer({tag, Tag, Attr}, Acc) ->
 get_tokenizer([[Ch | W] | T] = Lines) when ?IS_TAG(Ch) ->
   case parse_id(W) of
     {[], _   } -> {recursive, no_tokenizer, Lines};
-    {Id, Rest} ->
-      {IsRec, HasAttrs} = is_recursive(Ch, Id),
-      case HasAttrs of
+    {Id, RestLn} ->
+      {IsRec, HasAttrs, HasClassAttrs} = is_recursive(Ch, Id),
+      {{NewType, NewTag, ClassAttr} = Tok, Rest} = case HasClassAttrs of
         has_class_attrs ->
-          {Type, Tag, Attr} = get_tag(Ch, Id),
-          {NewAttr, RestLn} = parse_attrs(Rest, Attr),
-          {IsRec, {Type, Tag, NewAttr}, [RestLn | T]};
-        _ -> {IsRec, get_tag(Ch, Id), [Rest | T]}
+          {Type, Tag, FirstAttr} = get_tag(Ch, Id),
+          {NewAttr, NewRestLn} = parse_class_attrs(RestLn, FirstAttr),
+          {{Type, Tag, NewAttr}, NewRestLn};
+        _ -> {get_tag(Ch, Id), RestLn}
+      end,
+      case HasAttrs of
+        has_attrs ->
+          case zml_tag:parse_attr([Rest | T], ClassAttr) of
+            {Attr, []} -> {IsRec, {NewType, NewTag, Attr}, [""]};
+            {Attr, Body} -> {IsRec, {NewType, NewTag, Attr}, Body}
+          end;
+        _ -> {IsRec, Tok, [Rest | T]}
       end
   end;
 
 get_tokenizer([[$\\ | [Ch | _] = W] | T]) when ?IS_TAG(Ch) ->
   {recursive, no_tokenizer, [W | T]};
 
-get_tokenizer(Ln) -> {recursive, no_tokenizer, Ln}.
+get_tokenizer([]) -> {recursive, no_tokenizer, [""]};
+
+get_tokenizer(Lines) -> {recursive, no_tokenizer, Lines}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -111,7 +121,8 @@ get_tag($*, Id) -> {tag, {special, Id}, []};
 get_tag(Ch, Id) when ?IS_ATTR(Ch) -> {tag, "div", [id2attr(Ch, Id)]}.
 
 is_recursive($*, Tag) ->
-  zml:call_special(Tag, is_recursive, [], {recursive, has_class_attrs});
+  zml:call_special(Tag, is_recursive, [],
+    {recursive, has_attrs, has_class_attrs});
 
-is_recursive(_, _) -> {recursive, has_class_attrs}.
+is_recursive(_, _) -> {recursive, has_attrs, has_class_attrs}.
 
