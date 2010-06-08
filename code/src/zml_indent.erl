@@ -29,10 +29,10 @@ tokenize({_, Ln}, [_|T], Indent, non_recursive, Tok, Acc) ->
   tokenize(T, Indent, non_recursive, Tok, [Ln | Acc]);
 
 tokenize({NewDent, Ln}, [_|T], Indent, Rec, Tok, Acc) ->
-  {NewRec, NewTok, RestLn} = get_tokenizer(Ln),
+  {NewRec, NewTok, Rest} = get_tokenizer([Ln | T]),
   case NewTok of
-    no_tokenizer -> tokenize(T, Indent, Rec, Tok, [RestLn | Acc]);
-    _ -> {L,R} = tokenize(T, NewDent, NewRec, NewTok, [RestLn]),
+    no_tokenizer -> tokenize(Rest, Indent, Rec, Tok, Acc);
+    _ -> {L,R} = tokenize(Rest, NewDent, NewRec, NewTok, []),
          tokenize(R, Indent, Rec, Tok, [L | Acc])
   end.
 
@@ -75,8 +75,6 @@ apply_tokenizer({tag, {special, Tag} = _Spc, Attr}, Acc) ->
     function_not_found ->
       {Tag, normal, NewAttr, Res} = apply_tokenizer({tag, Tag, Attr}, Acc),
       {{Tag, 0}, special, NewAttr, Res};
-    % {tag, Tag, NewAttr, Res} = apply_tokenizer({tag, Tag, Attr}, Acc),
-    % {tag, Spc, NewAttr, Res};
     Node -> Node
   end,
   zml:call_special(Tag, process_node, [Toks, []], Toks);
@@ -84,26 +82,25 @@ apply_tokenizer({tag, {special, Tag} = _Spc, Attr}, Acc) ->
 apply_tokenizer({tag, Tag, Attr}, Acc) ->
   {NewAttr, Body, []} = zml_tag:tokenize_tag(lists:reverse(Acc), Attr, 0),
   {Tag, normal, NewAttr, Body}.
-% {tag, Tag, NewAttr, Body}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-get_tokenizer([H|T] = Ln) when ?IS_TAG(H) ->
-  case parse_id(T) of
-    {[], _   } -> {recursive, no_tokenizer, Ln};
+get_tokenizer([[Ch | W] | T] = Lines) when ?IS_TAG(Ch) ->
+  case parse_id(W) of
+    {[], _   } -> {recursive, no_tokenizer, Lines};
     {Id, Rest} ->
-      {IsRec, HasAttrs} = is_recursive(H, Id),
+      {IsRec, HasAttrs} = is_recursive(Ch, Id),
       case HasAttrs of
         has_class_attrs ->
-          {Type, Tag, Attr} = get_tag(H, Id),
+          {Type, Tag, Attr} = get_tag(Ch, Id),
           {NewAttr, RestLn} = parse_attrs(Rest, Attr),
-          {IsRec, {Type, Tag, NewAttr}, RestLn};
-        _ -> {IsRec, get_tag(H, Id), Rest}
+          {IsRec, {Type, Tag, NewAttr}, [RestLn | T]};
+        _ -> {IsRec, get_tag(Ch, Id), [Rest | T]}
       end
   end;
 
-get_tokenizer([$\\ | [H|_] = Ln]) when ?IS_TAG(H) ->
-  {recursive, no_tokenizer, Ln};
+get_tokenizer([[$\\ | [Ch | _] = W] | T]) when ?IS_TAG(Ch) ->
+  {recursive, no_tokenizer, [W | T]};
 
 get_tokenizer(Ln) -> {recursive, no_tokenizer, Ln}.
 
