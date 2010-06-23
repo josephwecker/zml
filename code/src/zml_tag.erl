@@ -30,10 +30,7 @@ inline_tags([[Ch | W] | T] = Lines, Level, AccL, AccR) when ?IS_TAG(Ch) ->
     {_Rec, {Type, Tag, Attr}, Rest} ->
       {NewAttr, Body, NewRest} = inline_tags(Rest, Attr, Level + 1),
       inline_tags(NewRest, Level, [],
-        [case {Type, Tag} of
-           {tag, {special, Id}} -> {{Id, 0}, special, NewAttr, Body};
-           {tag,           Id } -> { Id,     normal,  NewAttr, Body}
-         end | add_text(AccL, AccR)])
+        [inline_special(Type, Tag, NewAttr, Body) | add_text(AccL, AccR)])
   end;
 
 inline_tags([[] | T], 0, AccL, AccR) ->
@@ -50,6 +47,14 @@ inline_tags([[Ch | Ln] | T], Level, AccL, AccR) ->
 
 inline_tags([], _Level, AccL, AccR) ->
   {lists:reverse(add_text(AccL, AccR)), []}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+inline_special(tag, {special, Id}, Attr, Body) ->
+  zml:call_special(Id, inline_tag,
+    [Id, Attr, Body], {{Id, 0}, special, Attr, Body});
+
+inline_special(tag, Id, Attr, Body) -> {Id, normal, Attr, Body}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
