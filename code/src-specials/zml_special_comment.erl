@@ -8,5 +8,7 @@ is_recursive() -> {non_recursive, no_attrs, no_class_attrs}.
 
 tokenize("comment", _Attr, _Acc) -> [].
 
-inline_tag("comment", _Attr, _Body) -> [].
+% inline_tag("comment", _Attr, [_|T]) -> {[], T };
+
+inline_tag("comment", _Attr, _Body) -> {[], []}.
 
