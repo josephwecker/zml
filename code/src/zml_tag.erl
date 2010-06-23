@@ -27,10 +27,13 @@ inline_tags([[$; | Ln] | T], Level, AccL, AccR) when Level > 0 ->
 inline_tags([[Ch | W] | T] = Lines, Level, AccL, AccR) when ?IS_TAG(Ch) ->
   case zml_indent:get_tokenizer(Lines) of
     {_,no_tokenizer,_} -> inline_tags([W | T], Level, [Ch | AccL], AccR);
-    {_Rec, {Type, Tag, Attr}, Rest} ->
+    {recursive, {Type, Tag, Attr}, Rest} ->
       {NewAttr, Body, NewRest} = inline_tags(Rest, Attr, Level + 1),
-      inline_tags(NewRest, Level, [],
-        [inline_special(Type, Tag, NewAttr, Body) | add_text(AccL, AccR)])
+      {NewTag, []} = inline_special(Type, Tag, NewAttr, Body),
+      inline_tags(NewRest, Level, [], [NewTag | add_text(AccL, AccR)]);
+    {non_recursive, {Type, Tag, Attr}, Rest} ->
+      {NewTag, NewRest} = inline_special(Type, Tag, Attr, Rest),
+      inline_tags(NewRest, Level, [], [NewTag | add_text(AccL, AccR)])
   end;
 
 inline_tags([[] | T], 0, AccL, AccR) ->
@@ -52,9 +55,9 @@ inline_tags([], _Level, AccL, AccR) ->
 
 inline_special(tag, {special, Id}, Attr, Body) ->
   zml:call_special(Id, inline_tag,
-    [Id, Attr, Body], {{Id, 0}, special, Attr, Body});
+    [Id, Attr, Body], {{{Id, 0}, special, Attr, Body}, []});
 
-inline_special(tag, Id, Attr, Body) -> {Id, normal, Attr, Body}.
+inline_special(tag, Id, Attr, Body) -> {{Id, normal, Attr, Body}, []}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
