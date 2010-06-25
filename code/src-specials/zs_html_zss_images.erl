@@ -19,9 +19,10 @@ process(ID, Attr, _Children, AST, Options) ->
   zml:append_children(AST, [{"html",ID},"head"], [Rendered]).
 
 get_zss_attrs(Attr, Options) ->
-  case proplists:lookup("remove_unused_css", Attr) of
-    none -> Options;
-    Val  -> [{remove_unused_css, list_to_atom(Val)} | Options]
+  case proplists:get_value("remove_unused_css", Attr) of
+    undefined -> Options;
+    [Val|_]   -> [{remove_unused_css, list_to_atom(Val)} | Options];
+    []        -> [{remove_unused_css, true} | Options]
   end.
 
 get_declared_zss(Attr, Options) ->
@@ -78,7 +79,7 @@ dir_missing_wanted(TryBaseDir, Lookfor) ->
 
 % Give back: {Type, InlineCSS}
 process_styles({Type, Sheets}, AST, Options) ->
-  CompileZss = case proplists:lookup(remove_unused_css, Options) of
+  CompileZss = case proplists:get_value(remove_unused_css, Options) of
     true -> fun(ZSSF) -> remove_unused_css(zss:compile(ZSSF), AST, []) end;
     _    -> fun zss:compile/1
   end,
