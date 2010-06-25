@@ -434,22 +434,19 @@ This code translates into:
 </table>
 </code></pre>
 
-Each row of the table must begin and end with the '|' character. Note
-that all '|' delimiters must be surrounded by spaces, e.g.
+Each row of the table must begin and end with the '|'
+character. Spaces are treated as-is; note that "||" (with no spaces)
+is treated as a comment:
 
 <pre><code>
-*table | a|b |  || 1x1 table!
+*table | a|b |  || comment!
 </code></pre>
 
-has only one column:
+results in
 
 <pre><code>
 <?xml version="1.0"?>
-<table>
-  <tr>
-    <td>a|b</td>
-  </tr>
-</table>
+<table><tr><td> a</td><td>b </td></tr></table>
 </code></pre>
 
 Note that it is OK to start table immediately after the *table tag, on
