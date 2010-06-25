@@ -70,12 +70,14 @@ dir_missing_wanted(TryBaseDir, Lookfor) ->
   not filelib:is_dir(TryDir).
 
 % Give back: {Type, InlineCSS}
-process_styles({Type, Sheets}, AST, _Options) ->
-  case [remove_unused_css(zss:compile(ZSSF), AST, []) || ZSSF <- Sheets] of
-    [] ->
-      empty;
-    ZSSTrees ->
-      {Type, zss:output_css(lists:flatten(ZSSTrees))}
+process_styles({Type, Sheets}, AST, Options) ->
+  CompileZss = case proplists:lookup(remove_unused_css, Options) of
+    true -> fun(ZSSF) -> remove_unused_css(zss:compile(ZSSF), AST, []) end;
+    _    -> fun zss:compile/1
+  end,
+  case [CompileZss(ZSSF) || ZSSF <- Sheets] of
+    []       -> empty;
+    ZSSTrees -> {Type, zss:output_css(lists:flatten(ZSSTrees))}
   end.
 
 remove_unused_css([], _AST, Acc) ->
