@@ -7,15 +7,22 @@
 -include("zml_special_html.hrl").
 
 process(ID, Attr, _Children, AST, Options) ->
-  DeclaredZSS = get_declared_zss(Attr, Options),
+  Options2 = get_zss_attrs(Attr, Options),
+  DeclaredZSS = get_declared_zss(Attr, Options2),
   Processed = lists:filter(
     fun is_tuple/1,
-    [process_styles(Styles, AST, Options) || Styles <- DeclaredZSS]),
+    [process_styles(Styles, AST, Options2) || Styles <- DeclaredZSS]),
   Rendered = "\n" ++ lists:flatten(lists:map(fun({T, CSS}) ->
           {Prepend, Append} = proplists:get_value(T, ?STYLESHEET_TAGS),
           [Prepend, CSS, Append, "\n"]
       end, Processed)),
   zml:append_children(AST, [{"html",ID},"head"], [Rendered]).
+
+get_zss_attrs(Attr, Options) ->
+  case proplists:lookup("remove_unused_css", Attr) of
+    none -> Options;
+    Val  -> [{remove_unused_css, list_to_atom(Val)} | Options]
+  end.
 
 get_declared_zss(Attr, Options) ->
   % Explicitly declared

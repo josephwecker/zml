@@ -62,7 +62,7 @@
 
 -define(SPECIAL_ATTRIBUTES,
   ["script", "scripts", "type", "encoding", "title", "favicon", "stylelib",
-   "stylelibs"] ++
+   "stylelibs", "remove_unused_css"] ++
   ?STYLESHEET_TYPES ++ [SPATTA++"s" || SPATTA <- ?STYLESHEET_TYPES]).
 
 -define(STYLESHEET_TAGS,
