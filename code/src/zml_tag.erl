@@ -24,6 +24,12 @@ inline_tags([[$\\, Ch | Ln] | T], Level, AccL, AccR)
 inline_tags([[$; | Ln] | T], Level, AccL, AccR) when Level > 0 ->
   {lists:reverse(add_text(AccL, AccR)), [Ln | T]};
 
+inline_tags([[$$, Ch | Ln] | T], Level, AccL, AccR) when ?IS_BR_OPEN(Ch) ->
+  case parse_var(Ln, Ch) of
+    fail  -> inline_tags([Ln | T], Level, [Ch, $$ | AccL], AccR);
+    {L,R} -> inline_tags([R | T], Level, [], [L | add_text(AccL, AccR)])
+  end;
+
 inline_tags([[Ch | W] | T] = Lines, Level, AccL, AccR) when ?IS_TAG(Ch) ->
   case zml_indent:get_tokenizer(Lines) of
     {_,no_tokenizer,_} -> inline_tags([W | T], Level, [Ch | AccL], AccR);
@@ -124,6 +130,21 @@ parse_quote([[Ch | W] | T], Q, Acc) -> parse_quote([W | T], Q, [Ch | Acc]);
 parse_quote([[] | T], Q, Acc) -> parse_quote(T, Q, [32 | Acc]);
 parse_quote([], _, Acc) -> {Acc, []}.
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+parse_var(Ln, Br) -> parse_var([$. | Ln], close_bracket(Br), []).
+
+parse_var([Br | T], Br, Acc) -> {{var, lists:reverse(Acc)}, T};
+
+parse_var([$. | T], Br, Acc) ->
+  case zml_indent:parse_id(T) of
+    {[], _} -> fail;
+    {Id, Rest} -> parse_var(Rest, Br, [Id | Acc])
+  end;
+
+parse_var(_Ln, _Br, _Acc) -> fail.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 add_text([],   AccR) -> AccR;
 add_text(AccL, AccR) -> [lists:reverse(AccL) | AccR].
