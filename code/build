@@ -37,7 +37,5 @@ erlc('zss')
 erlc('zss_tokenizer')
 erlc('zss_parser')
 
-erlc('rex')
-
 erlc('zss_tests')
 
