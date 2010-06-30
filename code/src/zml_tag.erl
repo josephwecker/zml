@@ -3,6 +3,7 @@
 -compile(export_all).
 -include("zml_tokenizer.hrl").
 
+-define(AST_NEWLINE, "\n").
 
 inline_tags(Lines, Attr, Level) ->
   {Body, Rest} = inline_tags(Lines, Level, [], []),
@@ -80,10 +81,10 @@ parse_attr(Lines, Attr) -> {Attr, Lines}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 parse_attr([[] | T], Id, AccL, AccR, Br, Attr) ->
-  parse_attr(T, Id, [], add_text(AccL, AccR), Br, Attr);
+  parse_attr(T, Id, [], [?AST_NEWLINE | add_text(AccL, AccR)], Br, Attr);
 
-parse_attr([[Ch | W] | T], Id, AccL, AccR, Br, Attr) when ?IS_WHITESPACE(Ch) ->
-  parse_attr([W | T], Id, [], add_text(AccL, AccR), Br, Attr);
+% parse_attr([[Ch | W] | T], Id, AccL, AccR, Br, Attr) when ?IS_WHITESPACE(Ch) ->
+%   parse_attr([W | T], Id, [], add_text(AccL, AccR), Br, Attr);
 
 parse_attr([[$|, $| | _] | T], Id, AccL, AccR, Br, Attr) ->
   parse_attr([[] | T], Id, AccL, AccR, Br, Attr);
@@ -133,7 +134,7 @@ parse_attr([], Id, AccL, AccR, _Br, Attr) ->
 
 parse_quote([[Q, $| | W] | T], Q, Acc) -> {Acc, [W | T]};
 parse_quote([[Ch | W] | T], Q, Acc) -> parse_quote([W | T], Q, [Ch | Acc]);
-parse_quote([[] | T], Q, Acc) -> parse_quote(T, Q, [32 | Acc]);
+parse_quote([[] | T], Q, Acc) -> parse_quote(T, Q, [?AST_NEWLINE | Acc]);
 parse_quote([], _, Acc) -> {Acc, []}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
