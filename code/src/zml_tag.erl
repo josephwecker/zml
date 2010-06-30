@@ -92,6 +92,12 @@ parse_attr([[$|, Ch | W] | T], Id, AccL, AccR, Br, Attr) when ?IS_QUOTE(Ch) ->
   {L,R} = parse_quote([W | T], Ch, AccL),
   parse_attr(R, Id, L, AccR, Br, Attr);
 
+parse_attr([[$$, Ch | W] | T], Id, AccL, AccR, Br, Attr) when ?IS_BR_OPEN(Ch) ->
+  case parse_var(W, Ch) of
+    fail  -> parse_attr([W | T], Id, [Ch, $$ | AccL], AccR, Br, Attr);
+    {L,R} -> parse_attr([R | T], Id, [], [L | add_text(AccL, AccR)], Br, Attr)
+  end;
+
 parse_attr([[Open | W] | T], Id, AccL, AccR, {Open, Close, L}, Attr) ->
   parse_attr([W | T], Id, [Open | AccL], AccR, {Open, Close, L+1}, Attr);
 
@@ -104,8 +110,8 @@ parse_attr([[Close | W] | T], Id, AccL, AccR, {Open, Close, L}, Attr) ->
 parse_attr([[$\\, Close | W] | T], Id, AccL, AccR, {_,Close,_} = Br, Attr) ->
   parse_attr([W | T], Id, [Close | AccL], AccR, Br, Attr);
 
-parse_attr([[$\\, Ch | W] | T], Id,
-    AccL, AccR, Br, Attr) when ?IS_WHITESPACE(Ch) orelse Ch == $| ->
+parse_attr([[$\\, Ch | W] | T], Id, AccL, AccR, Br, Attr)
+    when ?IS_WHITESPACE(Ch) orelse Ch == $| orelse Ch == $$ ->
   parse_attr([W | T], Id, [Ch | AccL], AccR, Br, Attr);
 
 parse_attr([W | T], Id, AccL, AccR, Br, Attr) ->
