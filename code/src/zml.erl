@@ -157,16 +157,9 @@ translate_ast_item([Str | T], Acc) ->
   translate_ast_item(T, [Str | Acc]).
 
 
-translate_attributes([]) -> "";
-translate_attributes(Atts) ->
-  lists:foldl(fun out_attr/2, [], Atts).
+translate_attributes(Atts) -> lists:foldl(fun out_attr/2, [], Atts).
 
-out_attr({Name, Values}, Acc) ->
-  [" ", Name, "=\"", Values, "\"" | Acc].
-
-% intersperse([H|T], Sep)      -> intersperse(T, Sep, [H]).
-% intersperse([H|T], Sep, Acc) -> intersperse(T, Sep, [H, Sep | Acc]);
-% intersperse([],   _Sep, Acc) -> lists:reverse(Acc).
+out_attr({Name, Values}, Acc) -> [" ", Name, "=\"", Values, "\"" | Acc].
 
 % TODO: move into tokenizer/parser?
 translate_ast_code([Code]) ->

@@ -83,9 +83,6 @@ parse_attr(Lines, Attr) -> {Attr, Lines}.
 parse_attr([[] | T], Id, AccL, AccR, Br, Attr) ->
   parse_attr(T, Id, [], [?AST_NEWLINE | add_text(AccL, AccR)], Br, Attr);
 
-% parse_attr([[Ch | W] | T], Id, AccL, AccR, Br, Attr) when ?IS_WHITESPACE(Ch) ->
-%   parse_attr([W | T], Id, [], add_text(AccL, AccR), Br, Attr);
-
 parse_attr([[$|, $| | _] | T], Id, AccL, AccR, Br, Attr) ->
   parse_attr([[] | T], Id, AccL, AccR, Br, Attr);
 
