@@ -139,10 +139,9 @@ translate_ast_item([{var,_} = Var | T], Acc) ->
 % In case a special one still remains, remove ID and pretend it's normal
 translate_ast_item([{{Name,_ID},Type,Attributes,Children} | T], Acc) ->
   translate_ast_item([{Name, Type, Attributes, Children} | T], Acc);
-translate_ast_item([{Code,code,[],Children} | T], Acc) ->
-  ToAppend = {with, translate_ast_code(Code),
-              translate_ast_item(Children, [])},
-  translate_ast_item(T, [ToAppend | Acc]);
+translate_ast_item([{with, Attr, Children} | T], Acc) ->
+  translate_ast_item(T, [{with, Attr, % Attr truncated in the special handler
+    translate_ast_item(Children, [])} | Acc]);
 translate_ast_item([{Name,_Type,Attributes,[]} | T], Acc) ->
   ToAppend = ["<", Name, translate_attributes(Attributes), "/>"],
   translate_ast_item(T, [ToAppend | Acc]);
@@ -160,11 +159,6 @@ translate_ast_item([Str | T], Acc) ->
 translate_attributes(Atts) -> lists:foldl(fun out_attr/2, [], Atts).
 
 out_attr({Name, Values}, Acc) -> [" ", Name, "=\"", Values, "\"" | Acc].
-
-% TODO: move into tokenizer/parser?
-translate_ast_code([Code]) ->
-  ["with" | Vars] = string:tokens(Code, " "),
-  Vars.
 
 %% -------------------- Utilities for special handlers -----------------------
 
