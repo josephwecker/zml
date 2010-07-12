@@ -33,7 +33,9 @@
     get_search_paths/1,
     str/1,
     call_special/3,
-    call_special/4
+    call_special/4,
+    render_string/2,
+    render_string/3
   ]).
 
 -define(OPT_ENV(Desc),
@@ -75,6 +77,11 @@ compile_string(Str, Options) ->
   Template = translate_ast_item(AST2, []),
   zml_render:render(Template,
     proplists:get_value(data, Options2, fake)).
+
+render_string(Str, Data) -> render_string(Str, Data, []).
+
+render_string(Str, Data, Options) ->
+  compile_string(Str, [{data, Data} | Options]).
 
 other_options(Options) ->
   case ?OPT_ENV(zml_zss_libs) of

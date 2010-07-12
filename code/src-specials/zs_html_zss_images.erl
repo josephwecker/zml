@@ -50,7 +50,7 @@ get_declared_zss(Attr, Options) ->
 append_lib_styles(_Opts, Dec, []) ->
   Dec;
 append_lib_styles(Opts, Dec, [Lib | T]) ->
-  {ok, Dir} = find_lib_dir(Lib, Opts),
+  {ok, Dir} = find_lib_dir(string:strip(Lib), Opts),
   Dec2 = lists:foldl(fun({Type,_Tags}, Acc) ->
       FName = filename:join([Dir, Type ++ ".zss"]),
       case filelib:is_file(FName) of
@@ -66,7 +66,7 @@ find_lib_dir(Wanted, Opts) ->
   case proplists:get_value(zml_zss_libs, Opts) of
     undefined -> {error, "zml_zss_libs undefined"};
     RawLibs ->
-      Libs = string:tokens(RawLibs, ";,"),
+      Libs = [string:strip(L) || L <- string:tokens(RawLibs, ";,")],
       case lists:dropwhile(fun(E) -> dir_missing_wanted(E,Wanted) end, Libs) of
         [] -> {error, "ZSS library not found"};
         [Found | _] -> {ok, filename:join([Found, Wanted])}

@@ -31,7 +31,12 @@ render([H | T], Acc, Data) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 var(fake, Var) -> "[VARIABLE:" ++ string:join(Var, ".") ++ "]";
-var(Props, Var) -> proplists:get_value(Var, Props, var(fake, Var)).
+
+var(Props, [Var]) ->
+  proplists:get_value(Var, Props, var(fake, [Var]));
+
+var(Props, [H|T]) -> var(proplists:get_value(H, Props, []), T).
+
 
 data(fake, _Name) -> [fake];
 data(Props, Name) -> var(Props, Name).
