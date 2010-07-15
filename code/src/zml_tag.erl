@@ -74,8 +74,6 @@ parse_attr([[Ch | W] | T], Attr) when ?IS_BR_OPEN(Ch) ->
 parse_attr([[Ch | W] | T], Attr) when ?IS_WHITESPACE(Ch) ->
   parse_attr([W | T], Attr);
 
-parse_attr([[] | T], Attr) -> parse_attr(T, Attr);
-
 parse_attr(Lines, Attr) -> {Attr, Lines}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
