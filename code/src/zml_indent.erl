@@ -43,14 +43,16 @@ get_dent([H|T], Dent) when ?IS_WHITESPACE(H) -> get_dent(T, Dent + 1);
 get_dent(Ln, Dent) -> {Dent, Ln}.
 
 is_alnum(Ch) when Ch >= $0 andalso Ch =< $9 -> true;
-is_alnum(Ch) when Ch >= $a andalso Ch =< $z -> true;
-is_alnum(Ch) when Ch >= $A andalso Ch =< $Z -> true;
 is_alnum($_) -> true;
 is_alnum($-) -> true;
-is_alnum(_ ) -> false.
+is_alnum(Ch) -> ?IS_ALPHA(Ch).
 
 % TODO: move to zml_util? zml_tag uses this function, too.
-parse_id(Ln) -> lists:splitwith(fun is_alnum/1, Ln).
+parse_id([Ch | T]) when ?IS_ALPHA(Ch) ->
+  {L, R} = lists:splitwith(fun is_alnum/1, T),
+  {[Ch | L], R};
+
+parse_id(Ln) -> {[], Ln}.
 
 
 parse_class_attrs([H|T] = Ln, Attr) when ?IS_ATTR(H) ->
