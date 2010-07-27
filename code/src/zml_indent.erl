@@ -33,7 +33,7 @@ tokenize({NewDent, Ln}, [_|T], Indent, Rec, Tok, Acc) ->
   case NewTok of
     no_tokenizer -> tokenize(Rest, Indent, Rec, Tok, [NewLn | Acc]);
     _ -> {L,R} = tokenize(Rest, NewDent, NewRec, NewTok, [NewLn]),
-         tokenize(R, Indent, Rec, Tok, [L | Acc])
+         tokenize(R, Indent, Rec, Tok, lists:reverse(L) ++ Acc)
   end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
