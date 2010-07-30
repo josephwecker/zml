@@ -370,6 +370,10 @@ h4. other special attributes for *html
 
 * nosmarttag: true or false. Controls MSSmartTagsPreventParsing.
 
+* stylelibs: Names of ZSS libraries to include
+
+* remove_unused_css: false (default) or true. Turns on CSS optimization.
+
 * description
 * keywords
 * copyright
@@ -495,4 +499,40 @@ translates into:
   </tr>
 </table>
 </code></pre>
+
+h3. Templating
+
+h4. Variables
+
+Syntax for variables is:
+
+<pre><code>
+${variable}
+</code></pre>
+
+To refer nested data sets, separate identifiers with dots:
+
+<pre><code>
+${data_set.nestedDataSet.var}
+</code></pre>
+
+Variables can be used in side the :tag body or in attribute
+values. Behavior of the *special tags depends on teh implementation,
+e.g. *comment and *verbatim treat variables as any other text.
+
+h4. Repeated blocks
+
+To iterate over a data set, use the *with special tag, e.g.
+
+<pre><code>
+:table
+  *with(id: data_set)
+    :tr :td ${user_name}; :td ${user_address};
+</code></pre>
+
+Here :tr block will be replicated as many times as there are records
+in the given data_set.
+
+Data set ID is specified in the *with id attribute. We can also write
+*with#data_set to the same effect.
 
