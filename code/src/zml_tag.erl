@@ -5,11 +5,9 @@
 
 -define(AST_NEWLINE, "\n").
 
-inline_tags_all([], _Level, Acc) -> lists:reverse(Acc);
-
-inline_tags_all(Lines, Level, Acc) ->
-  {L,R} = inline_tags(Lines, Level, [], []),
-  inline_tags_all(R, Level, [L | Acc]).
+inline_tags(Lines, Attr, Level) ->
+  {Body, Rest} = inline_tags(Lines, Level, [], []),
+  {Attr, Body, Rest}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -24,7 +22,7 @@ inline_tags([[$\\, Ch | Ln] | T], Level, AccL, AccR)
     when ?IS_TAG(Ch) orelse Ch == $| orelse Ch == $; ->
   inline_tags([Ln | T], Level, [Ch | AccL], AccR);
 
-inline_tags([[$; | Ln] | T], _Level, AccL, AccR) -> % when Level > 0 ->
+inline_tags([[$; | Ln] | T], Level, AccL, AccR) when Level > 0 ->
   {lists:reverse(add_text(AccL, AccR)), [Ln | T]};
 
 inline_tags([[$$, Ch | Ln] | T], Level, AccL, AccR) when ?IS_BR_OPEN(Ch) ->
@@ -37,8 +35,8 @@ inline_tags([[Ch | W] | T] = Lines, Level, AccL, AccR) when ?IS_TAG(Ch) ->
   case zml_indent:get_tokenizer(Lines) of
     {_,no_tokenizer,_} -> inline_tags([W | T], Level, [Ch | AccL], AccR);
     {recursive, {Type, Tag, Attr}, Rest} ->
-      {Body, NewRest} = inline_tags(Rest, Level + 1, [], []),
-      {NewTag, []} = inline_special(Type, Tag, Attr, Body),
+      {NewAttr, Body, NewRest} = inline_tags(Rest, Attr, Level + 1),
+      {NewTag, []} = inline_special(Type, Tag, NewAttr, Body),
       inline_tags(NewRest, Level, [], [NewTag | add_text(AccL, AccR)]);
     {non_recursive, {Type, Tag, Attr}, Rest} ->
       {NewTag, NewRest} = inline_special(Type, Tag, Attr, Rest),

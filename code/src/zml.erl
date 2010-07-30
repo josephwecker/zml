@@ -159,11 +159,8 @@ translate_ast_item([{Name,_Type,Attributes,Children} | T], Acc) ->
     translate_ast_item(Children, []),
     "</", Name, ">"],
   translate_ast_item(T, [ToAppend | Acc]);
-translate_ast_item([[Ch|_] = Str | T], Acc) when is_integer(Ch) ->
-  translate_ast_item(T, [Str | Acc]);
-translate_ast_item([H | T], Acc) when is_list(H) ->
-  translate_ast_item(T, [translate_ast_item(H, []) | Acc]);
-translate_ast_item([H | T], Acc) -> translate_ast_item(T, [H | Acc]).
+translate_ast_item([Str | T], Acc) ->
+  translate_ast_item(T, [Str | Acc]).
 
 
 translate_attributes(Atts) -> lists:foldl(fun out_attr/2, [], Atts).
