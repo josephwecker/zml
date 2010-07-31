@@ -165,7 +165,7 @@ translate_ast_item([Str | T], Acc) ->
 
 translate_attributes(Atts) -> lists:foldl(fun out_attr/2, [], Atts).
 
-out_attr({Name, Values}, Acc) -> [" ", Name, "=\"", Values, "\"" | Acc].
+out_attr({Name, Values}, Acc) -> [" ", Name, "=\"", string:join(Values, " "), "\"" | Acc].
 
 %% -------------------- Utilities for special handlers -----------------------
 
