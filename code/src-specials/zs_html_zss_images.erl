@@ -21,7 +21,8 @@ process(ID, Attr, _Children, AST, Options) ->
 get_zss_attrs(Attr, Options) ->
   case proplists:get_value("remove_unused_css", Attr) of
     undefined -> Options;
-    [Val|_]   -> [{remove_unused_css, list_to_atom(Val)} | Options];
+    [Val|_]   -> [{remove_unused_css,
+                   list_to_atom(string:strip(Val))} | Options];
     []        -> [{remove_unused_css, true} | Options]
   end.
 
@@ -31,7 +32,8 @@ get_declared_zss(Attr, Options) ->
   Declared = lists:map(fun({Type, _Tags}) ->
         Given = zml:get_attr_vals(Type, Attr) ++
                 zml:get_attr_vals(Type ++ "s", Attr),
-        Found = [zml:find_file(F, ".zss", Search) || F <- Given],
+        Styles = split_attr_values(Given),
+        Found = [zml:find_file(F, ".zss", Search) || F <- Styles],
         {Type, [Abs || {ok, Abs} <- Found]}
     end, ?STYLESHEET_TAGS),
   % Look for a magic one as well
@@ -41,11 +43,14 @@ get_declared_zss(Attr, Options) ->
       MagicFile -> zml:append_attr(Declared, {"style", [MagicFile]})
     end,
   % And full libraries
-  case zml:get_attr_vals(stylelib, Attr) ++ zml:get_attr_vals(stylelibs, Attr) of
-    [] -> Declared2;
-    Libs ->
-      append_lib_styles(Options, Declared2, Libs)
+  case zml:get_attr_vals(stylelib,  Attr) ++
+       zml:get_attr_vals(stylelibs, Attr) of
+    []   -> Declared2;
+    Libs -> append_lib_styles(Options, Declared2, split_attr_values(Libs))
   end.
+
+split_attr_values(Attrs) ->
+  lists:flatmap(fun(A) -> string:tokens(A, " \t\n") end, Attrs).
 
 append_lib_styles(_Opts, Dec, []) ->
   Dec;
