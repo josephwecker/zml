@@ -176,10 +176,10 @@ att_includes(_Attr, _Key, []) ->
   true;
 att_includes(Attr, Key, ReqVals) ->
   case zml:get_attr_vals(Key, Attr) of
-    [] ->
-      false;
+    [] -> false;
     HasVals ->
-      lists:all(fun(Req) -> lists:member(Req, HasVals) end, ReqVals)
+      Vals = split_attr_values(HasVals),
+      lists:all(fun(Req) -> lists:member(Req, Vals) end, ReqVals)
   end.
 
 % Given a string with optional element and strung classes, id markers, it
