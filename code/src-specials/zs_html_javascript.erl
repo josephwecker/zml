@@ -34,7 +34,10 @@
 -module(zs_html_javascript).
 
 -export([process/5]).
+
 -include("zml_special_html.hrl").
+-import(zml_special_html, [split_attr_values/1]).
+
 
 -define(JS_DEF(M,E,L),
   [{js_magic_file, inline, M},
@@ -43,19 +46,19 @@
 
 process(ID, Attr, _Children, AST, Options) ->
   MagicJS = zml:find_magic_file(".js", Options),
-  Externals = zml:get_attr_vals(script, Attr) ++
-    zml:get_attr_vals(scripts, Attr),
-  LibJS = zml:get_attr_vals(scriptlib, Attr) ++
+  Externals = split_attr_values(
+    zml:get_attr_vals(script,  Attr) ++
+    zml:get_attr_vals(scripts, Attr)),
+  LibJS = split_attr_values(
+    zml:get_attr_vals(scriptlib,  Attr) ++
     zml:get_attr_vals(scriptlibs, Attr) ++
-    autojquery(MagicJS),
-
+    autojquery(MagicJS)),
   InputDef = ?JS_DEF(MagicJS, Externals, LibJS),
   Input = [{K, proplists:get_value(K,Options,DV),In} || {K,DV,In} <- InputDef],
   Search = zml:get_search_paths(Options),
-  
-  Inlines =   [get_inline(K, In, Search) ||
+  Inlines = [get_inline(K, In, Search) ||
     {K,V,In} <- Input, V =:= inline, In=/= none],
-%  Locals =    [get_local(K, In) || {K,V,In} <- Instr, V =:= local, In =!= []],
+% Locals = [get_local(K, In) || {K,V,In} <- Instr, V =:= local, In =!= []],
   Locals = [],
 
   ScriptSection =

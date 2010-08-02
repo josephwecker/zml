@@ -5,7 +5,7 @@
 
 -module(zml_special_html).
 
--export([process_tree/3]).
+-export([process_tree/3, split_attr_values/1]).
 
 -include("zml_special_html.hrl").
 -import(string, [to_lower/1, to_upper/1, join/2]).
@@ -197,4 +197,7 @@ close_tag(true, "col"  ) -> [];
 close_tag(true, "base" ) -> [];
 
 close_tag(_, _) -> [""].
+
+split_attr_values(Attrs) ->
+  lists:flatmap(fun(A) -> string:tokens(A, " \t\n") end, Attrs).
 

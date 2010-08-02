@@ -4,7 +4,10 @@
 -module(zs_html_zss_images).
 
 -export([process/5]).
+
 -include("zml_special_html.hrl").
+-import(zml_special_html, [split_attr_values/1]).
+
 
 process(ID, Attr, _Children, AST, Options) ->
   Options2 = get_zss_attrs(Attr, Options),
@@ -48,9 +51,6 @@ get_declared_zss(Attr, Options) ->
     []   -> Declared2;
     Libs -> append_lib_styles(Options, Declared2, split_attr_values(Libs))
   end.
-
-split_attr_values(Attrs) ->
-  lists:flatmap(fun(A) -> string:tokens(A, " \t\n") end, Attrs).
 
 append_lib_styles(_Opts, Dec, []) ->
   Dec;
