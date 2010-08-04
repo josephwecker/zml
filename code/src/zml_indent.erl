@@ -70,7 +70,9 @@ id2attr($., Id) -> {"class", [Id]}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-apply_tokenizer(no_tokenizer, Acc) -> lists:reverse(Acc);
+apply_tokenizer(no_tokenizer, Acc) ->
+  {_Attr, Body, []} = zml_tag:inline_tags(lists:reverse(Acc), [], 0),
+  Body;
 
 apply_tokenizer({tag, {special, Tag} = _Spc, Attr}, Acc) ->
   Toks = case zml:call_special(Tag, tokenize, [Tag, Attr, Acc]) of
