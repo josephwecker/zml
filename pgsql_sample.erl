@@ -21,3 +21,16 @@ merchants() ->
         <<"http://img.shopzilla.com/merchant/100436.gif">>,
         <<"2009-01-21">>,<<"0">>}]}.
 
+cols(Cols) ->
+  [{binary_to_list(Name), {Pos, Rec}} ||
+   {Pos, {column, Name, _Type, _Prec, _Len, _} = Rec}
+     <- lists:zip(lists:seq(1, length(Cols)), Cols) ].
+
+get_col(Name, Row, Cols) -> get_col(Name, Row, Cols, undefined) ->
+
+get_col(Name, Row, Cols, Default) ->
+  case proplists:get_value(Name, Cols) of
+    {Pos, _Col} -> element(Pos, Row);
+    undefined -> Default
+  end.
+
