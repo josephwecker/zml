@@ -71,11 +71,10 @@ data_proplist(var, [Props|_], [H|T]) ->
 
 data_proplist(var, [], Vars) -> data_fake(var, Vars);
 
-data_proplist(with, [], _Vars) -> eod;
-
 data_proplist(with, Props, Vars) ->
   data_accessor(data_proplist(var, Props, Vars));
 
+data_proplist(with, [],  _Vars) -> eod;
 data_proplist(next, [],  _Vars) -> eod;
 data_proplist(next, [_], _Vars) -> eod;
 
@@ -97,6 +96,7 @@ data_pgsql(var, [Name], [Row|_], Cols) ->
     undefined -> data_fake(var, [Name])
   end;
 
+data_pgsql(with, _Vars, [],  _Cols) -> eod;
 data_pgsql(next, _Vars, [],  _Cols) -> eod;
 data_pgsql(next, _Vars, [_], _Cols) -> eod;
 
