@@ -36,6 +36,22 @@ render_with(AST, Acc, Vars, GetData) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+data_accessor(fake) -> fun data_fake/2;
+
+data_accessor(
+    {[{column, _Name, _Type, _Prec, _Len, _} | _] = Cols, Rows}) ->
+  fun(Op, Vars) -> data_pgsql(Op, Vars, Rows, pgsql_cols(Cols)) end;
+
+data_accessor({ok, Cols, Rows}) -> data_accessor({Cols, Rows});
+
+data_accessor([{[Ch|_], _} | _] = Props) ->
+  fun(Op, Vars) -> data_proplist(Op, [Props], Vars) end;
+
+data_accessor(Props) ->
+  fun(Op, Vars) -> data_proplist(Op, Props, Vars) end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 data_fake(var, [Ch|_] = Var)
   when is_integer(Ch) -> "[VARIABLE:" ++ Var ++ "]";
 
@@ -60,8 +76,7 @@ data_proplist(with, [], _Vars) -> eod;
 data_proplist(with, Props, Vars) ->
   data_accessor(data_proplist(var, Props, Vars));
 
-data_proplist(next, [], _Vars) -> eod;
-
+data_proplist(next, [],  _Vars) -> eod;
 data_proplist(next, [_], _Vars) -> eod;
 
 data_proplist(next, [_|T], _Vars) ->
@@ -69,8 +84,25 @@ data_proplist(next, [_|T], _Vars) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-data_accessor(fake) -> fun data_fake/2;
+pgsql_cols(Cols) ->
+  [{binary_to_list(Name), {Pos, Rec}} ||
+   {Pos, {column, Name, _Type, _Prec, _Len, _} = Rec}
+     <- lists:zip(lists:seq(1, length(Cols)), Cols) ].
 
-data_accessor(Props) ->
-  fun(Op, Vars) -> data_proplist(Op, Props, Vars) end.
+data_pgsql(var, Vars, [], _Cols) -> data_fake(var, Vars);
+
+data_pgsql(var, [Name], [Row|_], Cols) ->
+  case proplists:get_value(Name, Cols) of
+    {Pos, _Col} -> element(Pos, Row);
+    undefined -> data_fake(var, [Name])
+  end;
+
+data_pgsql(next, _Vars, [],  _Cols) -> eod;
+data_pgsql(next, _Vars, [_], _Cols) -> eod;
+
+data_pgsql(with, Vars, Rows, Cols) ->
+  data_accessor(data_pgsql(var, Vars, Rows, Cols));
+
+data_pgsql(next, _Vars, [_|Rows], Cols) ->
+  fun(Op, Vars) -> data_pgsql(Op, Vars, Rows, Cols) end.
 

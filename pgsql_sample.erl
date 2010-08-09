@@ -26,7 +26,7 @@ cols(Cols) ->
    {Pos, {column, Name, _Type, _Prec, _Len, _} = Rec}
      <- lists:zip(lists:seq(1, length(Cols)), Cols) ].
 
-get_col(Name, Row, Cols) -> get_col(Name, Row, Cols, undefined) ->
+get_col(Name, Row, Cols) -> get_col(Name, Row, Cols, undefined).
 
 get_col(Name, Row, Cols, Default) ->
   case proplists:get_value(Name, Cols) of
