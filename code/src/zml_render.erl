@@ -39,7 +39,7 @@ render_with(AST, Acc, Vars, GetData) ->
 data_accessor(fake) -> fun data_fake/2;
 
 data_accessor(
-    {[{column, _Name, _Type, _Prec, _Len, _} | _] = Cols, Rows}) ->
+    {[{column, _Name, _Type, _Size, _Modifier, _Format} | _] = Cols, Rows}) ->
   fun(Op, Vars) -> data_pgsql(Op, Vars, Rows, pgsql_cols(Cols)) end;
 
 data_accessor({ok, Cols, Rows}) -> data_accessor({Cols, Rows});
@@ -85,7 +85,7 @@ data_proplist(next, [_|T], _Vars) ->
 
 pgsql_cols(Cols) ->
   [{binary_to_list(Name), {Pos, Rec}} ||
-   {Pos, {column, Name, _Type, _Prec, _Len, _} = Rec}
+   {Pos, {column, Name, _Type, _Size, _Modifier, _Format} = Rec}
      <- lists:zip(lists:seq(1, length(Cols)), Cols) ].
 
 data_pgsql(var, Vars, [], _Cols) -> data_fake(var, Vars);
