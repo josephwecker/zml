@@ -44,7 +44,7 @@ data_accessor(
 
 data_accessor({ok, Cols, Rows}) -> data_accessor({Cols, Rows});
 
-data_accessor([{[Ch|_], _} | _] = Props) ->
+data_accessor([{[Ch|_], _} | _] = Props) when is_integer(Ch) ->
   fun(Op, Vars) -> data_proplist(Op, [Props], Vars) end;
 
 data_accessor(Props) ->
@@ -71,12 +71,12 @@ data_proplist(var, [Props|_], [H|T]) ->
 
 data_proplist(var, [], Vars) -> data_fake(var, Vars);
 
-data_proplist(with, Props, Vars) ->
-  data_accessor(data_proplist(var, Props, Vars));
-
 data_proplist(with, [],  _Vars) -> eod;
 data_proplist(next, [],  _Vars) -> eod;
 data_proplist(next, [_], _Vars) -> eod;
+
+data_proplist(with, Props, Vars) ->
+  data_accessor(data_proplist(var, Props, Vars));
 
 data_proplist(next, [_|T], _Vars) ->
   fun(Op, Vars) -> data_proplist(Op, T, Vars) end.
