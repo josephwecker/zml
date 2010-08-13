@@ -52,7 +52,7 @@ compile_files(FLS) ->
   lists:foreach(fun(FName) ->
     % TODO: take output path from the options.
     FNameOut = FName ++ ".html",
-    io:format("~s --> ~s.html~n", [FName, FNameOut]),
+    io:format("~s --> ~s~n", [FName, FNameOut]),
     Template = zml:template_file(FName),
     ok = file:write_file(FNameOut, zml:render(Template))
   end, FLS).
