@@ -2,14 +2,16 @@
 
 % Main function
 -export([
-    compile_file/1,
-    compile_file/2,
     compile_files/0,
     compile_files/1,
-    compile_stream/1,
-    compile_stream/2,
-    compile_string/1,
-    compile_string/2
+    template_file/1,
+    template_file/2,
+    template_stream/1,
+    template_stream/2,
+    template_string/1,
+    template_string/2,
+    render/1,
+    render/2
   ]).
 
 % Utilities for special handlers:
@@ -33,9 +35,7 @@
     get_search_paths/1,
     str/1,
     call_special/3,
-    call_special/4,
-    render_string/2,
-    render_string/3
+    call_special/4
   ]).
 
 -define(OPT_ENV(Desc),
@@ -44,15 +44,24 @@
 
 compile_files() -> compile_files([]).
 
+compile_files([]) ->
+  Template = zml:template_stream(standard_io),
+  io:format("~s~n", [zml:render(Template)]);
+
 compile_files(FLS) ->
-  case FLS of
-    [] -> io:format("~s~n", [zml:compile_stream(standard_io)]);
-    _ -> [io:format("~s~n", [zml:compile_file(F)]) || F <- FLS]
-  end.
+  lists:foreach(fun(FName) ->
+    % TODO: take output path from the options.
+    FNameOut = FName ++ ".html",
+    io:format("~s --> ~s.html~n", [FName, FNameOut]),
+    Template = zml:template_file(FName),
+    ok = file:write_file(FNameOut, zml:render(Template))
+  end, FLS).
 
-compile_file(InFile) -> compile_file(InFile, []).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-compile_file(InFile, Options) ->
+template_file(InFile) -> template_file(InFile, []).
+
+template_file(InFile, Options) ->
   SourceFName = filename:absname(InFile),
   Options2 =
     case proplists:lookup(source_filename, Options) of
@@ -60,28 +69,28 @@ compile_file(InFile, Options) ->
       _ -> Options
     end,
   {ok, Bin} = file:read_file(InFile),
-  compile_string(binary_to_list(Bin), Options2).
+  template_string(binary_to_list(Bin), Options2).
 
-compile_stream(Stream) -> compile_stream(Stream, []).
+template_stream(Stream) -> template_stream(Stream, []).
 
-compile_stream(Stream, Options) ->
+template_stream(Stream, Options) ->
   Str = io:get_chars(Stream, "", 1024000),
-  compile_string(Str, Options).
+  template_string(Str, Options).
 
-compile_string(Str) -> compile_string(Str, []).
+template_string(Str) -> template_string(Str, []).
 
-compile_string(Str, Options) ->
+template_string(Str, Options) ->
   Options2 = other_options(Options),
   AST = zml_indent:tokenize_string(Str), % TODO: pass options here
   AST2 = run_specialized_handlers(AST, Options2),
-  Template = translate_ast_item(AST2, []),
-  zml_render:render(Template,
-    proplists:get_value(data, Options2, fake)).
+  translate_ast_item(AST2, []).
 
-render_string(Str, Data) -> render_string(Str, Data, []).
 
-render_string(Str, Data, Options) ->
-  compile_string(Str, [{data, Data} | Options]).
+render(Template) -> render(Template, fake).
+
+render(Template, Data) -> zml_render:render(Template, Data).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 other_options(Options) ->
   case ?OPT_ENV(zml_zss_libs) of
@@ -93,29 +102,6 @@ other_options(Options) ->
     _ -> []
   end ++
   Options.
-
-%-define(DIR_TMP, ".tmp").
-%-define(DIR_JS,  "js").
-%-define(DIR_CSS, "css").
-%-define(DIR_IMG, "img").
-%-define(DIR_DYN, "dynamic").
-
-%set_up_staging() ->
-%  {ok, CurrDir} = file:get_cwd(),
-%  BaseDir = tmp_filename(),
-%  DirMain = filename:join([CurrDir, BaseDir]),
-%  DirTmp =  filename:join([DirMain, ?DIR_TMP]),
-%  DirJS =   filename:join([DirMain, ?DIR_JS]),
-%  DirCSS =  filename:join([DirMain, ?DIR_CSS]),
-%  DirImg =  filename:join([DirMain, ?DIR_IMG]),
-%  DirDyn =  filename:join([DirMain, ?DIR_DYN]),
-%  file:make_dir(DirMain),
-%  file:make_dir(DirTmp),
-%  file:make_dir(DirJS),
-%  file:make_dir(DirCSS),
-%  file:make_dir(DirImg),
-%  file:make_dir(DirDyn),
-%  {DirMain, DirTmp, DirJS, DirCSS, DirImg, DirDyn}.
 
 
 run_specialized_handlers(AST, Options) ->
