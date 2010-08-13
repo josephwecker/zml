@@ -50,12 +50,18 @@ compile_files([]) ->
 
 compile_files(FLS) ->
   lists:foreach(fun(FName) ->
-    % TODO: take output path from the options.
-    FNameOut = FName ++ ".html",
+    FNameOut = output_file_name(FName),
     io:format("~s --> ~s~n", [FName, FNameOut]),
     Template = zml:template_file(FName),
     ok = file:write_file(FNameOut, zml:render(Template))
   end, FLS).
+
+% TODO: take output path from the options.
+output_file_name(FName) ->
+  case string:right(FName, 4) of
+    ".zml" -> string:left(FName, string:len(FName) - 4);
+    _ -> FName
+  end ++ ".html".
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
