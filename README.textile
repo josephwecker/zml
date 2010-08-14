@@ -516,8 +516,8 @@ To refer nested data sets, separate identifiers with dots:
 ${data_set.nestedDataSet.var}
 </code></pre>
 
-Variables can be used in side the :tag body or in attribute
-values. Behavior of the *special tags depends on teh implementation,
+Variables can be used inside the :tag body or in attribute values.
+Behavior of the *special tags depends on the tag implementation,
 e.g. *comment and *verbatim treat variables as any other text.
 
 h4. Repeated blocks
@@ -534,5 +534,72 @@ Here :tr block will be replicated as many times as there are records
 in the given data_set.
 
 Data set ID is specified in the *with id attribute. We can also write
-*with#data_set to the same effect.
+*with#data_set to same effect.
+
+h3. ZML Gotchas
+
+h4. Special characters that begin a tag
+
+Remember that '.' period, ':' colon, and '#' hash are special characters that
+can start inline tags, when immediately followed by one or more alpha
+characters, e.g.
+
+<pre><code>
+:a(href: http://github.com) github.com
+</code></pre>
+
+translates into
+
+<pre><code>
+<a href="http://github.com"> github<div class="com"></div></a>
+</code></pre>
+
+i.e. a string ".com" is treated as inline div block here. Oops.
+
+To avoid this, escape the dot with the backslash or quote the whole string, and
+write github\.com or |"github.com"|.
+
+Note that tag name *must* begin with the alpha character, so the the strings
+like "$9.99" or "#1" will remain untouched.
+
+h4. Semicolons
+
+Remember that ';' semicolon closes the inline tag, but *only* if there is an
+_inline_ tag to close. Otherwise, semicolon will remain as is. E.g.
+
+<pre><code>
+.example Check if :i x &lt; y; for every value of x
+</code></pre>
+
+results in
+
+<pre><code>
+<div class="example">Check if <i>x &lt</i> y; for every value of x</div>
+</code></pre>
+
+Note that the first semicolon that belongs to &lt; string has been translated
+as the end of the :i tag, but the second semicolon remained as is.
+
+The issue occurs only when the extra semicolon is inside the *inline* tag.
+Since tags that start the line does not have to be closed, there's no need to
+escape semicolons in such case.
+
+h4. Spaces around inline tags
+
+Spaces around inline tags are preserved, just like any other spaces between
+words. The only spaces that ZML truncates are those immediately following the
+tag name (but not the list of attributes), e.g.
+
+<pre><code>
+.example   Hello :a (href: #)  world;!
+</code></pre>
+
+produces
+
+<pre><code>
+<div class="example">Hello <a href="#">  world</a>!</div>
+</code></pre>
+
+i.e. ZML had removed spaces between ".example" and "Hello", and between "a" and
+"href". All other spacing remained intact.
 
