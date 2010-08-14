@@ -21,15 +21,15 @@
 compile_files() -> compile_files([]).
 
 compile_files([]) ->
-  Template = zml:template_stream(standard_io),
-  io:format("~s~n", [zml:render(Template)]);
+  Template = template_stream(standard_io),
+  io:format("~s~n", [render(Template)]);
 
 compile_files(FLS) ->
   lists:foreach(fun(FName) ->
     FNameOut = output_file_name(FName),
     io:format("~s --> ~s~n", [FName, FNameOut]),
-    Template = zml:template_file(FName),
-    ok = file:write_file(FNameOut, zml:render(Template))
+    Template = template_file(FName),
+    ok = file:write_file(FNameOut, render(Template))
   end, FLS).
 
 % TODO: take output path from the options.
