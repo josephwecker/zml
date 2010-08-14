@@ -45,12 +45,12 @@
 
 process(ID, Attr, _Children, AST, Options) ->
   MagicJS = zml:find_magic_file(".js", Options),
-  Externals = zml:split_attr_values(
-    zml:get_attr_vals(script,  Attr) ++
-    zml:get_attr_vals(scripts, Attr)),
-  LibJS = zml:split_attr_values(
-    zml:get_attr_vals(scriptlib,  Attr) ++
-    zml:get_attr_vals(scriptlibs, Attr) ++
+  Externals = zml_util:split_attr_values(
+    zml_util:get_attr_vals(script,  Attr) ++
+    zml_util:get_attr_vals(scripts, Attr)),
+  LibJS = zml_util:split_attr_values(
+    zml_util:get_attr_vals(scriptlib,  Attr) ++
+    zml_util:get_attr_vals(scriptlibs, Attr) ++
     autojquery(MagicJS)),
   InputDef = ?JS_DEF(MagicJS, Externals, LibJS),
   Input = [{K, proplists:get_value(K,Options,DV),In} || {K,DV,In} <- InputDef],

@@ -32,9 +32,9 @@ get_declared_zss(Attr, Options) ->
   % Explicitly declared
   Search = zml:get_search_paths(Options),
   Declared = lists:map(fun({Type, _Tags}) ->
-        Given = zml:get_attr_vals(Type, Attr) ++
-                zml:get_attr_vals(Type ++ "s", Attr),
-        Styles = zml:split_attr_values(Given),
+        Given = zml_util:get_attr_vals(Type, Attr) ++
+                zml_util:get_attr_vals(Type ++ "s", Attr),
+        Styles = zml_util:split_attr_values(Given),
         Found = [zml:find_file(F, ".zss", Search) || F <- Styles],
         {Type, [Abs || {ok, Abs} <- Found]}
     end, ?STYLESHEET_TAGS),
@@ -42,13 +42,13 @@ get_declared_zss(Attr, Options) ->
   Declared2 =
     case zml:find_magic_file(".zss", Options) of
       none -> Declared;
-      MagicFile -> zml:append_attr(Declared, {"style", [MagicFile]})
+      MagicFile -> zml_util:append_attr(Declared, {"style", [MagicFile]})
     end,
   % And full libraries
-  case zml:get_attr_vals(stylelib,  Attr) ++
-       zml:get_attr_vals(stylelibs, Attr) of
+  case zml_util:get_attr_vals(stylelib,  Attr) ++
+       zml_util:get_attr_vals(stylelibs, Attr) of
     []   -> Declared2;
-    Libs -> append_lib_styles(Options, Declared2, zml:split_attr_values(Libs))
+    Libs -> append_lib_styles(Options, Declared2, zml_util:split_attr_values(Libs))
   end.
 
 append_lib_styles(_Opts, Dec, []) -> Dec;
@@ -58,7 +58,7 @@ append_lib_styles(Opts, Dec, [Lib | T]) ->
   Dec2 = lists:foldl(fun({Type,_Tags}, Acc) ->
       FName = filename:join([Dir, Type ++ ".zss"]),
       case filelib:is_file(FName) of
-        true  -> zml:prepend_attr(Acc, {Type, [FName]});
+        true  -> zml_util:prepend_attr(Acc, {Type, [FName]});
         false -> Acc
       end
     end, Dec, ?STYLESHEET_TAGS),
@@ -172,10 +172,10 @@ elements_match(ElStr, Name, Attrs) ->
 att_includes(_Attr, _Key, []) -> true;
 
 att_includes(Attr, Key, ReqVals) ->
-  case zml:get_attr_vals(Key, Attr) of
+  case zml_util:get_attr_vals(Key, Attr) of
     [] -> false;
     HasVals ->
-      Vals = zml:split_attr_values(HasVals),
+      Vals = zml_util:split_attr_values(HasVals),
       lists:all(fun(Req) -> lists:member(Req, Vals) end, ReqVals)
   end.
 

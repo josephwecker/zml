@@ -59,7 +59,7 @@ parse_class_attrs([H|T] = Ln, Attr) when ?IS_ATTR(H) ->
   case parse_id(T) of
     {[], _   } -> {Attr, Ln};
     {Id, Rest} -> parse_class_attrs(Rest,
-                    zml:append_attr(Attr, id2attr(H, Id)))
+      zml_util:append_attr(Attr, id2attr(H, Id)))
   end;
 
 parse_class_attrs(Ln, Attr) -> {Attr, Ln}.
@@ -75,13 +75,13 @@ apply_tokenizer(no_tokenizer, Acc) ->
   Body;
 
 apply_tokenizer({tag, {special, Tag} = _Spc, Attr}, Acc) ->
-  Toks = case zml:call_special(Tag, tokenize, [Tag, Attr, Acc]) of
+  Toks = case zml_util:call_special(Tag, tokenize, [Tag, Attr, Acc]) of
     function_not_found ->
       {Tag, normal, NewAttr, Res} = apply_tokenizer({tag, Tag, Attr}, Acc),
       {{Tag, 0}, special, NewAttr, Res};
     Node -> Node
   end,
-  zml:call_special(Tag, process_node, [Toks, []], Toks);
+  zml_util:call_special(Tag, process_node, [Toks, []], Toks);
 
 apply_tokenizer({tag, Tag, Attr}, Acc) ->
   {NewAttr, Body, []} = zml_tag:inline_tags(lists:reverse(Acc), Attr, 0),
@@ -125,7 +125,7 @@ get_tag($*, Id) -> {tag, {special, Id}, []};
 get_tag(Ch, Id) when ?IS_ATTR(Ch) -> {tag, "div", [id2attr(Ch, Id)]}.
 
 is_recursive($*, Tag) ->
-  zml:call_special(Tag, is_recursive, [],
+  zml_util:call_special(Tag, is_recursive, [],
     {recursive, has_attrs, has_class_attrs});
 
 is_recursive(_, _) -> {recursive, has_attrs, has_class_attrs}.

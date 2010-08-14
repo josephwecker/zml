@@ -43,7 +43,7 @@ process_doctype(_ID, Attr, _Children, AST, _Options) ->
       end;
     _ -> ok
   end,
-  [Type] = zml:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
+  [Type] = zml_util:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
   DoctypeString =
     case proplists:get_value(list_to_atom(Type), ?TYPES) of
       undefined ->
@@ -78,13 +78,14 @@ process_head_and_body(ID, Attr, Children, AST, _Options) ->
   zml:update_tag(AST, {"html",ID}, special, Attr, [Head, Body]).
 
 process_xhtml(ID, Attr, Children, AST, _Options) ->
-  [[TypeFC | _]] = zml:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
+  [[TypeFC | _]] = zml_util:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
   case TypeFC == $x of
     false ->
       AST;
     true ->
-      [Namespace] = zml:get_attr_vals_split(xmlns, Attr, ?XMLNS),
-      [Language] = zml:get_attr_vals_split("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
+      [Namespace] = zml_util:get_attr_vals_split(xmlns, Attr, ?XMLNS),
+      [Language] = zml_util:get_attr_vals_split(
+          "xml:lang", Attr, ?LANGUAGE_XML_DEFAULT),
       zml:update_tag(AST, {"html",ID}, special,
         [{"xmlns",[Namespace]}, {"xml:lang",[Language]} | Attr], Children)
       %% Skipping for now - xml declaration
@@ -94,7 +95,7 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
   end.
 
 process_metas(ID, Attr, _Children, AST, _Options) ->
-  [[Tp | _]] = zml:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
+  [[Tp | _]] = zml_util:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
   Metas = lists:foldr(fun(Input,Acc) -> new_metas(Input, Acc, Attr) end, [],
     [ {encoding,    Tp, ?ENCODING_DEFAULT},
       {language,    Tp, ?LANGUAGE_DEFAULT},
@@ -118,7 +119,7 @@ process_cleanup(ID, Attr, Children, AST, _Options) ->
 
 
 new_metas({Name, Type, Def}, Acc, Attr) ->
-  case zml:get_attr_vals_split(Name, Attr, Def) of
+  case zml_util:get_attr_vals_split(Name, Attr, Def) of
     ["none"] -> Acc;
     Vals -> metatag(Name, Type, Vals) ++ Acc
   end.
@@ -154,19 +155,19 @@ build_meta(Key, Name, Vals, IsXml) ->
 build_meta(Key, Name, Vals, IsXml, LowerVals) ->
   NewName = case {Name, IsXml} of
     {"MSSmartTagsPreventParsing", $x} -> Name;
-    {_, $x} -> to_lower(zml:str(Name));
-    {_, _ } -> zml:str(Name)
+    {_, $x} -> to_lower(zml_util:str(Name));
+    {_, _ } -> zml_util:str(Name)
   end,
   NewVals = case LowerVals of
     $x -> to_lower(join(Vals, " "));
     _  -> join(Vals, " ")
   end,
   [zml:new_tag(meta,
-    [{"content", [NewVals]}, {zml:str(Key), [NewName]}], [])].
+    [{"content", [NewVals]}, {zml_util:str(Key), [NewName]}], [])].
 
 
 process_autoclose(_ID, Attr, _Children, AST, _Options) ->
-  [[TypeFC | _]] = zml:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
+  [[TypeFC | _]] = zml_util:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
   autoclose(AST, TypeFC == $x, []).
 
 autoclose([], _, Acc) -> lists:reverse(Acc);

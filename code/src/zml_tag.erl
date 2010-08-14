@@ -61,7 +61,7 @@ inline_tags([], _Level, AccL, AccR) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 inline_special(tag, {special, Id}, Attr, Body) ->
-  zml:call_special(Id, inline_tag,
+  zml_util:call_special(Id, inline_tag,
     [Id, Attr, Body], {{{Id, 0}, special, Attr, Body}, []});
 
 inline_special(tag, Id, Attr, Body) -> {{Id, normal, Attr, Body}, []}.
@@ -155,7 +155,7 @@ add_text(AccL, AccR) -> [lists:reverse(AccL) | AccR].
 add_attr(none, _AccL, _AccR, Attr) -> Attr;
 
 add_attr(Id, AccL, AccR, Attr) ->
- zml:append_attr(Attr, {Id, lists:reverse(add_text(AccL, AccR))}).
+ zml_util:append_attr(Attr, {Id, lists:reverse(add_text(AccL, AccR))}).
 
 
 append_rev([H|T], Acc) -> append_rev(T, [H|Acc]);
