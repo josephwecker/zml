@@ -36,7 +36,6 @@
 -export([process/5]).
 
 -include("zml_special_html.hrl").
--import(zml_special_html, [split_attr_values/1]).
 
 
 -define(JS_DEF(M,E,L),
@@ -46,10 +45,10 @@
 
 process(ID, Attr, _Children, AST, Options) ->
   MagicJS = zml:find_magic_file(".js", Options),
-  Externals = split_attr_values(
+  Externals = zml:split_attr_values(
     zml:get_attr_vals(script,  Attr) ++
     zml:get_attr_vals(scripts, Attr)),
-  LibJS = split_attr_values(
+  LibJS = zml:split_attr_values(
     zml:get_attr_vals(scriptlib,  Attr) ++
     zml:get_attr_vals(scriptlibs, Attr) ++
     autojquery(MagicJS)),

@@ -6,7 +6,6 @@
 -export([process/5]).
 
 -include("zml_special_html.hrl").
--import(zml_special_html, [split_attr_values/1]).
 
 
 process(ID, Attr, _Children, AST, Options) ->
@@ -35,7 +34,7 @@ get_declared_zss(Attr, Options) ->
   Declared = lists:map(fun({Type, _Tags}) ->
         Given = zml:get_attr_vals(Type, Attr) ++
                 zml:get_attr_vals(Type ++ "s", Attr),
-        Styles = split_attr_values(Given),
+        Styles = zml:split_attr_values(Given),
         Found = [zml:find_file(F, ".zss", Search) || F <- Styles],
         {Type, [Abs || {ok, Abs} <- Found]}
     end, ?STYLESHEET_TAGS),
@@ -49,20 +48,18 @@ get_declared_zss(Attr, Options) ->
   case zml:get_attr_vals(stylelib,  Attr) ++
        zml:get_attr_vals(stylelibs, Attr) of
     []   -> Declared2;
-    Libs -> append_lib_styles(Options, Declared2, split_attr_values(Libs))
+    Libs -> append_lib_styles(Options, Declared2, zml:split_attr_values(Libs))
   end.
 
-append_lib_styles(_Opts, Dec, []) ->
-  Dec;
+append_lib_styles(_Opts, Dec, []) -> Dec;
+
 append_lib_styles(Opts, Dec, [Lib | T]) ->
   {ok, Dir} = find_lib_dir(string:strip(Lib), Opts),
   Dec2 = lists:foldl(fun({Type,_Tags}, Acc) ->
       FName = filename:join([Dir, Type ++ ".zss"]),
       case filelib:is_file(FName) of
-        true ->
-          zml:prepend_attr(Acc, {Type, [FName]});
-        false ->
-          Acc
+        true  -> zml:prepend_attr(Acc, {Type, [FName]});
+        false -> Acc
       end
     end, Dec, ?STYLESHEET_TAGS),
   append_lib_styles(Opts, Dec2, T).
@@ -172,13 +169,13 @@ elements_match(ElStr, Name, Attrs) ->
         att_includes(Attrs, "id", ID)
   end.
 
-att_includes(_Attr, _Key, []) ->
-  true;
+att_includes(_Attr, _Key, []) -> true;
+
 att_includes(Attr, Key, ReqVals) ->
   case zml:get_attr_vals(Key, Attr) of
     [] -> false;
     HasVals ->
-      Vals = split_attr_values(HasVals),
+      Vals = zml:split_attr_values(HasVals),
       lists:all(fun(Req) -> lists:member(Req, Vals) end, ReqVals)
   end.
 

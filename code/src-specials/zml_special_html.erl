@@ -5,7 +5,7 @@
 
 -module(zml_special_html).
 
--export([process_tree/3, split_attr_values/1]).
+-export([process_tree/3]).
 
 -include("zml_special_html.hrl").
 -import(string, [to_lower/1, to_upper/1, join/2]).
@@ -43,7 +43,7 @@ process_doctype(_ID, Attr, _Children, AST, _Options) ->
       end;
     _ -> ok
   end,
-  [Type] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
+  [Type] = zml:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
   DoctypeString =
     case proplists:get_value(list_to_atom(Type), ?TYPES) of
       undefined ->
@@ -78,13 +78,13 @@ process_head_and_body(ID, Attr, Children, AST, _Options) ->
   zml:update_tag(AST, {"html",ID}, special, Attr, [Head, Body]).
 
 process_xhtml(ID, Attr, Children, AST, _Options) ->
-  [[TypeFC | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
+  [[TypeFC | _]] = zml:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
   case TypeFC == $x of
     false ->
       AST;
     true ->
-      [Namespace] = zml:get_attr_vals(xmlns, Attr, ?XMLNS),
-      [Language] = zml:get_attr_vals("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
+      [Namespace] = zml:get_attr_vals_split(xmlns, Attr, ?XMLNS),
+      [Language] = zml:get_attr_vals_split("xml:lang",Attr, ?LANGUAGE_XML_DEFAULT),
       zml:update_tag(AST, {"html",ID}, special,
         [{"xmlns",[Namespace]}, {"xml:lang",[Language]} | Attr], Children)
       %% Skipping for now - xml declaration
@@ -94,17 +94,16 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
   end.
 
 process_metas(ID, Attr, _Children, AST, _Options) ->
-  [[Tp | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
+  [[Tp | _]] = zml:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
   Metas = lists:foldr(fun(Input,Acc) -> new_metas(Input, Acc, Attr) end, [],
-    [
-      {encoding,    Tp, ?ENCODING_DEFAULT},
+    [ {encoding,    Tp, ?ENCODING_DEFAULT},
       {language,    Tp, ?LANGUAGE_DEFAULT},
       {description, Tp, none},
       {keywords,    Tp, none},
       {copyright,   Tp, none},
       {nosmarttag,  Tp, true},
       {title,       Tp, none},
-      {favicon,     Tp, none}]),
+      {favicon,     Tp, none} ]),
   zml:append_children(AST, [{"html",ID},"head"], Metas).
 
 process_zss_and_images(ID, Attr, Children, AST, Options) ->
@@ -119,10 +118,9 @@ process_cleanup(ID, Attr, Children, AST, _Options) ->
 
 
 new_metas({Name, Type, Def}, Acc, Attr) ->
-  case zml:get_attr_vals(Name, Attr, Def) of
+  case zml:get_attr_vals_split(Name, Attr, Def) of
     ["none"] -> Acc;
-    Vals ->
-      metatag(Name, Type, Vals) ++ Acc
+    Vals -> metatag(Name, Type, Vals) ++ Acc
   end.
 
 metatag(encoding, $x, [Val]) ->
@@ -168,7 +166,7 @@ build_meta(Key, Name, Vals, IsXml, LowerVals) ->
 
 
 process_autoclose(_ID, Attr, _Children, AST, _Options) ->
-  [[TypeFC | _]] = zml:get_attr_vals(type, Attr, ?DEFAULT_TYPE),
+  [[TypeFC | _]] = zml:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
   autoclose(AST, TypeFC == $x, []).
 
 autoclose([], _, Acc) -> lists:reverse(Acc);
@@ -197,7 +195,4 @@ close_tag(true, "col"  ) -> [];
 close_tag(true, "base" ) -> [];
 
 close_tag(_, _) -> [""].
-
-split_attr_values(Attrs) ->
-  lists:flatmap(fun(A) -> string:tokens(A, " \t\n") end, Attrs).
 

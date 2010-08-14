@@ -28,6 +28,9 @@
     prepend_attr/2,
     get_attr_vals/2,
     get_attr_vals/3,
+    get_attr_vals_split/2,
+    get_attr_vals_split/3,
+    split_attr_values/1,
     pop_attr/3,
     replace_tag/3,
     update_tag/5,
@@ -281,14 +284,10 @@ prepend_attr([{K1,V1} | Attributes], {K1,V2}) ->
   [{K1, V2 ++ V1} | Attributes];
 prepend_attr([KV1 | Attributes], KV2) ->
   [KV1 | prepend_attr(Attributes, KV2)];
-prepend_attr([], KV2) ->
-  [KV2].
+prepend_attr([], KV2) -> [KV2].
 
 get_attr_vals(Find, Attr) ->
-  case proplists:get_value(str(Find), Attr, none) of
-    none -> [];
-    V -> V
-  end.
+  proplists:get_value(str(Find), Attr, []).
 get_attr_vals(Find, Attr, [H|_] = Default) when is_integer(H) ->
   proplists:get_value(str(Find), Attr, [Default]);
 get_attr_vals(Find, Attr, Default) when is_list(Default) ->
@@ -296,15 +295,21 @@ get_attr_vals(Find, Attr, Default) when is_list(Default) ->
 get_attr_vals(Find, Attr, Default) ->
   proplists:get_value(str(Find), Attr, [str(Default)]).
 
+get_attr_vals_split(Find, Attr) ->
+  get_attr_vals_split(Find, Attr, []).
+get_attr_vals_split(Find, Attr, Default) ->
+  split_attr_values(get_attr_vals(Find, Attr, Default)).
+
+split_attr_values(Attrs) ->
+  lists:flatmap(fun(A) -> string:tokens(A, " \t\n") end, Attrs).
+
 pop_attr(Find, Attr, Default) ->
   Key = str(Find),
   Val = proplists:get_value(Key, Attr, [str(Default)]),
   {proplists:delete(Key, Attr), Val}.
 
-str(A) when is_atom(A) ->
-  atom_to_list(A);
-str(A) ->
-  A.
+str(A) when is_atom(A) -> atom_to_list(A);
+str(A) -> A.
 
 get_search_paths(Options) ->
   % TODO (optionally if needed in the future)
