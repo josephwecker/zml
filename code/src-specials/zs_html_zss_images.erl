@@ -18,7 +18,7 @@ process(ID, Attr, _Children, AST, Options) ->
           {Prepend, Append} = proplists:get_value(T, ?STYLESHEET_TAGS),
           [Prepend, CSS, Append, "\n"]
       end, Processed)),
-  zml:append_children(AST, [{"html",ID},"head"], [Rendered]).
+  zml_util:append_children(AST, [{"html",ID},"head"], [Rendered]).
 
 get_zss_attrs(Attr, Options) ->
   case proplists:get_value("remove_unused_css", Attr) of

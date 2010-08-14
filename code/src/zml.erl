@@ -21,12 +21,6 @@
     tmp_filename/0,
     tmp_filename/1,
     pull_in_file/2,
-    new_tag/3,
-    new_tag/4,
-    get_tag/2,
-    replace_tag/3,
-    update_tag/5,
-    append_children/3,
     get_search_paths/1
   ]).
 
@@ -186,80 +180,6 @@ pull_in_file(Name, DestDirAndName) ->
         Error -> {error, Error}
       end
   end.
-
-new_tag(Name, Attr, Children) when is_atom(Name) ->
-  new_tag(atom_to_list(Name), normal, Attr, Children);
-new_tag(Name, Attr, Children) when is_tuple(Name) ->
-  new_tag(Name, special, Attr, Children).
-
-new_tag(Name, Type, Attr, Children) when is_atom(Name) ->
-  new_tag(atom_to_list(Name), Type, Attr, Children);
-new_tag(Name, Type, Attr, Children) ->
-  {Name, Type, Attr, Children}.
-
-
-%% Recursively replaces any tags with existing Name with the new attributes and
-%% children specified. Search is the search path as a list of tag names, such as:
-%% [{"html", ID}, "body", "table"] to find the table tag within the body tag
-%% within the special html tag with the given ID.  No mechanism yet for
-%% wildcard IDs, wildcard tagnames, looking at attributes, or "lookahead" at
-%% children.
-replace_tag(AST, Search, NewTag) ->
-  replace_tag(AST, lists:reverse(Search), NewTag, [], []).
-
-replace_tag([], _, _, _, Acc) ->
-  lists:reverse(Acc);
-
-replace_tag([{Name,Tp,Att,Children} | T], Search, NewTag, CurrPath, Acc) ->
-  EqPath = lists:sublist([Name | CurrPath], length(Search)),
-  case EqPath == Search of
-    true ->
-      % We won't recurse into new children, because that would inevitably lead
-      % to infinite recursion if someone tried to take advantage of it.
-      replace_tag(T, Search, NewTag, CurrPath, [NewTag | Acc]);
-    false ->
-      NewChildren = replace_tag(Children,Search,NewTag, [Name | CurrPath],[]),
-      replace_tag(T, Search, NewTag, CurrPath,
-        [{Name,Tp,Att,NewChildren} | Acc])
-  end;
-
-replace_tag([H|T], Search, NewTag, CurrPath, Acc) ->
-  replace_tag(T, Search, NewTag, CurrPath, [H | Acc]).
-
-
-%% Shortcut for basically changing the attributes / children of a specific tag.
-update_tag(AST, [F | _] = Search, Type, NewAttr, NewChildren) when
-    is_list(Search) and (is_list(F) or is_tuple(F)) ->
-  replace_tag(AST, Search, new_tag(lists:last(Search), Type, NewAttr, NewChildren));
-update_tag(AST, Name, Type, NewAttr, NewChildren) ->
-  replace_tag(AST, [Name], new_tag(Name, Type, NewAttr, NewChildren)).
-
-append_children(AST, Search, NewChildren) ->
-  {_,Type,Attr,Children} = get_tag(AST, Search),
-  update_tag(AST, Search, Type, Attr, Children ++ NewChildren).
-
-%% Similar to replace_tag, only is stops when it finds it and returns it
-%% instead of returning a rebuilt full AST.
-get_tag(AST, Search) ->
-  get_tag(AST, lists:reverse(Search), []).
-
-get_tag([], _, _) -> undefined;
-
-get_tag([{Name,_,_,Children} = Tag | T], Search, CurrPath) ->
-  EqPath = lists:sublist([Name | CurrPath], length(Search)),
-  case EqPath == Search of
-    true ->
-      Tag;
-    false ->
-      case get_tag(Children, Search, [Name | CurrPath]) of
-        undefined ->
-          get_tag(T, Search, CurrPath);
-        FoundTag ->
-          FoundTag
-      end
-  end;
-
-get_tag([_|T], Search, CurrPath) -> get_tag(T, Search, CurrPath).
 
 get_search_paths(Options) ->
   % TODO (optionally if needed in the future)

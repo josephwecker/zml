@@ -28,7 +28,7 @@ process_tree({{"html", ID}, special, _Attr, _Children}, AST, Options) ->
   ],
   lists:foldl(
     fun(Transformer, NewAST) ->
-      {_, _, NewAttr, NewChildren} = zml:get_tag(NewAST, [{"html",ID}]),
+      {_, _, NewAttr, NewChildren} = zml_util:get_tag(NewAST, [{"html",ID}]),
       Transformer(ID, NewAttr, NewChildren, NewAST, Options)
     end, AST, Transformations).
 
@@ -58,24 +58,24 @@ process_doctype(_ID, Attr, _Children, AST, _Options) ->
 
 process_head_and_body(ID, Attr, Children, AST, _Options) ->
   % Ensure there is a body
-  ExistingHead = zml:get_tag(Children, ["head"]),
-  ExistingBody = zml:get_tag(Children, ["body"]),
+  ExistingHead = zml_util:get_tag(Children, ["head"]),
+  ExistingBody = zml_util:get_tag(Children, ["body"]),
 
   {Head, AllButHead} =
     case ExistingHead of
       undefined ->
-        {zml:new_tag("head", normal, [], []), Children};
+        {zml_util:new_tag("head", normal, [], []), Children};
       _ ->
-        {ExistingHead, zml:replace_tag(Children, ["head"], [])}
+        {ExistingHead, zml_util:replace_tag(Children, ["head"], [])}
     end,
   Body =
     case ExistingBody of
       undefined ->
-        zml:new_tag(body, normal, [], AllButHead);
+        zml_util:new_tag(body, normal, [], AllButHead);
       _ ->
         ExistingBody
     end,
-  zml:update_tag(AST, {"html",ID}, special, Attr, [Head, Body]).
+  zml_util:update_tag(AST, {"html",ID}, special, Attr, [Head, Body]).
 
 process_xhtml(ID, Attr, Children, AST, _Options) ->
   [[TypeFC | _]] = zml_util:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
@@ -86,7 +86,7 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
       [Namespace] = zml_util:get_attr_vals_split(xmlns, Attr, ?XMLNS),
       [Language] = zml_util:get_attr_vals_split(
           "xml:lang", Attr, ?LANGUAGE_XML_DEFAULT),
-      zml:update_tag(AST, {"html",ID}, special,
+      zml_util:update_tag(AST, {"html",ID}, special,
         [{"xmlns",[Namespace]}, {"xml:lang",[Language]} | Attr], Children)
       %% Skipping for now - xml declaration
       % TODO: flag to force insertion of the xml declaration
@@ -105,7 +105,7 @@ process_metas(ID, Attr, _Children, AST, _Options) ->
       {nosmarttag,  Tp, true},
       {title,       Tp, none},
       {favicon,     Tp, none} ]),
-  zml:append_children(AST, [{"html",ID},"head"], Metas).
+  zml_util:append_children(AST, [{"html",ID},"head"], Metas).
 
 process_zss_and_images(ID, Attr, Children, AST, Options) ->
   zs_html_zss_images:process(ID, Attr, Children, AST, Options).
@@ -115,7 +115,7 @@ process_javascript(ID, Attr, Children, AST, Options) ->
 
 process_cleanup(ID, Attr, Children, AST, _Options) ->
   CleanAttrs = lists:foldl(fun proplists:delete/2, Attr, ?SPECIAL_ATTRIBUTES),
-  zml:update_tag(AST, {"html",ID}, special, CleanAttrs, Children).
+  zml_util:update_tag(AST, {"html",ID}, special, CleanAttrs, Children).
 
 
 new_metas({Name, Type, Def}, Acc, Attr) ->
@@ -141,11 +141,11 @@ metatag(copyright, IsXml, Vals) ->
 metatag(nosmarttag, IsXml, _) ->
   build_meta(name, "MSSmartTagsPreventParsing", ["TRUE"], IsXml);
 
-metatag(title, _, Vals) -> [zml:new_tag(title, [], Vals)];
+metatag(title, _, Vals) -> [zml_util:new_tag(title, [], Vals)];
 
 metatag(favicon, _, Vals) ->
-  [zml:new_tag(link, [{"rel", ["icon"]}, {"href", Vals}], []),
-   zml:new_tag(link, [{"rel", ["shortcut icon"]}, {"href", Vals}], [])];
+  [zml_util:new_tag(link, [{"rel", ["icon"]}, {"href", Vals}], []),
+   zml_util:new_tag(link, [{"rel", ["shortcut icon"]}, {"href", Vals}], [])];
 
 metatag(Name, IsXml, Vals) -> build_meta(name, Name, Vals, IsXml).
 
@@ -162,12 +162,12 @@ build_meta(Key, Name, Vals, IsXml, LowerVals) ->
     $x -> to_lower(join(Vals, " "));
     _  -> join(Vals, " ")
   end,
-  [zml:new_tag(meta,
+  [zml_util:new_tag(meta,
     [{"content", [NewVals]}, {zml_util:str(Key), [NewName]}], [])].
 
 
 process_autoclose(_ID, Attr, _Children, AST, _Options) ->
-  [[TypeFC | _]] = zml_util:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
+  [[TypeFC|_]] = zml_util:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
   autoclose(AST, TypeFC == $x, []).
 
 autoclose([], _, Acc) -> lists:reverse(Acc);

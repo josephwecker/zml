@@ -70,7 +70,7 @@ process(ID, Attr, _Children, AST, Options) ->
     end,
   case ScriptSection of
     none -> AST;
-    _ -> zml:append_children(AST, [{"html",ID}, AddTo], [ScriptSection])
+    _ -> zml_util:append_children(AST, [{"html",ID}, AddTo], [ScriptSection])
   end.
 
 autojquery(_JSFile) ->
@@ -114,8 +114,9 @@ create_script_part(Inline, External, true) ->
   script_tag(?JS_LOAD_IWAIT(External, Inline)).
 
 ext_script_tag(Src) ->
-  zml:new_tag(script, [{"type", ["text/javascript"]}, {"src", [Src]}], [""]).
+  zml_util:new_tag(script,
+    [{"type", ["text/javascript"]}, {"src", [Src]}], [""]).
 script_tag(Children) ->
-  zml:new_tag(script, [{"type", ["text/javascript"]}],
+  zml_util:new_tag(script, [{"type", ["text/javascript"]}],
     %[lists:flatten([?JS_START, Children, ?JS_END])]).
     [?JS_START, Children, ?JS_END]).
