@@ -53,7 +53,7 @@ tr([[$\\, $| | W] | T], AttrTR, AttrTD, [AccL | AccR]) ->
 tr([[$| | W] | T], AttrTR, AttrTD, [AccL | AccR]) ->
   {Tds, Rest} = td([W | T], AttrTD, [[]], []),
   tr(Rest, AttrTR, AttrTD,
-    [[], zml:new_tag(tr, AttrTR, Tds), lists:reverse(AccL) | AccR]);
+    [[], zml_util:new_tag(tr, AttrTR, Tds), lists:reverse(AccL) | AccR]);
 
 tr([[_ | W] | T], AttrTR, AttrTD, Acc) -> tr([W | T], AttrTR, AttrTD, Acc);
 
@@ -62,7 +62,7 @@ tr([W | T], AttrTR, AttrTD, Acc) when is_tuple(W) -> tr(T, AttrTR, AttrTD, Acc).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 td([[$| | W] | T], Attrs, [AccL | AccR], Tds) ->
-  td([W | T], Attrs, [[]], [zml:new_tag(td, Attrs,
+  td([W | T], Attrs, [[]], [zml_util:new_tag(td, Attrs,
     lists:reverse([lists:reverse(AccL) | AccR])) | Tds]);
 
 td([[$\\, $| | W] | T], Attrs, [AccL | AccR], Tds) ->

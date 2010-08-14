@@ -27,10 +27,11 @@ run('mkdir','-p',curr_dir+'include')
 run('mkdir','-p',curr_dir+'ebin')
 
 erlc('zml')
-erlc('zml_util')
 erlc('zml_indent')
 erlc('zml_tag')
 erlc('zml_render')
+erlc('zml_util')
+erlc('zml_util_file')
 erlc_glob('../src-specials/zml_special*.erl')
 erlc_glob('../src-specials/zs_*.erl')
 

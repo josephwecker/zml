@@ -11,8 +11,7 @@
 process(ID, Attr, _Children, AST, Options) ->
   Options2 = get_zss_attrs(Attr, Options),
   DeclaredZSS = get_declared_zss(Attr, Options2),
-  Processed = lists:filter(
-    fun is_tuple/1,
+  Processed = lists:filter(fun is_tuple/1,
     [process_styles(Styles, AST, Options2) || Styles <- DeclaredZSS]),
   Rendered = "\n" ++ lists:flatten(lists:map(fun({T, CSS}) ->
           {Prepend, Append} = proplists:get_value(T, ?STYLESHEET_TAGS),
@@ -21,26 +20,25 @@ process(ID, Attr, _Children, AST, Options) ->
   zml_util:append_children(AST, [{"html",ID},"head"], [Rendered]).
 
 get_zss_attrs(Attr, Options) ->
-  case proplists:get_value("remove_unused_css", Attr) of
+  case zml_util:get_attr_vals_split(remove_unused_css, Attr) of
     undefined -> Options;
-    [Val|_]   -> [{remove_unused_css,
-                   list_to_atom(string:strip(Val))} | Options];
+    [Val|_]   -> [{remove_unused_css, list_to_atom(Val)} | Options];
     []        -> [{remove_unused_css, true} | Options]
   end.
 
 get_declared_zss(Attr, Options) ->
   % Explicitly declared
-  Search = zml:get_search_paths(Options),
+  Search = zml_util_file:get_search_paths(Options),
   Declared = lists:map(fun({Type, _Tags}) ->
         Given = zml_util:get_attr_vals(Type, Attr) ++
                 zml_util:get_attr_vals(Type ++ "s", Attr),
         Styles = zml_util:split_attr_values(Given),
-        Found = [zml:find_file(F, ".zss", Search) || F <- Styles],
+        Found = [zml_util_file:find_file(F, ".zss", Search) || F <- Styles],
         {Type, [Abs || {ok, Abs} <- Found]}
     end, ?STYLESHEET_TAGS),
   % Look for a magic one as well
   Declared2 =
-    case zml:find_magic_file(".zss", Options) of
+    case zml_util_file:find_magic_file(".zss", Options) of
       none -> Declared;
       MagicFile -> zml_util:append_attr(Declared, {"style", [MagicFile]})
     end,
@@ -48,7 +46,8 @@ get_declared_zss(Attr, Options) ->
   case zml_util:get_attr_vals(stylelib,  Attr) ++
        zml_util:get_attr_vals(stylelibs, Attr) of
     []   -> Declared2;
-    Libs -> append_lib_styles(Options, Declared2, zml_util:split_attr_values(Libs))
+    Libs -> append_lib_styles(Options,
+      Declared2, zml_util:split_attr_values(Libs))
   end.
 
 append_lib_styles(_Opts, Dec, []) -> Dec;

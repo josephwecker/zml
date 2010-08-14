@@ -44,7 +44,7 @@
    {js_libs, inline, L}]).
 
 process(ID, Attr, _Children, AST, Options) ->
-  MagicJS = zml:find_magic_file(".js", Options),
+  MagicJS = zml_util_file:find_magic_file(".js", Options),
   Externals = zml_util:split_attr_values(
     zml_util:get_attr_vals(script,  Attr) ++
     zml_util:get_attr_vals(scripts, Attr)),
@@ -54,7 +54,7 @@ process(ID, Attr, _Children, AST, Options) ->
     autojquery(MagicJS)),
   InputDef = ?JS_DEF(MagicJS, Externals, LibJS),
   Input = [{K, proplists:get_value(K,Options,DV),In} || {K,DV,In} <- InputDef],
-  Search = zml:get_search_paths(Options),
+  Search = zml_util_file:get_search_paths(Options),
   Inlines = [get_inline(K, In, Search) ||
     {K,V,In} <- Input, V =:= inline, In=/= none],
 % Locals = [get_local(K, In) || {K,V,In} <- Instr, V =:= local, In =!= []],
@@ -82,7 +82,7 @@ get_inline(js_magic_file, FN, _) ->
   Res;
 get_inline(js_externals, ExtNames, Search) ->
   % TODO: warnings on error instead of ignoring
-  SearchRes = [zml:find_file(N, Search) || N <- ExtNames],
+  SearchRes = [zml_util_file:find_file(N, Search) || N <- ExtNames],
   [file:read_file(FN) || {ok, FN} <- SearchRes];
 get_inline(js_libs, _Libs, _Search) ->
   % TODO: implement
