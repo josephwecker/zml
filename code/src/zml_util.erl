@@ -17,6 +17,7 @@
     replace_tag/3,
     update_tag/5,
     append_children/3,
+    intersperse/2,
     str/1,
     call_special/3,
     call_special/4
@@ -132,6 +133,11 @@ get_tag([_|T], Search, CurrPath) -> get_tag(T, Search, CurrPath).
 
 str(A) when is_atom(A) -> atom_to_list(A);
 str(A) -> A.
+
+intersperse([H|T], Sep)      -> intersperse(T, Sep, [H]).
+intersperse([H|T], Sep, Acc) -> intersperse(T, Sep, [H, Sep | Acc]);
+intersperse([],   _Sep, Acc) -> lists:reverse(Acc).
+
 
 call_special(Tag, Func, Args) ->
   call_special(Tag, Func, Args, function_not_found).

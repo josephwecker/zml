@@ -130,13 +130,7 @@ translate_ast_item([{Name,_Type,Attributes,Children} | T], Acc) ->
 translate_ast_item([Str | T], Acc) ->
   translate_ast_item(T, [Str | Acc]).
 
-
-translate_attributes(Atts) -> lists:foldl(fun out_attr/2, [], Atts).
-
-out_attr({Name, Values}, Acc) ->
-  [" ", Name, "=\"", intersperse(Values, " "), "\"" | Acc].
-
-intersperse([H|T], Sep)      -> intersperse(T, Sep, [H]).
-intersperse([H|T], Sep, Acc) -> intersperse(T, Sep, [H, Sep | Acc]);
-intersperse([],   _Sep, Acc) -> lists:reverse(Acc).
+translate_attributes(Attrs) ->
+  [ [" ", Name, "=\"", zml_util:intersperse(Values, " "), "\""]
+    || {Name, Values} <- Attrs ].
 
