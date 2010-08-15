@@ -1,3 +1,4 @@
+
 -module(zml).
 
 % Main function
@@ -10,9 +11,15 @@
     template_stream/2,
     template_string/1,
     template_string/2,
+    start/0,
+    template_dir/2,
+    template/2,
     render/1,
     render/2
   ]).
+
+-include_lib("kernel/include/file.hrl").
+
 
 -define(OPT_ENV(Desc),
         {proplists:get_value(Desc, Options),
@@ -34,12 +41,43 @@ compile_files(FLS) ->
 
 % TODO: take output path from the options.
 output_file_name(FName) ->
-  case string:right(FName, 4) of
-    ".zml" -> string:left(FName, string:len(FName) - 4);
+  case string:right(FName, 5) of
+    [_|".zml"] -> string:left(FName, string:len(FName) - 4);
     _ -> FName
   end ++ ".html".
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+start() ->
+  ets:new(zml_templates, [set, public, named_table]).
+
+
+template_dir(DirName, Options) ->
+  Dir = lists:reverse(case lists:reverse(DirName) of
+    [$/|_] = T -> T;
+    Rid -> [$/|Rid]
+  end),
+  case file:list_dir(Dir) of
+    {ok, Files} ->
+      lists:foreach(fun(FName) ->
+        case string:right(FName, 5) of
+          [_|".zml"] -> template(Dir ++ FName, Options);
+          _ -> nothing
+        end end, Files);
+    Err -> Err
+  end.
+
+% @return ZML template
+template(FName, Options) ->
+  {ok, FileInfo} = file:read_file_info(FName),
+  NewTs = FileInfo#file_info.mtime,
+  case ets:lookup(zml_templates, FName) of
+    [{_FName, Ts, Templ}] when Ts >= NewTs -> Templ;
+    _ -> NewTempl = template_file(FName, Options),
+         ets:insert(zml_templates, {FName, NewTs, NewTempl}),
+         NewTempl
+  end.
+
 
 template_file(InFile) -> template_file(InFile, []).
 
