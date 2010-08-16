@@ -2,21 +2,8 @@
 -module(zml).
 
 % Main function
--export([
-    compile_files/0,
-    compile_files/1,
-    template_file/1,
-    template_file/2,
-    template_stream/1,
-    template_stream/2,
-    template_string/1,
-    template_string/2,
-    start/0,
-    template_dir/2,
-    template/2,
-    render/1,
-    render/2
-  ]).
+-export([ compile_files/0, compile_files/1,
+          start/0, template_dir/2, render/3 ]).
 
 -include_lib("kernel/include/file.hrl").
 
@@ -28,15 +15,15 @@
 compile_files() -> compile_files([]).
 
 compile_files([]) ->
-  Template = template_stream(standard_io),
-  io:format("~s~n", [render(Template)]);
+  Template = template_stream(standard_io, []),
+  io:format("~s~n", [zml_render:render(Template, fake)]);
 
 compile_files(FLS) ->
   lists:foreach(fun(FName) ->
     FNameOut = output_file_name(FName),
     io:format("~s --> ~s~n", [FName, FNameOut]),
-    Template = template_file(FName),
-    ok = file:write_file(FNameOut, render(Template))
+    Template = template_file(FName, []),
+    ok = file:write_file(FNameOut, zml_render:render(Template, fake))
   end, FLS).
 
 % TODO: take output path from the options.
@@ -48,38 +35,54 @@ output_file_name(FName) ->
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-start() ->
-  ets:new(zml_templates, [set, public, named_table]).
+start() -> ets:new(zml_templates, [set, public, named_table]).
 
-
-template_dir(DirName, Options) ->
-  Dir = lists:reverse(case lists:reverse(DirName) of
-    [$/|_] = T -> T;
-    Rid -> [$/|Rid]
-  end),
+template_dir(Dir, Options) ->
   case file:list_dir(Dir) of
     {ok, Files} ->
       lists:foreach(fun(FName) ->
         case string:right(FName, 5) of
-          [_|".zml"] -> template(Dir ++ FName, Options);
+          [_|".zml"] -> add_template(Dir, FName, Options);
           _ -> nothing
         end end, Files);
     Err -> Err
   end.
 
-% @return ZML template
-template(FName, Options) ->
-  {ok, FileInfo} = file:read_file_info(FName),
+add_template(Dir, FName, Options) ->
+  Path = Dir ++ "/" ++ FName,
+  {ok, FileInfo} = file:read_file_info(Path),
   NewTs = FileInfo#file_info.mtime,
-  case ets:lookup(zml_templates, FName) of
-    [{_FName, Ts, Templ}] when Ts >= NewTs -> Templ;
-    _ -> NewTempl = template_file(FName, Options),
-         ets:insert(zml_templates, {FName, NewTs, NewTempl}),
-         NewTempl
+  Id = list_to_atom(string:left(FName, string:len(FName) - 4)),
+  case ets:lookup(zml_templates, Id) of
+    [{_Id, _Path, Ts, _Templ}] when Ts >= NewTs -> ok;
+    _ -> ets:insert(zml_templates,
+      {Id, Path, NewTs, template_file(Path, Options)})
   end.
 
+% @return ZML template or atom 'undefined'
+template(Id, Options) ->
+  case ets:lookup(zml_templates, Id) of
+    [{Id, Path, Ts, Templ}] ->
+      {ok, FileInfo} = file:read_file_info(Path),
+      NewTs = FileInfo#file_info.mtime,
+      case NewTs > Ts of
+        true  -> NewTempl = template_file(Path, Options),
+                 ets:insert(zml_templates, {Id, Path, NewTs, NewTempl}),
+                 NewTempl;
+        false -> Templ
+      end;
+    _ -> undefined
+  end.
 
-template_file(InFile) -> template_file(InFile, []).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+render(Id, Data, Options) ->
+  case template(Id, Options) of
+    undefined -> undefined;
+    Templ -> zml_render:render(Templ, Data)
+  end.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 template_file(InFile, Options) ->
   SourceFName = filename:absname(InFile),
@@ -91,24 +94,15 @@ template_file(InFile, Options) ->
   {ok, Bin} = file:read_file(InFile),
   template_string(binary_to_list(Bin), Options2).
 
-template_stream(Stream) -> template_stream(Stream, []).
-
 template_stream(Stream, Options) ->
   Str = io:get_chars(Stream, "", 1024000),
   template_string(Str, Options).
-
-template_string(Str) -> template_string(Str, []).
 
 template_string(Str, Options) ->
   Options2 = other_options(Options),
   AST = zml_indent:tokenize_string(Str), % TODO: pass options here
   AST2 = run_specialized_handlers(AST, Options2),
   translate_ast_item(AST2, []).
-
-
-render(Template) -> render(Template, fake).
-
-render(Template, Data) -> zml_render:render(Template, Data).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
