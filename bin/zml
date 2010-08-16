@@ -15,4 +15,11 @@ cd "$SCRIPT_PATH/../code/"
 ./build -q
 popd > /dev/null
 
-erl -pa "$SCRIPT_PATH/../code/ebin" -noshell -run zml compile_files $@ -run erlang halt
+if [ "$ZML_ZSS_LIBS" == "" ]
+then
+  export ZML_ZSS_LIBS="$SCRIPT_PATH/../lib"
+fi
+
+erl -pa "$SCRIPT_PATH/../code/ebin" \
+  -noshell -run zml compile_static_files $@ -run erlang halt
+
