@@ -96,7 +96,7 @@ process_xhtml(ID, Attr, Children, AST, _Options) ->
 
 process_metas(ID, Attr, _Children, AST, _Options) ->
   [[Tp | _]] = zml_util:get_attr_vals_split(type, Attr, ?DEFAULT_TYPE),
-  Metas = lists:foldr(fun(Input,Acc) -> new_metas(Input, Acc, Attr) end, [],
+  Metas = lists:foldr(fun(Input, Acc) -> new_metas(Input, Acc, Attr) end, [],
     [ {encoding,    Tp, ?ENCODING_DEFAULT},
       {language,    Tp, ?LANGUAGE_DEFAULT},
       {description, Tp, none},
@@ -141,7 +141,7 @@ metatag(copyright, IsXml, Vals) ->
 metatag(nosmarttag, IsXml, _) ->
   build_meta(name, "MSSmartTagsPreventParsing", ["TRUE"], IsXml);
 
-metatag(title, _, Vals) -> [zml_util:new_tag(title, [], Vals)];
+metatag(title, _, Vals) -> [zml_util:new_tag(title, [], string:join(Vals, " "))];
 
 metatag(favicon, _, Vals) ->
   [zml_util:new_tag(link, [{"rel", ["icon"]}, {"href", Vals}], []),

@@ -61,8 +61,9 @@
     "ie-print-style"]).
 
 -define(SPECIAL_ATTRIBUTES,
-  ["script", "scripts", "type", "encoding", "title", "favicon", "stylelib",
-   "stylelibs", "remove_unused_css"] ++
+  [ "script", "scripts", "type", "encoding", "title", "favicon",
+    "language", "description", "keywords", "copyright", "nosmarttag",
+    "stylelib", "stylelibs", "remove_unused_css" ] ++
   ?STYLESHEET_TYPES ++ [SPATTA++"s" || SPATTA <- ?STYLESHEET_TYPES]).
 
 -define(STYLESHEET_TAGS,
