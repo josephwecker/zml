@@ -1,7 +1,0 @@
-:html
-    :heya
-        [for [A,B,C] in [
-      [1,2,3],[4,5,6],[7,8,9]]
-] :span {A} | {B} | {C} ;
-            more children
-
