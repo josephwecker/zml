@@ -79,7 +79,7 @@ parse_attr(Lines, Attr) -> {Attr, Lines}.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 parse_attr([[] | T], Id, AccL, AccR, Br, Attr) ->
-  parse_attr(T, Id, [], [?AST_NEWLINE | add_text(AccL, AccR)], Br, Attr);
+  parse_attr(T, Id, [], add_text(AccL, AccR), Br, Attr);
 
 parse_attr([[$|, $| | _] | T], Id, AccL, AccR, Br, Attr) ->
   parse_attr([[] | T], Id, AccL, AccR, Br, Attr);
@@ -111,11 +111,13 @@ parse_attr([[$\\, Ch | W] | T], Id, AccL, AccR, Br, Attr)
   parse_attr([W | T], Id, [Ch | AccL], AccR, Br, Attr);
 
 parse_attr([W | T], Id, AccL, AccR, Br, Attr) ->
-  case zml_indent:parse_id(W) of
+  case zml_indent:parse_id_spc(W) of
     {[_|_] = NewId, [$:, Ch | R]} when ?IS_WHITESPACE(Ch) ->
-      parse_attr([R | T], NewId, [], [], Br, add_attr(Id, AccL, AccR, Attr));
+      parse_attr([R | T], string:strip(NewId, left),
+        [], [], Br, add_attr(Id, AccL, AccR, Attr));
     {[_|_] = NewId, ":"} ->
-      parse_attr(T, NewId, [], [], Br, add_attr(Id, AccL, AccR, Attr));
+      parse_attr(T, string:strip(NewId, left),
+        [], [], Br, add_attr(Id, AccL, AccR, Attr));
     {[_|_] = NewId, R} ->
       parse_attr([R | T], Id, append_rev(NewId, AccL), AccR, Br, Attr);
     {[], [Ch | R]} ->

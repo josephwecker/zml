@@ -54,6 +54,12 @@ parse_id([Ch | T]) when ?IS_ALPHA(Ch) ->
 
 parse_id(Ln) -> {[], Ln}.
 
+parse_id_spc(Ln) ->
+  {Dent, W} = get_dent(Ln),
+  case parse_id(W) of
+    {[], _} -> {[], Ln};
+    {L,  R} -> {lists:sublist(Ln, Dent + length(L)), R}
+  end.
 
 parse_class_attrs([H|T] = Ln, Attr) when ?IS_ATTR(H) ->
   case parse_id(T) of
