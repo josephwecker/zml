@@ -130,12 +130,8 @@ run_specialized_handlers_inner([], _, NewAST) -> NewAST;
 run_specialized_handlers_inner(
     [{{Name, _ID}, special, _Attr, _Children} = Node | T],
     Options, FullAST) ->
-  ModuleName = list_to_atom("zml_special_" ++ string:to_lower(Name)),
-  {module, Module} = code:ensure_loaded(ModuleName),
-  NewAST = case erlang:function_exported(Module, process_tree, 3) of
-    true -> Module:process_tree(Node, FullAST, Options);
-    _ -> FullAST
-  end,
+  NewAST = zml_util:call_special(Name,
+    process_tree, [Node, FullAST, Options], FullAST),
   run_specialized_handlers_inner(T, Options, NewAST);
 
 run_specialized_handlers_inner([_H|T], Options, FullAST) ->
