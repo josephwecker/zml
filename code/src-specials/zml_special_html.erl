@@ -163,7 +163,7 @@ build_meta(Key, Name, Vals, IsXml, LowerVals) ->
     _  -> join(Vals, " ")
   end,
   [zml_util:new_tag(meta,
-    [{"content", [NewVals]}, {zml_util:str(Key), [NewName]}], [])].
+    [{zml_util:str(Key), [NewName]}, {"content", [NewVals]}], [])].
 
 
 process_autoclose(_ID, Attr, _Children, AST, _Options) ->
