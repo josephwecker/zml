@@ -1,6 +1,0 @@
-*html
-  :h1 a quick sample for $name's sake
-  :table
-    [for x,y,z in data]
-      :tr :td $x; :td $y; :td $z;
-      :tr(class: [if x == 3] highlighted [else] normal [end]) :td; :td; :td;
