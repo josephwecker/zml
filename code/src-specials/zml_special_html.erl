@@ -141,7 +141,8 @@ metatag(copyright, IsXml, Vals) ->
 metatag(nosmarttag, IsXml, _) ->
   build_meta(name, "MSSmartTagsPreventParsing", ["TRUE"], IsXml);
 
-metatag(title, _, Vals) -> [zml_util:new_tag(title, [], string:join(Vals, " "))];
+metatag(title, _, Vals) ->
+  [zml_util:new_tag(title, [], zml_util:intersperse(Vals, " "))];
 
 metatag(favicon, _, Vals) ->
   [zml_util:new_tag(link, [{"rel", ["icon"]}, {"href", Vals}], []),
