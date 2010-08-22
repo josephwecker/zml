@@ -4,7 +4,7 @@
 % Main function
 -export([ compile_static_files/0, compile_static_files/1,
           template_dir/2, template_file/2, template_string/3,
-          start/0, render/3 ]).
+          start/0, render/2, render/3 ]).
 
 -include_lib("kernel/include/file.hrl").
 
@@ -100,6 +100,14 @@ get_template(Name, Options) ->
 render(Name, Data, Options) ->
   case get_template(Name, Options) of
     {ok, Templ} -> zml_render:render(Templ, Data);
+    Err -> Err
+  end.
+
+% TODO: Make sure Templ is a pure iolist
+% (can do it at compile time).
+render(Name, Options) ->
+  case get_template(Name, Options) of
+    {ok, Templ} -> Templ;
     Err -> Err
   end.
 
