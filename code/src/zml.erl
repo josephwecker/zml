@@ -3,7 +3,7 @@
 
 % Main function
 -export([ compile_static_files/0, compile_static_files/1,
-          template_dir/2, template_file/3, template_string/3,
+          template_dir/2, template_file/2, template_string/3,
           start/0, render/3 ]).
 
 -include_lib("kernel/include/file.hrl").
@@ -39,51 +39,66 @@ output_file_name(FName) ->
 start() -> ets:new(zml_templates, [set, public, named_table]).
 
 template_dir(Dir, Options) ->
-  case file:list_dir(Dir) of
+  BaseDir = proplists:get_value(base_dir, Options, "."),
+  Path = case Dir of
+    "" -> BaseDir;
+    _  -> BaseDir ++ "/" ++ Dir
+  end,
+  case file:list_dir(Path) of
     {ok, Files} ->
       lists:foreach(fun(FName) ->
         case string:right(FName, 5) of
-          [_|".zml"] -> template_file(
-            list_to_atom(string:left(FName, string:len(FName) - 4)),
-            Dir ++ "/" ++ FName, Options);
+          [_|".zml"] -> template_file(Dir ++ "/" ++ FName, Options);
           _ -> nothing
         end end, Files);
     Err -> Err
   end.
 
-template_file(Id, Path, Options) ->
+template_file(FName, Options) ->
+  BaseDir = proplists:get_value(base_dir, Options, "."),
+  Path = BaseDir ++ "/" ++ FName,
   {ok, FileInfo} = file:read_file_info(Path),
   NewTs = FileInfo#file_info.mtime,
-  case ets:lookup(zml_templates, Id) of
-    [{_Id, _Path, Ts, _Templ}] when Ts >= NewTs -> ok;
-    _ -> ets:insert(zml_templates,
-      {Id, Path, NewTs, compile_file(Path, Options)})
+  case ets:lookup(zml_templates, FName) of
+    [{FName, _Path, Ts, Templ}] when Ts >= NewTs -> Templ;
+    _ -> NewTempl = compile_file(Path, Options),
+         ets:insert(zml_templates, {FName, Path, NewTs, NewTempl}),
+         NewTempl
   end.
 
-template_string(Id, Str, Options) ->
-  ets:insert(zml_templates, {Id, none, 0, compile_string(Str, Options)}).
+template_string(Name, Str, Options) ->
+  Templ = compile_string(Str, Options),
+  ets:insert(zml_templates, {Name, none, 0, Templ}),
+  Templ.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % @return {ok, ZML template} or atom 'undefined'
 % recompile the file, if needed
-get_template(Id, Options) ->
-  case ets:lookup(zml_templates, Id) of
-    [{_Id, none, 0,  Templ}] -> Templ;
-    [{_Id, Path, Ts, Templ}] ->
+get_template(Name, Options) ->
+  case ets:lookup(zml_templates, Name) of
+    [{_Name, none, 0,  Templ}] -> Templ;
+    [{_Name, Path, Ts, Templ}] ->
       {ok, FileInfo} = file:read_file_info(Path),
       NewTs = FileInfo#file_info.mtime,
-      {ok, case NewTs > Ts of
-        true  -> NewTempl = compile_file(Path, Options),
-                 ets:insert(zml_templates, {Id, Path, NewTs, NewTempl}),
-                 NewTempl;
-        false -> Templ
-      end};
-    _ -> undefined
+      case NewTs > Ts of
+        true ->
+          NewTempl = compile_file(Path, Options),
+          ets:insert(zml_templates, {Name, Path, NewTs, NewTempl}),
+          {ok, NewTempl};
+        false ->
+          {ok, Templ}
+      end;
+    [] ->
+      case string:right(Name, 5) of
+        [_|".zml"] ->  {ok, template_file(Name, Options)};
+        _ -> {error, template_not_found, Name}
+      end;
+    Err -> {error, Err}
   end.
 
-render(Id, Data, Options) ->
-  case get_template(Id, Options) of
+render(Name, Data, Options) ->
+  case get_template(Name, Options) of
     {ok, Templ} -> zml_render:render(Templ, Data);
     Err -> Err
   end.
