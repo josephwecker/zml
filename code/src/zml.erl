@@ -26,8 +26,12 @@ compile_static_files([]) ->
 compile_static_files(FLS) ->
   lists:foreach(fun(FName) ->
     FNameOut = output_file_name(FName),
-    io:format("~s --> ~s~n", [FName, FNameOut]),
     {Template, IsStatic} = compile_file(FName, []),
+    io:format("~s --> ~s :: ~s~n", [FName, FNameOut,
+      case IsStatic of
+        true  -> "static file";
+        false -> "dynamic template"
+      end]),
     ok = file:write_file(FNameOut,
       case IsStatic of
         true  -> Template;
