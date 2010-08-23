@@ -201,7 +201,7 @@ translate_attributes([{Name, Vals} | Attrs], Acc, IsStatic) ->
 paste_attr_values([], Acc, IsStatic) -> {lists:reverse(Acc), IsStatic};
 
 paste_attr_values([H | T], [], IsStatic) ->
-  paste_attr_values(T, [H], IsStatic andalso is_tuple(H));
+  paste_attr_values(T, [H], IsStatic andalso not is_tuple(H));
 
 paste_attr_values([H | T], [A | _] = Acc,
     _IsStatic) when is_tuple(H) orelse is_tuple(A) ->
