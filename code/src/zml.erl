@@ -180,18 +180,33 @@ translate_ast_item([{with, Attr, Children} | T], Acc, _IsStatic) ->
    % *with Attr truncated in the special handler:
   translate_ast_item(T, [{with, Attr, ChildAST} | Acc], false);
 translate_ast_item([{Name, _Type, Attributes, []} | T], Acc, IsStatic) ->
-  {AttrTempl, AttrStatic} = translate_attributes(Attributes),
+  {AttrTempl, AttrStatic} = translate_attributes(Attributes, [], true),
   translate_ast_item(T,
     [["<", Name, AttrTempl, "/>"] | Acc], IsStatic and AttrStatic);
 translate_ast_item([{Name, _Type, Attributes, Children} | T], Acc, IsStatic) ->
-  {AttrTempl,  AttrStatic } = translate_attributes(Attributes),
+  {AttrTempl,  AttrStatic } = translate_attributes(Attributes, [], true),
   {ChildTempl, ChildStatic} = translate_ast_item(Children, [], true),
   ToAppend = ["<", Name, AttrTempl, ">", ChildTempl, "</", Name, ">"],
   translate_ast_item(T, [ToAppend | Acc], IsStatic and AttrStatic and ChildStatic);
 translate_ast_item([Str | T], Acc, IsStatic) ->
   translate_ast_item(T, [Str | Acc], IsStatic).
 
-translate_attributes(Attrs) ->
-  {[[" ", Name, "=\"", zml_util:intersperse(Values, " "), "\""]
-    || {Name, Values} <- Attrs ], true}.
+translate_attributes([], Acc, IsStatic) -> {lists:reverse(Acc), IsStatic};
+
+translate_attributes([{Name, Vals} | Attrs], Acc, IsStatic) ->
+  {ValStr, ValStatic} = paste_attr_values(Vals, [], true),
+  translate_attributes(Attrs,
+    [[" ", Name, "=\"", ValStr, "\""] | Acc], ValStatic and IsStatic).
+
+paste_attr_values([], Acc, IsStatic) -> {lists:reverse(Acc), IsStatic};
+
+paste_attr_values([H | T], [], IsStatic) ->
+  paste_attr_values(T, [H], IsStatic andalso is_tuple(H));
+
+paste_attr_values([H | T], [A | _] = Acc,
+    _IsStatic) when is_tuple(H) orelse is_tuple(A) ->
+  paste_attr_values(T, [H | Acc], false);
+
+paste_attr_values([H | T], Acc, IsStatic) ->
+  paste_attr_values(T, [H, " " | Acc], IsStatic).
 
