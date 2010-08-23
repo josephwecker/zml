@@ -1,6 +1,6 @@
 %% TODO:
 %%   - (Future) build list of images from culled zss and do image processing
- 
+
 -module(zs_html_zss_images).
 
 -export([process/5]).
@@ -129,25 +129,24 @@ ast_has_selector(AST, Sel) ->
 scan_ast([], _) -> true;
 scan_ast(_, []) -> false;
 
-scan_ast(Elems, [newline | T])               -> scan_ast(Elems, T);
-scan_ast(Elems, [Txt | T]) when is_list(Txt) -> scan_ast(Elems, T);
+scan_ast(Elems, [newline  | T]) -> scan_ast(Elems, T);
+scan_ast(Elems, [{var, _} | T]) -> scan_ast(Elems, T);
 
-scan_ast([E | T] = Elems, [{NEl, _, NAtt, NChildren}  | TAST]) ->
+scan_ast(Elems, [{where, _, Children} | T]) ->
+  scan_ast(Elems, Children) orelse scan_ast(Elems, T);
+
+scan_ast(Elems, [[Ch|_] | T])
+    when is_integer(Ch) -> scan_ast(Elems, T);
+
+scan_ast(Elems, [H | T]) when is_binary(H) -> scan_ast(Elems, T);
+
+scan_ast(Elems, [H | T]) when is_list(H) ->
+  scan_ast(Elems, H) orelse scan_ast(Elems, T);
+
+scan_ast([E | T] = Elems, [{NEl, _, NAtt, NChildren} | TAST]) ->
   case elements_match(E, NEl, NAtt) of
-    true ->
-      case T of
-        [] ->
-          true;
-        _ ->
-          scan_ast(T, NChildren)
-      end;
-    false ->
-      case scan_ast(Elems, NChildren) of
-        true ->
-          true;
-        false ->
-          scan_ast(Elems, TAST)
-      end
+    true  -> T == [] orelse scan_ast(T, NChildren);
+    false -> scan_ast(Elems, NChildren) orelse scan_ast(Elems, TAST)
   end.
 
 elements_match(ElStr, {Name, _ID}, Attrs) ->
