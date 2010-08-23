@@ -16,15 +16,23 @@
 compile_static_files() -> compile_static_files([]).
 
 compile_static_files([]) ->
-  Template = compile_stream(standard_io, []),
-  io:format("~s~n", [zml_render:render(Template, fake)]);
+  {Template, IsStatic} = compile_stream(standard_io, []),
+  io:format("~s~n", [
+    case IsStatic of
+      true  -> Template;
+      false -> zml_render:render(Template, fake)
+    end]);
 
 compile_static_files(FLS) ->
   lists:foreach(fun(FName) ->
     FNameOut = output_file_name(FName),
     io:format("~s --> ~s~n", [FName, FNameOut]),
-    Template = compile_file(FName, []),
-    ok = file:write_file(FNameOut, zml_render:render(Template, fake))
+    {Template, IsStatic} = compile_file(FName, []),
+    ok = file:write_file(FNameOut,
+      case IsStatic of
+        true  -> Template;
+        false -> zml_render:render(Template, fake)
+      end)
   end, FLS).
 
 % TODO: take output path from the options.
@@ -60,15 +68,15 @@ template_file(FName, Options) ->
   {ok, FileInfo} = file:read_file_info(Path),
   NewTs = FileInfo#file_info.mtime,
   case ets:lookup(zml_templates, FName) of
-    [{FName, _Path, Ts, Templ}] when Ts >= NewTs -> Templ;
-    _ -> NewTempl = compile_file(Path, Options),
-         ets:insert(zml_templates, {FName, Path, NewTs, NewTempl}),
+    [{FName, _Path, Ts, Templ, _IsStatic}] when Ts >= NewTs -> Templ;
+    _ -> {NewTempl, IsStatic} = compile_file(Path, Options),
+         ets:insert(zml_templates, {FName, Path, NewTs, NewTempl, IsStatic}),
          NewTempl
   end.
 
 template_string(Name, Str, Options) ->
-  Templ = compile_string(Str, Options),
-  ets:insert(zml_templates, {Name, none, 0, Templ}),
+  {Templ, IsStatic} = compile_string(Str, Options),
+  ets:insert(zml_templates, {Name, none, 0, Templ, IsStatic}),
   Templ.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -77,17 +85,17 @@ template_string(Name, Str, Options) ->
 % recompile the file, if needed
 get_template(Name, Options) ->
   case ets:lookup(zml_templates, Name) of
-    [{_Name, none, 0,  Templ}] -> Templ;
-    [{_Name, Path, Ts, Templ}] ->
+    [{_Name, none, 0,  Templ, IsStatic}] -> {ok, Templ, IsStatic};
+    [{_Name, Path, Ts, Templ, IsStatic}] ->
       {ok, FileInfo} = file:read_file_info(Path),
       NewTs = FileInfo#file_info.mtime,
       case NewTs > Ts of
         true ->
-          NewTempl = compile_file(Path, Options),
-          ets:insert(zml_templates, {Name, Path, NewTs, NewTempl}),
-          {ok, NewTempl};
+          {NewTempl, IsNewStatic} = compile_file(Path, Options),
+          ets:insert(zml_templates, {Name, Path, NewTs, NewTempl, IsNewStatic}),
+          {ok, NewTempl, IsNewStatic};
         false ->
-          {ok, Templ}
+          {ok, Templ, IsStatic}
       end;
     [] ->
       case string:right(Name, 5) of
@@ -99,17 +107,12 @@ get_template(Name, Options) ->
 
 render(Name, Data, Options) ->
   case get_template(Name, Options) of
-    {ok, Templ} -> zml_render:render(Templ, Data);
+    {ok, Templ, true } -> Templ;
+    {ok, Templ, false} -> zml_render:render(Templ, Data);
     Err -> Err
   end.
 
-% TODO: Make sure Templ is a pure iolist
-% (can do it at compile time).
-render(Name, Options) ->
-  case get_template(Name, Options) of
-    {ok, Templ} -> Templ;
-    Err -> Err
-  end.
+render(Name, Options) -> render(Name, fake, Options).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -131,7 +134,7 @@ compile_string(Str, Options) ->
   Options2 = other_options(Options),
   AST = zml_indent:tokenize_string(Str), % TODO: pass options here
   AST2 = run_specialized_handlers(AST, Options2),
-  translate_ast_item(AST2, []).
+  translate_ast_item(AST2, [], true).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -160,31 +163,31 @@ run_specialized_handlers_inner(
 run_specialized_handlers_inner([_H|T], Options, FullAST) ->
   run_specialized_handlers_inner(T, Options, FullAST).
 
-translate_ast_item([], Acc) -> lists:reverse(Acc);
-translate_ast_item([newline | T], Acc) ->
-  translate_ast_item(T, ["\n" | Acc]);
-translate_ast_item([{var,_} = Var | T], Acc) ->
-  translate_ast_item(T, [Var | Acc]);
+translate_ast_item([], Acc, IsStatic) -> {lists:reverse(Acc), IsStatic};
+translate_ast_item([newline | T], Acc, IsStatic) ->
+  translate_ast_item(T, ["\n" | Acc], IsStatic);
+translate_ast_item([{var,_} = Var | T], Acc, _IsStatic) ->
+  translate_ast_item(T, [Var | Acc], false);
 % In case a special one still remains, remove ID and pretend it's normal
-translate_ast_item([{{Name,_ID},Type,Attributes,Children} | T], Acc) ->
-  translate_ast_item([{Name, Type, Attributes, Children} | T], Acc);
-translate_ast_item([{with, Attr, Children} | T], Acc) ->
-  translate_ast_item(T, [{with, Attr, % Attr truncated in the special handler
-    translate_ast_item(Children, [])} | Acc]);
-translate_ast_item([{Name,_Type,Attributes,[]} | T], Acc) ->
-  ToAppend = ["<", Name, translate_attributes(Attributes), "/>"],
-  translate_ast_item(T, [ToAppend | Acc]);
-translate_ast_item([{Name,_Type,Attributes,Children} | T], Acc) ->
-  ToAppend = [
-    "<", Name,
-    translate_attributes(Attributes), ">",
-    translate_ast_item(Children, []),
-    "</", Name, ">"],
-  translate_ast_item(T, [ToAppend | Acc]);
-translate_ast_item([Str | T], Acc) ->
-  translate_ast_item(T, [Str | Acc]).
+translate_ast_item([{{Name, _ID}, Type, Attributes, Children} | T], Acc, IsStatic) ->
+  translate_ast_item([{Name, Type, Attributes, Children} | T], Acc, IsStatic);
+translate_ast_item([{with, Attr, Children} | T], Acc, _IsStatic) ->
+  {ChildAST, _IsStatic} = translate_ast_item(Children, [], true),
+   % *with Attr truncated in the special handler:
+  translate_ast_item(T, [{with, Attr, ChildAST} | Acc], false);
+translate_ast_item([{Name, _Type, Attributes, []} | T], Acc, IsStatic) ->
+  {AttrTempl, AttrStatic} = translate_attributes(Attributes),
+  translate_ast_item(T,
+    [["<", Name, AttrTempl, "/>"] | Acc], IsStatic and AttrStatic);
+translate_ast_item([{Name, _Type, Attributes, Children} | T], Acc, IsStatic) ->
+  {AttrTempl,  AttrStatic } = translate_attributes(Attributes),
+  {ChildTempl, ChildStatic} = translate_ast_item(Children, [], true),
+  ToAppend = ["<", Name, AttrTempl, ">", ChildTempl, "</", Name, ">"],
+  translate_ast_item(T, [ToAppend | Acc], IsStatic and AttrStatic and ChildStatic);
+translate_ast_item([Str | T], Acc, IsStatic) ->
+  translate_ast_item(T, [Str | Acc], IsStatic).
 
 translate_attributes(Attrs) ->
-  [ [" ", Name, "=\"", zml_util:intersperse(Values, " "), "\""]
-    || {Name, Values} <- Attrs ].
+  {[[" ", Name, "=\"", zml_util:intersperse(Values, " "), "\""]
+    || {Name, Values} <- Attrs ], true}.
 
