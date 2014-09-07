@@ -1,0 +1,8 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+ <html xml:lang="en" xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="content-type" content="text/html; charset=UTF-8"/><meta http-equiv="content-language" content="en-us"/><meta name="MSSmartTagsPreventParsing" content="true"/>
+</head><body><h4>Testing the js</h4><script type="text/javascript">//<![CDATA[
+ var _zmlx=2;var _zmljs=null;var head=document.getElementsByTagName('head')[0];_zmljs=document.createElement('script');_zmljs.src='jstest_lib.js';_zmljs.setAttribute('onload','_zmlx-=1;');head.appendChild(_zmljs);_zmljs=document.createElement('script');_zmljs.src='js/another.js';_zmljs.setAttribute('onload','_zmlx-=1;');head.appendChild(_zmljs);_zmlw();function _zmlw(){_zmlx?setTimeout('_zmlw()',150):_zmlc()}function _zmlc(){
+alert("The name is... " + global_hi_there + '  ' + another_hi);
+}; 
+//]]>
+</script></body></html>
